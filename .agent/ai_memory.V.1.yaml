@@ -1,0 +1,113 @@
+# ai_memory.V.1.yaml
+version: 1
+project: "medieval_sim"
+updated_utc: "2025-10-09T04:50:42Z"
+
+# Short-term notes are tied to the active step. Promote durable lessons to long_term.
+short_term:
+  - step: "S0.1a"
+    decisions:
+      - "Standard toolchain is rustc 1.90.0 (stable); rustfmt and clippy installed via rustup."
+      - "Continue targeting Bevy 0.17; document if a custom toolchain becomes necessary."
+    risks:
+      - "Pre-release Bevy minor may shift APIs; lock patch version once crates stabilise."
+      - "Running `cargo run` in unattended sessions can hang until the window is closed; note manual close requirement."
+      - "WGPU warns about missing Vulkan validation layers on Windows; harmless but worth tracking if debug tooling is needed."
+    experiments:
+      - "Evaluate whether `bevy::time::Time<Virtual>` satisfies scaling needs before rolling a custom resource."
+      - "`cargo clippy` requires the `-- -D warnings` invocation to propagate deny rules."
+    open_questions:
+      - "Should we adopt `leafwing_input_manager` before implementing first-person controls (M1)?"
+      - "Will SQLite be used directly (rusqlite) or via higher-level crate (sqlx)?"
+  - step: "S0.1b"
+    decisions:
+      - "Implemented custom SimulationClock resource over Bevy `Time<Virtual>` to keep control of clamping/logging."
+      - "Retained `set_time_scale` with conditional dead code allowance until config wiring lands."
+      - "Startup system logs configured scale to aid debugging."
+    risks:
+      - "SimulationClock must stay in sync with Bevy time; consider instrumentation if divergence occurs."
+      - "Allow(dead_code) attribute should be revisited once time scaling config is live."
+    experiments:
+      - "Unit tests verify scaling and clamping; consider property tests later for edge cases."
+    open_questions:
+      - "When wiring /config/time.toml, should we support live changes or only startup loads?"
+  - step: "S0.1c"
+    decisions:
+      - "Added cargo feature `core_debug` to gate per-second logging without affecting release binaries."
+      - "Implemented repeating timer using SimulationClock scaled deltas to report elapsed sim time and deltas."
+      - "Updated VS Code tasks to pass `-- -D warnings` to Clippy and surface feature-aware run targets."
+    risks:
+      - "Logging every second is helpful for debugging but still noisy; document clearly and keep feature off by default."
+      - "Allow(dead_code) guards on SimulationClock accessors should be removed once world systems consume them."
+    experiments:
+      - "Tested `cargo clippy` with and without `core_debug` feature to ensure gating works."
+    open_questions:
+      - "Should we add structured logging (e.g., tracing spans) instead of plain `info!` for debug output?"
+      - "Is Bevy's diagnostic plugin sufficient for FPS/entity counts, or do we craft custom metrics?"
+  - step: "S0.2a"
+    decisions:
+      - "Adopted fly camera controls matching Bevy 0.17 input APIs (ButtonInput, MessageReader)."
+      - "Kept ground to a scalable Plane3d mesh to simplify future terrain swaps."
+    risks:
+      - "Scene scaffolding can balloon quickly; keep placeholder assets lightweight to avoid perf surprises."
+    experiments: []
+    open_questions:
+      - "Use primitive meshes or quick GLTF placeholders for ground/NPCs during S0.2a?"
+  - step: "S0.2b"
+    decisions:
+      - "WorldTimeSettings loads from config/time.toml with fallback logging."
+      - "WorldClock derives from SimulationClock so global time scaling propagates automatically."
+      - "PrimarySun lighting and ambient color lerp based on the clock."
+    risks:
+      - "Lighting curve is simplistic; may need refinement when weather/skybox arrive."
+      - "Config reload is static; consider hot-reload before exposing to players."
+    experiments:
+      - "Verified clippy with and without core_debug to ensure conditional compilation works."
+    open_questions:
+      - "Should we surface time-of-day to UI/console for debugging?"
+      - "Do we need season-aware parameters (e.g., multiple declinations) before weather work?"
+  - step: "S0.3a"
+    decisions:
+      - "Documentation sweep captured world time guidance across README, tech notes, and architecture snapshot."
+      - "Planning artifacts updated to make S1.1a the next active step."
+    risks:
+      - "Documentation can drift quickly; review at the start of each milestone."
+    experiments: []
+    open_questions:
+      - "Should we add automated checks (spellcheck, linkcheck) before milestone S1?"
+
+# Accumulates durable lessons and conventions.
+long_term:
+  architecture:
+    - "Hybrid plugin model: explicit deps for core systems; optional plugins share resources/events."
+    - "Keep files under ~400 lines; split modules when responsibilities diverge."
+    - "Document new resources/components in the nearest module README."
+  llm:
+    - "Token budget: global throttle + per-NPC cooldown with summarised memories."
+    - "Prompts rely on NPC dossier + scoped recent context; avoid world-global dumps."
+  data:
+    - "Configs live in TOML under /config and should support hot reload later."
+    - "Persistent state funnels through DbResource to isolate SQLite usage."
+  tooling:
+    - "Gate optional instrumentation behind feature flags; default binaries stay clean."
+    - "Run fmt + clippy + check before merging; note skipped checks as risks."
+
+# Record significant refactors (leave empty array if none yet).
+refactors: []
+
+# What failed and why (helps agents avoid repeats).
+postmortems: []
+
+# Documentation index (update paths as modules appear).
+doc_index:
+  core: "/src/core/README.md"
+  world: "/src/world/README.md"
+  npc: "/src/npc/README.md"
+  dialogue: "/src/dialogue/README.md"
+  economy: "/src/economy/README.md"
+  save: "/src/save/README.md"
+  ui: "/src/ui/README.md"
+  weather: "/src/weather/README.md"
+
+
+

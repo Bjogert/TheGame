@@ -1,0 +1,27 @@
+[package]
+name = "thegame"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = []
+core_debug = []
+
+[dependencies]
+bevy = "0.17"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+
+# Enable a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (but not for our code):
+[profile.dev.package."*"]
+opt-level = 3
+
+# Enable more optimization in release mode
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1

@@ -1,0 +1,63 @@
+﻿# Rust build artifacts
+/target/
+Cargo.lock
+
+# IDE files
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Bevy specific
+*.pdb
+
+# Temporary files
+*.tmp
+*.temp
+
+# Local configuration files
+.env
+.env.local
+
+# Game saves/data (if you add them later)
+saves/
+data/
+
+# Asset cache (if Bevy generates it)
+.import/
+
+# Backup files
+*.bak
+*.backup

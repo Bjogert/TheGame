@@ -1,0 +1,134 @@
+# tasks.yaml - execution queue for coding agents
+# States: backlog | in_progress | blocked | done
+
+- id: S0.1a
+  title: "Confirm toolchain & baseline run"
+  state: done
+  deps: []
+  deliverables:
+    - "Toolchain report recorded in ai_memory (rustup show output, component status)"
+    - "`cargo fmt`, `cargo clippy -- -D warnings`, and `cargo check --all-targets` succeed"
+    - "`cargo run` launches without errors (close window manually when testing locally)"
+  docs_update:
+    - ".agent/ai_memory.V.1.yaml"
+    - "TASK.md"
+  notes:
+    - "Active toolchain rustc 1.90.0 (stable); rustfmt and clippy installed via rustup component add."
+    - "CLI `cargo run` call times out if the Bevy window is not closed; wgpu emits expected validation-layer warnings."
+
+- id: S0.1b
+  title: "Introduce CorePlugin & SimulationClock"
+  state: done
+  deps: [S0.1a]
+  deliverables:
+    - "`src/core/plugin.rs` with CorePlugin and SimulationClock resource"
+    - "`src/main.rs` updated to register CorePlugin"
+    - "Decision captured on whether Bevy Time<Virtual> is sufficient"
+  docs_update:
+    - "src/core/README.md"
+    - "CHANGELOG.md"
+    - ".agent/ai_memory.V.1.yaml"
+    - "TASK.md"
+  notes:
+    - "SimulationClock wraps Bevy Time for scaled deltas; keep setter for future config with allow(dead_code) outside tests."
+    - "Startup logging confirms configured time scale; unit tests cover scaling and clamping behaviour."
+
+- id: S0.1c
+  title: "Add core_debug feature & logging system"
+  state: done
+  deps: [S0.1b]
+  deliverables:
+    - "Feature flag `core_debug` defined in Cargo.toml"
+    - "Log-once-per-second system gated behind the feature"
+    - "VS Code tasks exposing the feature toggle"
+  docs_update:
+    - "src/core/README.md"
+    - "CHANGELOG.md"
+    - ".agent/ai_memory.V.1.yaml"
+    - "TASK.md"
+  notes:
+    - "core_debug feature adds repeating timer logging sim elapsed, real/virtual deltas, and scale."
+    - "VS Code tasks updated to pass `-- -D warnings` to clippy and expose feature toggles."
+
+- id: S0.2a
+  title: "Bootstrap world shell"
+  state: done
+  deps: [S0.1c]
+  deliverables:
+    - "`src/world/` modules scaffolded with WorldPlugin"
+    - "Ground plane, directional light, and basic camera controller in place"
+    - "Assets/config decisions recorded"
+  docs_update:
+    - "src/world/README.md"
+    - ".agent/ai_memory.V.1.yaml"
+    - "TASK.md"
+  notes:
+    - "WorldPlugin spawns plane, light, and fly camera (WASD + Space/LShift, right-mouse look)."
+    - "Documentation appended to src/world/README.md; CHANGELOG updated."
+
+- id: S0.2b
+  title: "Wire WorldClock & configurable day/night cycle"
+  state: done
+  deps: [S0.2a]
+  deliverables:
+    - "WorldClock resource integrated with SimulationClock"
+    - "/config/time.toml added and loaded at startup"
+    - "Systems reacting to config values for pacing"
+  docs_update:
+    - "docs/tech_notes.md"
+    - "src/world/README.md"
+    - "TASK.md"
+  notes:
+    - "WorldTimeSettings loads from config/time.toml; WorldClock drives sun rotation and ambient lighting."
+    - "Cursor grab now leverages CursorOptions for Bevy 0.17 API compliance."
+
+- id: S0.3a
+  title: "Docs & automation sweep for milestone S0"
+  state: done
+  deps: [S0.2b]
+  deliverables:
+    - "README.md, docs/tech_notes.md, .agent/docs/arch.md refreshed"
+    - "CHANGELOG entry for milestone S0"
+    - ".agent/tasks.yaml and .agent/ai_memory.V.1.yaml brought current"
+  docs_update:
+    - "README.md"
+    - "docs/tech_notes.md"
+    - ".agent/docs/arch.md"
+    - ".agent/ai_memory.V.1.yaml"
+    - "TASK.md"
+  notes:
+    - "Documentation sweep captured world time guidance and refreshed architecture snapshot."
+    - "Planning artifacts now point to S1.1a as the next active step."
+
+- id: S1.1a
+  title: "NPC identity component & debug spawner"
+  state: done
+  deps: [S0.3a]
+  deliverables:
+    - "Identity component with placeholder fields"
+    - "Spawner creating two debug NPCs (primitive meshes)"
+    - "NpcPlugin module documented"
+  docs_update:
+    - "src/npc/README.md"
+    - "CHANGELOG.md"
+    - "TASK.md"
+  notes:
+    - "NpcPlugin spawns three capsule NPCs with unique Identity data."
+    - "NpcIdGenerator issues monotonic IDs for future persistence."
+
+- id: S1.1b
+  title: "NPC schedule scaffold & integration tests"
+  state: in_progress
+  deps: [S1.1a]
+  deliverables:
+    - "Basic schedule system stub (daily tick placeholder)"
+    - "Integration test or debug assertion verifying NPC registration"
+    - "Follow-up risks recorded in ai_memory"
+  docs_update:
+    - "src/npc/README.md"
+    - ".agent/ai_memory.V.1.yaml"
+    - "TASK.md"
+
+
+
+

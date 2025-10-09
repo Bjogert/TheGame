@@ -1,0 +1,128 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "S0.1a - Toolchain Report",
+            "type": "shell",
+            "command": "rustup",
+            "args": [
+                "show"
+            ],
+            "problemMatcher": [],
+            "detail": "Record active Rust toolchain and installed components for Step S0.1a."
+        },
+        {
+            "label": "S0.1a - Format (cargo fmt)",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "fmt"
+            ],
+            "problemMatcher": [],
+            "detail": "Run during Step S0.1a to confirm formatting tooling works."
+        },
+        {
+            "label": "S0.1a - Clippy (deny warnings)",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "clippy",
+                "--",
+                "-D",
+                "warnings"
+            ],
+            "problemMatcher": "$rustc",
+            "detail": "Ensure lint cleanliness before deeper work."
+        },
+        {
+            "label": "S0.1a - Check (all targets)",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "check",
+                "--all-targets"
+            ],
+            "problemMatcher": "$rustc",
+            "detail": "Baseline compilation check for the scaffold."
+        },
+        {
+            "label": "S0.1a - Baseline Run",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run"
+            ],
+            "group": "build",
+            "problemMatcher": "$rustc",
+            "detail": "Launch the current app to verify the window opens."
+        },
+        {
+            "label": "S0.1c - Run with core_debug",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run",
+                "--features",
+                "core_debug"
+            ],
+            "problemMatcher": "$rustc",
+            "detail": "Use once the core_debug feature exists to observe scaled tick logs."
+        },
+        {
+            "label": "S0.1c - Watch (core_debug)",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "watch",
+                "-x",
+                "run --features core_debug"
+            ],
+            "problemMatcher": "$rustc",
+            "detail": "Requires cargo-watch; handy while iterating on debug instrumentation."
+        },
+        {
+            "label": "General - Run (cargo run)",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run"
+            ],
+            "group": "build",
+            "problemMatcher": "$rustc",
+            "detail": "General purpose run command for later milestones."
+        },
+        {
+            "label": "General - Test (cargo test)",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "test"
+            ],
+            "problemMatcher": "$rustc",
+            "detail": "Execute unit/integration tests as they are introduced."
+        },
+        {
+            "label": "General - Doc (cargo doc --no-deps)",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "doc",
+                "--no-deps"
+            ],
+            "problemMatcher": [],
+            "detail": "Build local API documentation quickly."
+        },
+        {
+            "label": "General - Watch (check --all-targets)",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "watch",
+                "-x",
+                "check --all-targets"
+            ],
+            "problemMatcher": "$rustc",
+            "detail": "Continuous type-checking; requires cargo-watch."
+        }
+    ]
+}
