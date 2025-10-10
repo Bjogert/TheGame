@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **TheGame** is a medieval life simulation built with Bevy 0.17, exploring long-form NPC simulation with AI assistance. The codebase (865 lines of Rust) demonstrates professional engineering patterns with clean plugin-based ECS architecture and data-driven configuration.
 
-**Current State:** Milestone M0 (scaffolding phase)
+**Current State:** Milestone S1.1b (schedule scaffold active)
 **Architecture Maturity:** Early but well-designed; ready for horizontal expansion
 **Code Quality:** 61% documentation-to-code ratio, defensive validation throughout, no files exceed 400-line guideline
 
@@ -635,3 +635,4 @@ See [COMPREHENSIVE_CODEBASE_ANALYSIS.md](COMPREHENSIVE_CODEBASE_ANALYSIS.md) for
 - Code quality metrics and dependency graphs
 - Performance considerations and optimization strategies
 - Detailed extension points and scaling patterns
+

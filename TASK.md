@@ -84,7 +84,16 @@ _Last updated: 2025-10-08 (UTC). This file explains the step-by-step execution p
 - **Exit criteria:** Debug NPCs appear in the world with unique identities and documentation reflects the new module.
 
 ---
-## What Comes Next
-Once S0 wraps, move into milestone S1: NPC identity, spawner skeleton, and early dialogue experiments. Those steps will receive their own breakdown once S0.3a turns this list into reality.
+## Step S1.1b - NPC Schedule Scaffold
+**Goal:** Introduce a stubbed daily schedule system and verify NPC activity transitions.
 
+- [ ] Design schedule data structures and determine how they tick (resource or component-driven).
+- [ ] Implement a minimal schedule update system that logs activity changes.
+- [ ] Add debug assertions/tests for schedule transitions (planned unit/integration tests).
+- [ ] Document schedule behaviour and update planning artifacts.
+- **Exit criteria:** NPCs transition between activities over the day, and documentation reflects the scheduling scaffold.
+
+---
+## What Comes Next
+Next steps after S1.1b include fleshing out activity logic, integrating needs, and preparing for dialogue scaffolding.
 

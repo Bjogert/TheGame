@@ -1187,14 +1187,13 @@ fn schedule_updates(
 
 ### 9.5 Maintenance Checklist
 
-**Before Each Milestone:**
-- [ ] Run `cargo fmt` and `cargo clippy -- -D warnings`
-- [ ] Update `CHANGELOG.md` with step summary
-- [ ] Refresh `src/docs/tech_notes.md` with new implementation details
-- [ ] Update `.agent/ai_memory.V.N.yaml` with decisions
-- [ ] Add/update module READMEs for new systems
-- [ ] Run `cargo test` and verify all tests pass
-- [ ] Test both `cargo run` and `cargo run --features core_debug`
+**Before Each Milestone:
+- [ ] Run `cargo fmt`, `cargo clippy -- -D warnings`, `cargo check --all-targets`
+- [ ] Update CHANGELOG, tech notes, module READMEs
+- [ ] `cargo test`
+- [ ] `cargo run` (expect capsule NPCs + logging)
+- [ ] `cargo run --features core_debug`
+ `cargo run` and `cargo run --features core_debug`
 
 **Before Adding Dependencies:**
 - [ ] Verify Bevy 0.17 compatibility
@@ -1282,3 +1281,4 @@ cargo watch -x "check --all-targets"       # Live reload
 **Report Generated:** 2025-10-10
 **Analysis Tool:** Claude Code (Serena-Powered Code Detective)
 **Analyst Notes:** Codebase is production-ready for current scope. Recommend proceeding to Milestone M1 with confidence.
+
