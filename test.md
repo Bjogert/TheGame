@@ -1,3 +1,0 @@
-﻿# TheGame
-
-Initial commit test
