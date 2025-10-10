@@ -94,14 +94,14 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 ## 4) Active Steps (Plan 3)
 > Update this section whenever the top backlog item changes. Keep scope small (0.5-2 focused days).
 
-### Current Focus - S1.2: Dialogue Scaffolding Research
-- Compile LLM API options and rate-limiting strategies suitable for the project.
-- Draft prompt scaffolding that interfaces cleanly with Identity/Schedule data.
-- Identify additional simulation context required for dialogue integration.
+### Current Focus - S1.3: Dialogue Broker Prototype
+- Implement a DialogueBroker trait plus provider enum (OpenAI/Anthropic/local).
+- Stub a queued request runner with global/per-NPC rate limiting.
+- Outline error handling (timeouts, retries, throttling) prior to full integration.
 
-**Recently completed:** S1.1b (NPC schedule scaffold) finished on 2025-10-10; capsule NPCs now tick activities via ScheduleTicker.
+**Recently completed:** S1.2 (dialogue scaffolding research) finished on 2025-10-10; findings documented in docs/dialogue_research.md.
 
-**Next in queue:** Flesh out dialogue integration deliverables (S1.2) once research notes are captured.
+**Next in queue:** Build the dialogue broker stub (S1.3) to prepare for end-to-end conversation tests.
 
 ---
 
@@ -120,6 +120,7 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 - SQLite with Rust: `sqlx` or `rusqlite` docs, plus SQLite official documentation for schema design.
 
 Add better sources (talks, devlogs, whitepapers) here as they surface.
+
 
 
 

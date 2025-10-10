@@ -1,6 +1,6 @@
 # TASK PLAN
 
-_Last updated: 2025-10-08 (UTC). This file explains the step-by-step execution plan so humans can follow the flow easily. For day-to-day coordination between agents, see `.agent/tasks.yaml`._
+_Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution plan so humans can follow the flow easily. For day-to-day coordination between agents, see `.agent/tasks.yaml`._
 
 ---
 
@@ -84,6 +84,7 @@ _Last updated: 2025-10-08 (UTC). This file explains the step-by-step execution p
 - **Exit criteria:** Debug NPCs appear in the world with unique identities and documentation reflects the new module.
 
 ---
+
 ## Step S1.1b - NPC Schedule Scaffold
 **Goal:** Introduce a stubbed daily schedule system and verify NPC activity transitions.
 
@@ -95,4 +96,24 @@ _Last updated: 2025-10-08 (UTC). This file explains the step-by-step execution p
 - **Exit criteria:** NPC tick cadence is observable in logs and ready for future needs integration.
 
 ---
-## What Comes Next\nUpcoming work focuses on S1.2 (Dialogue scaffolding research) to prepare for integrating LLM-driven conversations once scheduling foundations are in place.\n
+
+## Step S1.2 - Dialogue Scaffolding Research\n**Overview:** Gather information about which AI chat services to consider, how fast they can talk, and what information they need from our villagers before we build anything.
+**Goal:** Capture LLM provider options, rate limiting strategy, and prompt scaffolding requirements.\n
+- [x] Enumerate managed vs. local LLM providers with pros/cons.
+- [x] Define global/per-NPC rate limiting strategy and queue behaviour.
+- [x] Draft prompt template and identify required simulation context.
+- [x] Document findings in docs/dialogue_research.md and update project docs.
+- **Outcome:** Research documented; README/tech notes updated, planning artifacts point to the upcoming dialogue broker prototype.
+- **Exit criteria:** Dialogue research summary exists and informs implementation work.
+
+---
+
+## What Comes Next
+Upcoming work focuses on S1.3 (Dialogue broker prototype) to prepare for integrating LLM-driven conversations once scheduling foundations are in place.
+\nUpcoming work focuses on S1.2 (Dialogue scaffolding research) to prepare for integrating LLM-driven conversations once scheduling foundations are in place.\n
+
+
+
+
+
+

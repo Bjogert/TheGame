@@ -1,4 +1,4 @@
-﻿# Tech Notes
+# Tech Notes
 
 ## World Time & Lighting (S0.2b)
 - WorldTimeSettings loads from config/time.toml at startup; missing or invalid configs fall back to defaults with a warning.
@@ -12,3 +12,10 @@
 - ScheduleTicker accumulates simulation time (default 5 seconds) and triggers activity transitions driven by WorldClock.
 - DailySchedule entries use day-fraction start times; logs surface transitions for visibility.
 - Schedule data currently lives in code; migrate to config/persistence in later milestones.
+
+## Dialogue Scaffolding (S1.2)
+- Managed LLM APIs (OpenAI/Anthropic) chosen for rapid iteration; abstract via DialogueBroker.
+- Rate limiting plan: global 60 req/min bucket + per-NPC 30s cooldown with queued requests.
+- Prompt context uses Identity, ScheduleState, WorldClock; future fields include relationships, goals, mood.
+- See docs/dialogue_research.md for provider comparison and next steps.
+

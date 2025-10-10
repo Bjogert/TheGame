@@ -137,7 +137,7 @@
 
 - id: S1.2
   title: "Dialogue scaffolding research"
-  state: backlog
+  state: done
   deps: [S1.1b]
   deliverables:
     - "Document API options + rate limiting strategy"
@@ -145,5 +145,17 @@
   docs_update:
     - "docs/tech_notes.md"
     - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Research documented in docs/dialogue_research.md; README/tech notes updated."
 
 
+- id: S1.3
+  title: "Dialogue broker prototype"
+  state: backlog
+  deps: [S1.2]
+  deliverables:
+    - "Implement DialogueBroker trait + provider enum"
+    - "Stub request queue with rate limiting"
+  docs_update:
+    - "docs/tech_notes.md"
+    - ".agent/ai_memory.V.1.yaml"
