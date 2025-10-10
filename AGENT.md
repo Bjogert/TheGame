@@ -94,14 +94,18 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 ## 4) Active Steps (Plan 3)
 > Update this section whenever the top backlog item changes. Keep scope small (0.5-2 focused days).
 
-### Current Focus - S1.1b: NPC Schedule Scaffold
-- Sketch a minimal schedule/needs system that reads Identity data (even stubbed) to prove wiring.
-- Decide on interim data structures for daily tick events (resource or component set).
-- Add debug logging/tests to ensure NPC entities register with the scheduler.
+### Current Focus - S1.2: Dialogue Scaffolding Research
+- Compile LLM API options and rate-limiting strategies suitable for the project.
+- Draft prompt scaffolding that interfaces cleanly with Identity/Schedule data.
+- Identify additional simulation context required for dialogue integration.
 
-**Recently completed:** S1.1a (NPC identity & debug spawner) finished on 2025-10-08; capsule NPCs now appear in scene.
+**Recently completed:** S1.1b (NPC schedule scaffold) finished on 2025-10-10; capsule NPCs now tick activities via ScheduleTicker.
 
-**Next in queue:** Follow-up NPC systems (S1.1c / S1.2) once the schedule scaffold is in place.\n\n---\n\n## 5) Tooling & Automation
+**Next in queue:** Flesh out dialogue integration deliverables (S1.2) once research notes are captured.
+
+---
+
+## 5) Tooling & Automation
 - Use VS Code tasks from `.vscode/tasks.json` for routine commands (Run, Check, Clippy, Fmt, Test, Doc, Watch).
 - Before merging, run `cargo fmt`, `cargo clippy -D warnings`, and `cargo check --all-targets` at minimum.
 - For live-edit loops, prefer `cargo watch -x "check --all-targets"` or `-x run` (install `cargo-watch`).
@@ -116,6 +120,11 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 - SQLite with Rust: `sqlx` or `rusqlite` docs, plus SQLite official documentation for schema design.
 
 Add better sources (talks, devlogs, whitepapers) here as they surface.
+
+
+
+
+
 
 
 

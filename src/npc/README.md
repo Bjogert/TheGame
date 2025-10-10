@@ -19,11 +19,12 @@ Provides the scaffolding for non-player characters (NPCs). Currently the focus i
       ))
       .run();
   ```
-- Debug NPCs use capsule meshes, stand at pre-defined positions on the ground plane, and log activity changes throughout the day.
+- Debug NPCs use capsule meshes, stand at pre-defined positions on the ground plane, and log activity changes approximately every five seconds of simulation time.
 - `Identity` carries a unique `NpcId`, display name, and placeholder age. Extend this struct as more simulation data becomes available.
 
 ## Follow-ups
 - Replace debug meshes with animated GLTF assets when art is ready.
 - Persist NPC identities via the planned SQLite layer (Milestone M2).
 - Introduce scheduling/needs systems (S1.1b+) that read from `Identity` and future components.
+
 

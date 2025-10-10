@@ -33,3 +33,9 @@ All notable changes to this project will be documented in this file.
 - Added npc module with Identity component and NpcIdGenerator resource.
 - Registered NpcPlugin and spawned three placeholder NPCs with capsule meshes.
 - Documented the module (`src/npc/README.md`) and synced planning artifacts.
+
+## 2025-10-10 - S1.1b: NPC Schedule Scaffold
+- Added ScheduleTicker resource to accumulate simulation time and queue schedule ticks.
+- Consolidated schedule updates into tick_schedule_state, logging activity transitions at a 5s cadence.
+- Updated NPC documentation and planning artifacts to reflect the scheduling scaffold.
+

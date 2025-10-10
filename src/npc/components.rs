@@ -62,7 +62,11 @@ pub struct DailySchedule {
 
 impl DailySchedule {
     pub fn new(mut entries: Vec<ScheduleEntry>) -> Self {
-        entries.sort_by(|a, b| a.start.partial_cmp(&b.start).unwrap_or(std::cmp::Ordering::Equal));
+        entries.sort_by(|a, b| {
+            a.start
+                .partial_cmp(&b.start)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         Self { entries }
     }
 }
@@ -71,6 +75,48 @@ impl DailySchedule {
 #[derive(Component, Debug, Default, Clone)]
 pub struct ScheduleState {
     pub current_activity: String,
+}
+
+/// Controls how often schedules advance (seconds of simulation time).
+#[derive(Resource)]
+pub struct ScheduleTicker {
+    pub interval_seconds: f32,
+    accumulated: f32,
+    pending_ticks: u32,
+}
+
+impl Default for ScheduleTicker {
+    fn default() -> Self {
+        Self {
+            interval_seconds: 5.0,
+            accumulated: 0.0,
+            pending_ticks: 0,
+        }
+    }
+}
+
+impl ScheduleTicker {
+    /// Accumulates delta time and returns how many ticks should fire.
+    pub fn accumulate(&mut self, delta_seconds: f32) -> u32 {
+        if self.interval_seconds <= f32::EPSILON {
+            return 0;
+        }
+
+        self.accumulated += delta_seconds.max(0.0);
+        let mut ticks = 0;
+        while self.accumulated >= self.interval_seconds {
+            self.accumulated -= self.interval_seconds;
+            ticks += 1;
+        }
+        self.pending_ticks = self.pending_ticks.saturating_add(ticks);
+        ticks
+    }
+
+    pub fn take_pending(&mut self) -> u32 {
+        let ticks = self.pending_ticks;
+        self.pending_ticks = 0;
+        ticks
+    }
 }
 
 /// Resource that issues monotonically increasing NPC ids.

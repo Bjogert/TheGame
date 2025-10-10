@@ -38,6 +38,7 @@ Run any task via `Ctrl+Shift+P` ? *Run Task*.
 
 ## Time Configuration
 - World time is defined in `config/time.toml`. Adjust `day_length_minutes`, sunrise/sunset fractions, and lighting intensities to customise the cycle.
+- NPC schedules currently tick every ~5 seconds of simulation time; expect capsule villagers to change activities periodically in the logs.
 - Changes require a restart. Invalid files fall back to defaults and emit a warning on startup.
 
 ---
@@ -79,4 +80,5 @@ As systems land, add module-specific README files under `src/<module>/README.md`
 
 ## Next Actions
 Check `.agent/tasks.yaml` for the authoritative backlog. Today the open action is **S0.3a - documentation & automation sweep**. Update the documentation set (README, AGENT, TASK.md, tasks, memory) before promoting the next task.
+
 

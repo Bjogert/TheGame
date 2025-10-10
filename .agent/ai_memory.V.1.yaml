@@ -1,7 +1,7 @@
 # ai_memory.V.1.yaml
 version: 1
 project: "medieval_sim"
-updated_utc: "2025-10-09T04:50:42Z"
+updated_utc: "2025-10-10T16:56:09Z"
 
 # Short-term notes are tied to the active step. Promote durable lessons to long_term.
 short_term:
@@ -11,18 +11,18 @@ short_term:
       - "Continue targeting Bevy 0.17; document if a custom toolchain becomes necessary."
     risks:
       - "Pre-release Bevy minor may shift APIs; lock patch version once crates stabilise."
-      - "Running `cargo run` in unattended sessions can hang until the window is closed; note manual close requirement."
+      - "Running cargo run in unattended sessions can hang until the window is closed; note manual close requirement."
       - "WGPU warns about missing Vulkan validation layers on Windows; harmless but worth tracking if debug tooling is needed."
     experiments:
-      - "Evaluate whether `bevy::time::Time<Virtual>` satisfies scaling needs before rolling a custom resource."
-      - "`cargo clippy` requires the `-- -D warnings` invocation to propagate deny rules."
+      - "Evaluate whether evy::time::Time<Virtual> satisfies scaling needs before rolling a custom resource."
+      - "cargo clippy requires the -- -D warnings invocation to propagate deny rules."
     open_questions:
-      - "Should we adopt `leafwing_input_manager` before implementing first-person controls (M1)?"
+      - "Should we adopt leafwing_input_manager before implementing first-person controls (M1)?"
       - "Will SQLite be used directly (rusqlite) or via higher-level crate (sqlx)?"
   - step: "S0.1b"
     decisions:
-      - "Implemented custom SimulationClock resource over Bevy `Time<Virtual>` to keep control of clamping/logging."
-      - "Retained `set_time_scale` with conditional dead code allowance until config wiring lands."
+      - "Implemented custom SimulationClock resource over Bevy Time<Virtual> to keep control of clamping/logging."
+      - "Retained set_time_scale with conditional dead code allowance until config wiring lands."
       - "Startup system logs configured scale to aid debugging."
     risks:
       - "SimulationClock must stay in sync with Bevy time; consider instrumentation if divergence occurs."
@@ -33,16 +33,16 @@ short_term:
       - "When wiring /config/time.toml, should we support live changes or only startup loads?"
   - step: "S0.1c"
     decisions:
-      - "Added cargo feature `core_debug` to gate per-second logging without affecting release binaries."
+      - "Added cargo feature core_debug to gate per-second logging without affecting release binaries."
       - "Implemented repeating timer using SimulationClock scaled deltas to report elapsed sim time and deltas."
-      - "Updated VS Code tasks to pass `-- -D warnings` to Clippy and surface feature-aware run targets."
+      - "Updated VS Code tasks to pass -- -D warnings to Clippy and surface feature-aware run targets."
     risks:
       - "Logging every second is helpful for debugging but still noisy; document clearly and keep feature off by default."
       - "Allow(dead_code) guards on SimulationClock accessors should be removed once world systems consume them."
     experiments:
-      - "Tested `cargo clippy` with and without `core_debug` feature to ensure gating works."
+      - "Tested cargo clippy with and without core_debug feature to ensure gating works."
     open_questions:
-      - "Should we add structured logging (e.g., tracing spans) instead of plain `info!` for debug output?"
+      - "Should we add structured logging (e.g., tracing spans) instead of plain info! for debug output?"
       - "Is Bevy's diagnostic plugin sufficient for FPS/entity counts, or do we craft custom metrics?"
   - step: "S0.2a"
     decisions:
@@ -75,6 +75,15 @@ short_term:
     experiments: []
     open_questions:
       - "Should we add automated checks (spellcheck, linkcheck) before milestone S1?"
+  - step: "S1.1b"
+    decisions:
+      - "Introduced ScheduleTicker to accumulate simulation time (default 5s) before updating NPC activities."
+      - "Collapsed schedule processing into a single tick system to avoid ordering issues."
+    risks:
+      - "Tick interval is hard-coded; scheduling cadence should become configurable later."
+    experiments: []
+    open_questions:
+      - "Do we need per-NPC tick overrides (e.g., more/less reactive characters)?"
 
 # Accumulates durable lessons and conventions.
 long_term:
@@ -108,6 +117,3 @@ doc_index:
   save: "/src/save/README.md"
   ui: "/src/ui/README.md"
   weather: "/src/weather/README.md"
-
-
-

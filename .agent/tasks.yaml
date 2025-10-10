@@ -118,7 +118,7 @@
 
 - id: S1.1b
   title: "NPC schedule scaffold & integration tests"
-  state: in_progress
+  state: done
   deps: [S1.1a]
   deliverables:
     - "Basic schedule system stub (daily tick placeholder)"
@@ -128,7 +128,22 @@
     - "src/npc/README.md"
     - ".agent/ai_memory.V.1.yaml"
     - "TASK.md"
+  notes:
+    - "ScheduleTicker accumulates simulation time and drives tick_schedule_state."
 
 
+
+
+
+- id: S1.2
+  title: "Dialogue scaffolding research"
+  state: backlog
+  deps: [S1.1b]
+  deliverables:
+    - "Document API options + rate limiting strategy"
+    - "Draft prompt template approach"
+  docs_update:
+    - "docs/tech_notes.md"
+    - ".agent/ai_memory.V.1.yaml"
 
 

@@ -1,9 +1,10 @@
-//! Systems related to NPC spawning and debug helpers.
+//! Systems related to NPC spawning and scheduling.
 use bevy::{math::primitives::Capsule3d, prelude::*};
 
 use crate::{
+    core::plugin::SimulationClock,
     npc::components::{
-        DailySchedule, Identity, NpcIdGenerator, ScheduleEntry, ScheduleState,
+        DailySchedule, Identity, NpcIdGenerator, ScheduleEntry, ScheduleState, ScheduleTicker,
     },
     world::time::WorldClock,
 };
@@ -70,12 +71,18 @@ pub fn spawn_debug_npcs(
     }
 }
 
-/// Updates each NPC's current activity based on the world clock.
-pub fn update_schedule_state(
+/// Updates each NPC's current activity when pending ticks exist.
+pub fn tick_schedule_state(
+    mut ticker: ResMut<ScheduleTicker>,
+    sim_clock: Res<SimulationClock>,
     clock: Res<WorldClock>,
     mut query: Query<(&Identity, &DailySchedule, &mut ScheduleState)>,
 ) {
-    if query.is_empty() {
+    let delta = sim_clock.last_scaled_delta().as_secs_f32();
+    ticker.accumulate(delta);
+
+    let pending = ticker.take_pending();
+    if pending == 0 || query.is_empty() {
         return;
     }
 

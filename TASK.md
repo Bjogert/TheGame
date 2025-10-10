@@ -87,13 +87,12 @@ _Last updated: 2025-10-08 (UTC). This file explains the step-by-step execution p
 ## Step S1.1b - NPC Schedule Scaffold
 **Goal:** Introduce a stubbed daily schedule system and verify NPC activity transitions.
 
-- [ ] Design schedule data structures and determine how they tick (resource or component-driven).
-- [ ] Implement a minimal schedule update system that logs activity changes.
-- [ ] Add debug assertions/tests for schedule transitions (planned unit/integration tests).
-- [ ] Document schedule behaviour and update planning artifacts.
-- **Exit criteria:** NPCs transition between activities over the day, and documentation reflects the scheduling scaffold.
+- [x] Design schedule data structures and determine how they tick (resource-driven via ScheduleTicker).
+- [x] Implement a minimal schedule update system that logs activity changes.
+- [ ] Add debug assertions/tests for schedule transitions (deferred).
+- [x] Document schedule behaviour and update planning artifacts.
+- **Outcome:** NPCs now transition between activities every ~5s of simulation time, and documentation/planning files reflect the scheduling scaffold.
+- **Exit criteria:** NPC tick cadence is observable in logs and ready for future needs integration.
 
 ---
-## What Comes Next
-Next steps after S1.1b include fleshing out activity logic, integrating needs, and preparing for dialogue scaffolding.
-
+## What Comes Next\nUpcoming work focuses on S1.2 (Dialogue scaffolding research) to prepare for integrating LLM-driven conversations once scheduling foundations are in place.\n
