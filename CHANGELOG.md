@@ -44,3 +44,8 @@ All notable changes to this project will be documented in this file.
 - Introduced docker-compose.yml to streamline iterative development with mounted sources and cached cargo artifacts.
 - Documented container workflows in README.md.
 
+## 2025-10-12 - Tooling: Linux Docker Enablement
+- Installed Vulkan headers and Mesa Vulkan drivers in the Docker base/runtime images so Linux hosts can start wgpu without extra packages.
+- Added docker-compose.linux.yml override that wires `/dev/dri`, display sockets, and render group membership for desktop runs.
+- Documented the Linux workflow across README.md and docs/tech_notes.md.
+

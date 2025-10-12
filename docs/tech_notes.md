@@ -21,8 +21,9 @@
 
 ## Tooling - Docker Environment (2025-10-11)
 - Multi-stage Dockerfile provides `dev`, `build`, and `runtime` targets. Use `docker build --target runtime` for slim release images.
-- `docker-compose.yml` mounts the workspace and caches cargo artifacts; pass display/GPU devices on demand when running the Bevy client.
-- Runtime stage installs only the dynamic libraries required by wgpu (X11, Wayland, ALSA, udev) to keep distribution images small.
+- Base stage now installs Vulkan headers (`libvulkan-dev`) and Mesa Vulkan drivers so Linux hosts can initialise wgpu inside the container without extra host setup beyond the kernel driver.
+- `docker-compose.yml` mounts the workspace and caches cargo artifacts; pair it with `docker-compose.linux.yml` to bind `/dev/dri`, compositor sockets, and the render group when running on Linux.
+- Runtime stage installs only the dynamic libraries required by wgpu (X11, Wayland, ALSA, udev, Vulkan) to keep distribution images small.
 - Hosted CI agents cannot validate Docker commands directly because the Docker
   socket is unavailable inside the sandbox. Expect `docker build` to fail in
   that environment even though the configuration works on a standard developer

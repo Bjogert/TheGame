@@ -33,6 +33,11 @@ An experimental Bevy-based project exploring long-form medieval life simulation 
   docker compose run --rm thegame cargo run
   `
   Compose uses the `dev` stage of the Dockerfile, so additional devices (e.g., `/dev/dri`) can be passed via `docker compose run` when you need graphical output.
+- **Linux desktop usage:** the container now ships Vulkan userspace drivers. To launch with host rendering:
+  1. Determine the render group ID (usually `getent group render` → `109`). Export it as `RENDER_GROUP` when invoking compose if it differs.
+  2. Permit the container to talk to your compositor: `xhost +local:` for X11, or share the wayland runtime directory via `XDG_RUNTIME_DIR`.
+  3. Run the service with the Linux override: `docker compose -f docker-compose.yml -f docker-compose.linux.yml run --rm thegame cargo run`.
+  The override binds `/dev/dri`, forwards the display sockets, and relaxes seccomp enough for wgpu to initialise Vulkan.
 
 ---
 

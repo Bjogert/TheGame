@@ -25,6 +25,10 @@ RUN apt-get update \
         libxcb-xfixes0-dev \
         libxcb-render0-dev \
         libxxf86vm-dev \
+        libvulkan1 \
+        libvulkan-dev \
+        mesa-vulkan-drivers \
+        vulkan-tools \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
@@ -74,6 +78,8 @@ RUN apt-get update \
         libxcb-xfixes0 \
         libxcb-render0 \
         libxxf86vm1 \
+        libvulkan1 \
+        mesa-vulkan-drivers \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
