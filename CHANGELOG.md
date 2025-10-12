@@ -39,3 +39,8 @@ All notable changes to this project will be documented in this file.
 - Consolidated schedule updates into tick_schedule_state, logging activity transitions at a 5s cadence.
 - Updated NPC documentation and planning artifacts to reflect the scheduling scaffold.
 
+## 2025-10-11 - Tooling: Docker Environment Baseline
+- Added a multi-stage Dockerfile with dedicated dev, build, and runtime stages for Bevy dependencies.
+- Introduced docker-compose.yml to streamline iterative development with mounted sources and cached cargo artifacts.
+- Documented container workflows in README.md.
+

@@ -19,3 +19,12 @@
 - Prompt context uses Identity, ScheduleState, WorldClock; future fields include relationships, goals, mood.
 - See docs/dialogue_research.md for provider comparison and next steps.
 
+## Tooling - Docker Environment (2025-10-11)
+- Multi-stage Dockerfile provides `dev`, `build`, and `runtime` targets. Use `docker build --target runtime` for slim release images.
+- `docker-compose.yml` mounts the workspace and caches cargo artifacts; pass display/GPU devices on demand when running the Bevy client.
+- Runtime stage installs only the dynamic libraries required by wgpu (X11, Wayland, ALSA, udev) to keep distribution images small.
+- Hosted CI agents cannot validate Docker commands directly because the Docker
+  socket is unavailable inside the sandbox. Expect `docker build` to fail in
+  that environment even though the configuration works on a standard developer
+  workstation.
+
