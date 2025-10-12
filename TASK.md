@@ -97,8 +97,10 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 
 ---
 
-## Step S1.2 - Dialogue Scaffolding Research\n**Overview:** Gather information about which AI chat services to consider, how fast they can talk, and what information they need from our villagers before we build anything.
-**Goal:** Capture LLM provider options, rate limiting strategy, and prompt scaffolding requirements.\n
+## Step S1.2 - Dialogue Scaffolding Research
+**Overview:** Gather information about which AI chat services to consider, how fast they can talk, and what information they need from our villagers before we build anything.
+**Goal:** Capture LLM provider options, rate limiting strategy, and prompt scaffolding requirements.
+
 - [x] Enumerate managed vs. local LLM providers with pros/cons.
 - [x] Define global/per-NPC rate limiting strategy and queue behaviour.
 - [x] Draft prompt template and identify required simulation context.
@@ -108,9 +110,25 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 
 ---
 
-## What Comes Next
-Upcoming work focuses on S1.3 (Dialogue broker prototype) to prepare for integrating LLM-driven conversations once scheduling foundations are in place.
-\nUpcoming work focuses on S1.2 (Dialogue scaffolding research) to prepare for integrating LLM-driven conversations once scheduling foundations are in place.\n
+## Step S1.3 - Dialogue Broker Prototype
+**Goal:** Establish the abstraction layer that will coordinate LLM dialogue requests.
+
+- [x] Implement a `DialogueBroker` trait with provider enum (OpenAI, Anthropic, Local) and associated configuration.
+- [x] Create a queued request runner that enforces global and per-NPC rate limiting, including placeholder metrics.
+- [x] Stub error handling paths for timeouts, retries, and provider throttling without requiring real API calls.
+- [x] Update documentation (`docs/tech_notes.md`, `.agent/ai_memory.V.1.yaml`, `.agent/tasks.yaml`) after implementation.
+- **Outcome:** Dialogue plugin now registers a broker registry and rate-limited queue, with unit tests covering retry logic and documentation synced across planning artifacts.
+- **Exit criteria:** Broker trait, queue scaffolding, and rate-limiting logic compile with tests (if any) and docs capture the new systems.
+
+---
+
+## Step S1.4 - Dialogue Configuration & Telemetry Stub
+**Goal:** Externalise queue limits and surface visibility into dialogue processing.
+
+- [ ] Load dialogue queue limits and provider defaults from a new `config/dialogue.toml` file with sensible fallbacks.
+- [ ] Expose queue depth and retry counters through debug logging or an inspector resource for future UI hooks.
+- [ ] Add documentation for the new configuration knobs and update planning artifacts (`docs/tech_notes.md`, `.agent/tasks.yaml`, `.agent/ai_memory.V.1.yaml`).
+- **Exit criteria:** Dialogue queue behaviour becomes configurable without recompilation and core metrics are observable during development.
 
 
 

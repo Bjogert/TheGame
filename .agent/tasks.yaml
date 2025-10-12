@@ -151,11 +151,32 @@
 
 - id: S1.3
   title: "Dialogue broker prototype"
-  state: backlog
+  state: done
   deps: [S1.2]
   deliverables:
     - "Implement DialogueBroker trait + provider enum"
     - "Stub request queue with rate limiting"
+    - "Register default broker and run queue system each frame"
   docs_update:
     - "docs/tech_notes.md"
     - ".agent/ai_memory.V.1.yaml"
+    - "src/dialogue/README.md"
+    - "TASK.md"
+  notes:
+    - "DialoguePlugin initialises queue + broker registry and wires LocalEchoBroker stub."
+    - "Queue enforces 1 req/sec global cooldown and 30s per-NPC guard with retry metrics + tests."
+
+- id: S1.4
+  title: "Dialogue configuration & telemetry stub"
+  state: backlog
+  deps: [S1.3]
+  deliverables:
+    - "Introduce config/dialogue.toml and load queue limits/provider defaults"
+    - "Expose queue depth and retry counters via debug logging or inspector resource"
+    - "Document configuration knobs across planning artifacts"
+  docs_update:
+    - "docs/tech_notes.md"
+    - ".agent/ai_memory.V.1.yaml"
+    - "TASK.md"
+  notes:
+    - "Focus on observability and data-driven tuning before integrating external providers."

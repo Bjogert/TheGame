@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 
 mod core;
+mod dialogue;
 mod npc;
 mod world;
 
-use crate::{core::CorePlugin, npc::NpcPlugin, world::WorldPlugin};
+use crate::{core::CorePlugin, dialogue::DialoguePlugin, npc::NpcPlugin, world::WorldPlugin};
 
 fn main() {
     App::new()
@@ -13,6 +14,7 @@ fn main() {
             CorePlugin::default(),
             WorldPlugin,
             NpcPlugin,
+            DialoguePlugin::default(),
         ))
         .run();
 }

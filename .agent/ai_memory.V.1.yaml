@@ -93,6 +93,17 @@ short_term:
     experiments: []
     open_questions:
       - "Which provider should we prototype first (OpenAI vs Anthropic vs local)?"
+  - step: "S1.3"
+    decisions:
+      - "DialoguePlugin wires DialogueRequestQueue with broker registry and a LocalEchoBroker stub for smoke testing."
+      - "Default rate limits: 1 req/sec global plus 30s per-NPC cooldown with three retry attempts tracked via metrics."
+    risks:
+      - "Backoff timings currently hard-coded; real providers will require configurable policies to avoid over/under throttling."
+      - "Queue processing is synchronous; async provider integration must respect Bevy task scheduling."
+    experiments: []
+    open_questions:
+      - "Should rate-limit configuration move into config/dialogue.toml alongside provider credentials?"
+      - "How will dialogue transcripts persist across sessions (save plugin vs. rolling buffer)?"
 
 # Accumulates durable lessons and conventions.
 long_term:

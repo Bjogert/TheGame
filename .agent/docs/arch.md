@@ -46,7 +46,7 @@ NpcPlugin
   +- provides: Identity component & NpcIdGenerator
   +- systems: spawn_debug_npcs()
 
-Optional plugins (planned): DialoguePlugin, UiPlugin, WeatherPlugin
+Optional plugins (in progress): DialoguePlugin (queue + broker registry), UiPlugin, WeatherPlugin
 ```
 
 Guidelines:

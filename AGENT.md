@@ -94,14 +94,14 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 ## 4) Active Steps (Plan 3)
 > Update this section whenever the top backlog item changes. Keep scope small (0.5-2 focused days).
 
-### Current Focus - S1.3: Dialogue Broker Prototype
-- Implement a DialogueBroker trait plus provider enum (OpenAI/Anthropic/local).
-- Stub a queued request runner with global/per-NPC rate limiting.
-- Outline error handling (timeouts, retries, throttling) prior to full integration.
+### Current Focus - S1.4: Dialogue Configuration & Telemetry Stub
+- Externalise queue limits/provider defaults via `config/dialogue.toml` with fallback paths.
+- Surface queue depth and retry counters through debug logging or inspector resources.
+- Document the configuration pipeline and observability story ahead of UI integration.
 
-**Recently completed:** S1.2 (dialogue scaffolding research) finished on 2025-10-10; findings documented in docs/dialogue_research.md.
+**Recently completed:** S1.3 (dialogue broker prototype) finished on 2025-10-11; queue + broker scaffolding landed with unit tests.
 
-**Next in queue:** Build the dialogue broker stub (S1.3) to prepare for end-to-end conversation tests.
+**Next in queue:** Wire configurable limits and visibility to unblock forthcoming provider integrations.
 
 ---
 

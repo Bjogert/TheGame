@@ -39,3 +39,9 @@ All notable changes to this project will be documented in this file.
 - Consolidated schedule updates into tick_schedule_state, logging activity transitions at a 5s cadence.
 - Updated NPC documentation and planning artifacts to reflect the scheduling scaffold.
 
+## 2025-10-11 - S1.3: Dialogue Broker Prototype
+- Added dialogue module with `DialogueBroker` trait, provider enum, and stub `LocalEchoBroker` implementation.
+- Introduced `DialogueRequestQueue` enforcing global/per-NPC cooldowns with retry metrics and unit tests.
+- Registered `DialoguePlugin` to initialise queue resources and process requests every frame.
+- Documented architecture updates in `docs/tech_notes.md` and new `src/dialogue/README.md`.
+

@@ -19,3 +19,9 @@
 - Prompt context uses Identity, ScheduleState, WorldClock; future fields include relationships, goals, mood.
 - See docs/dialogue_research.md for provider comparison and next steps.
 
+## Dialogue Broker Prototype (S1.3)
+- `DialogueRequestQueue` enforces a 1 req/sec global cooldown plus a 30s per-NPC guard and records retry metrics.
+- `DialogueBrokerRegistry` resolves providers; a stub `LocalEchoBroker` acknowledges requests for integration testing.
+- Queue runner converts provider responses into retries (deferred/throttled) or metrics updates and is covered by unit tests.
+- Extend configuration later to load limits from TOML and surface queue depth/latency in debug tooling.
+
