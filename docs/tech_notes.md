@@ -19,3 +19,13 @@
 - Prompt context uses Identity, ScheduleState, WorldClock; future fields include relationships, goals, mood.
 - See docs/dialogue_research.md for provider comparison and next steps.
 
+## Tooling - Docker Environment (2025-10-11)
+- Multi-stage Dockerfile provides `dev`, `build`, and `runtime` targets. Use `docker build --target runtime` for slim release images.
+- Base stage now installs Vulkan headers (`libvulkan-dev`) and Mesa Vulkan drivers so Linux hosts can initialise wgpu inside the container without extra host setup beyond the kernel driver.
+- `docker-compose.yml` mounts the workspace and caches cargo artifacts; pair it with `docker-compose.linux.yml` to bind `/dev/dri`, compositor sockets, and the render group when running on Linux.
+- Runtime stage installs only the dynamic libraries required by wgpu (X11, Wayland, ALSA, udev, Vulkan) to keep distribution images small.
+- Hosted CI agents cannot validate Docker commands directly because the Docker
+  socket is unavailable inside the sandbox. Expect `docker build` to fail in
+  that environment even though the configuration works on a standard developer
+  workstation.
+
