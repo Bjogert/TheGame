@@ -19,6 +19,16 @@
 - Prompt context uses Identity, ScheduleState, WorldClock; future fields include relationships, goals, mood.
 - See docs/dialogue_research.md for provider comparison and next steps.
 
+## Dialogue Broker Prototype (S1.3)
+- Added `DialoguePlugin` with a queue runner, global/per-NPC rate limits, and stubbed `LocalDialogueBroker` responses.
+- Requests carry structured context events (including trades) so providers can reference live simulation data.
+- Failures emit events for future retry/telemetry handling; context-missing errors surface missing trade history.
+
+## Micro Trade Loop Spike (S1.4)
+- Economy module assigns farmer, miller, and blacksmith professions, each with simple inventories.
+- A daily loop produces grain, flour, and tool crates, emitting `TradeCompletedEvent` records for each exchange.
+- Trade events enqueue dialogue requests with matching context, proving the dialogue hook can react to simulation activity.
+
 ## Tooling - Docker Environment (2025-10-11)
 - Multi-stage Dockerfile provides `dev`, `build`, and `runtime` targets. Use `docker build --target runtime` for slim release images.
 - Base stage now installs Vulkan headers (`libvulkan-dev`) and Mesa Vulkan drivers so Linux hosts can initialise wgpu inside the container without extra host setup beyond the kernel driver.

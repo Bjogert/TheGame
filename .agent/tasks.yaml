@@ -151,11 +151,35 @@
 
 - id: S1.3
   title: "Dialogue broker prototype"
-  state: backlog
+  state: done
   deps: [S1.2]
   deliverables:
     - "Implement DialogueBroker trait + provider enum"
     - "Stub request queue with rate limiting"
+    - "Surface context-aware errors and response events"
   docs_update:
     - "docs/tech_notes.md"
     - ".agent/ai_memory.V.1.yaml"
+    - "CHANGELOG.md"
+    - "TASK.md"
+  notes:
+    - "DialoguePlugin registers queue resources, LocalDialogueBroker, and rate limiting systems."
+    - "Requests carry structured context (trade descriptors, schedule notes) and emit response/failure events."
+
+- id: S1.4
+  title: "Micro trade loop spike"
+  state: done
+  deps: [S1.3]
+  deliverables:
+    - "Assign farmer/miller/blacksmith professions with inventories"
+    - "Daily placeholder trade loop emitting TradeCompletedEvent"
+    - "Bridge trade events into dialogue requests"
+  docs_update:
+    - "docs/tech_notes.md"
+    - "docs/plan_overview.md"
+    - "CHANGELOG.md"
+    - "TASK.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "EconomyPlugin schedules trades after the world clock ticks, logging production/processing/exchange steps."
+    - "Trade exchanges enqueue dialogue prompts so NPC chatter reflects the daily loop."
