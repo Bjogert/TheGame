@@ -49,3 +49,13 @@ All notable changes to this project will be documented in this file.
 - Added docker-compose.linux.yml override that wires `/dev/dri`, display sockets, and render group membership for desktop runs.
 - Documented the Linux workflow across README.md and docs/tech_notes.md.
 
+## 2025-10-12 - S1.3: Dialogue Broker Prototype
+- Introduced `DialoguePlugin` with a trait-based broker abstraction, active provider resource, and request queue.
+- Implemented global/per-NPC rate limiting, retry backoff, and response/error events for queued dialogue.
+- Added structured context events (including trade descriptors) so future providers can cite simulation data.
+
+## 2025-10-12 - S1.4: Micro Trade Loop Spike
+- Added `EconomyPlugin` with placeholder professions, inventories, and a daily farmer → miller → blacksmith trade chain.
+- Emitted `TradeCompletedEvent` records for production, processing, and exchange steps while logging inventory flow.
+- Wired trade exchanges into the dialogue queue, queuing contextualised trade conversations for participating NPCs.
+

@@ -149,6 +149,10 @@ impl WorldClock {
         self.time_of_day
     }
 
+    pub fn day_count(&self) -> u64 {
+        self.day_count
+    }
+
     fn tick(&mut self, delta_seconds: f32, settings: &WorldTimeSettings) {
         let mut fraction = delta_seconds / settings.seconds_per_day;
         if fraction.is_nan() || !fraction.is_finite() {

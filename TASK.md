@@ -97,8 +97,10 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 
 ---
 
-## Step S1.2 - Dialogue Scaffolding Research\n**Overview:** Gather information about which AI chat services to consider, how fast they can talk, and what information they need from our villagers before we build anything.
-**Goal:** Capture LLM provider options, rate limiting strategy, and prompt scaffolding requirements.\n
+## Step S1.2 - Dialogue Scaffolding Research
+**Overview:** Gather information about which AI chat services to consider, how fast they can talk, and what information they need from our villagers before we build anything.
+**Goal:** Capture LLM provider options, rate limiting strategy, and prompt scaffolding requirements.
+
 - [x] Enumerate managed vs. local LLM providers with pros/cons.
 - [x] Define global/per-NPC rate limiting strategy and queue behaviour.
 - [x] Draft prompt template and identify required simulation context.
@@ -108,9 +110,31 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 
 ---
 
+## Step S1.3 - Dialogue Broker Prototype
+**Goal:** Deliver the first broker implementation capable of queuing dialogue requests with rate limiting and context awareness.
+
+- [x] Define a `DialogueBroker` trait and provider enum with a local placeholder implementation.
+- [x] Add a request queue resource with global and per-NPC cooldown tracking plus retry backoff.
+- [x] Emit success/failure events and surface structured context (including trade descriptors) for future providers.
+- [x] Register `DialoguePlugin` in `main.rs` and document the behaviour.
+- **Outcome:** Dialogue requests now flow through a managed queue with rate limits, context validation, and telemetry hooks.
+- **Exit criteria:** Broker processes local requests, respects cooldowns, and documents the abstraction.
+
+---
+
+## Step S1.4 - Micro Trade Loop Spike
+**Goal:** Prove that simulation events (placeholder trades) can update inventories and feed the dialogue system.
+
+- [x] Introduce an `EconomyPlugin` assigning farmer, miller, and blacksmith professions with inventories.
+- [x] Run a daily micro loop creating grain → flour → tool crates, emitting `TradeCompletedEvent` records.
+- [x] Queue dialogue requests from trade events to validate the broker context path.
+- **Outcome:** Each in-game day now generates trade events that update inventories and trigger contextual dialogue.
+- **Exit criteria:** Logs show the trade chain, inventories mutate correctly, and dialogue responses cite the exchange.
+
+---
+
 ## What Comes Next
-Upcoming work focuses on S1.3 (Dialogue broker prototype) to prepare for integrating LLM-driven conversations once scheduling foundations are in place.
-\nUpcoming work focuses on S1.2 (Dialogue scaffolding research) to prepare for integrating LLM-driven conversations once scheduling foundations are in place.\n
+Monitor the placeholder loop for stability, then expand into Step S1.5 (planning) to transition from crates to a more complete economy model in Step 7.
 
 
 
