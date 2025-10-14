@@ -80,6 +80,7 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 | **M2** | Persistence Layer | SQLite wrapper, migrations, save/load of world tick and NPC snapshot | M0 |
 | **M3** | NPC Foundations | Identity/traits components, needs & schedule ticks, population spawner | M2 |
 | **M4** | Dialogue | LLM client, prompt templates, chat UI, token budgeter | M3 |
+| **Checkpoint: S1.4** | Micro Trade Loop | Placeholder professions (farmer/miller/blacksmith) and daily crate trades that exercise inventories, schedules, and dialogue hooks | M4 |
 | **M5** | Economy | Resource definitions, job outputs, market balancing hooks | M3 |
 | **M6** | Weather & Seasons | Weather states affecting schedules and yields | M1, M5 |
 | **M7** | Threats & Combat | Aggro models, damage loop, physics integration if required | M1, M3 |
@@ -101,7 +102,7 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 
 **Recently completed:** S1.2 (dialogue scaffolding research) finished on 2025-10-10; findings documented in docs/dialogue_research.md.
 
-**Next in queue:** Build the dialogue broker stub (S1.3) to prepare for end-to-end conversation tests.
+**Next in queue:** S1.4 – Micro trade loop spike with placeholder goods and professions to validate dialogue hooks before the full economy milestone.
 
 ---
 

@@ -151,7 +151,7 @@
 
 - id: S1.3
   title: "Dialogue broker prototype"
-  state: backlog
+  state: in_progress
   deps: [S1.2]
   deliverables:
     - "Implement DialogueBroker trait + provider enum"
@@ -159,3 +159,20 @@
   docs_update:
     - "docs/tech_notes.md"
     - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Keep broker interface flexible so placeholder economy events can feed dialogue summaries immediately."
+
+- id: S1.4
+  title: "Micro trade loop spike"
+  state: backlog
+  deps: [S1.3]
+  deliverables:
+    - "Assign placeholder professions (farmer, miller, blacksmith)"
+    - "Spawn crate-like goods that move between professions each day"
+    - "Expose trade events for dialogue consumption"
+  docs_update:
+    - "docs/tech_notes.md"
+    - "src/economy/README.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Treat the spike as a vertical slice: basic inventories, schedule touchpoints, and dialogue hooks must all observe the trade."

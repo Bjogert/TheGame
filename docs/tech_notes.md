@@ -29,3 +29,8 @@
   that environment even though the configuration works on a standard developer
   workstation.
 
+## Planning Alignment (2025-10-13)
+- Dialogue broker prototype (S1.3) remains in flight; its output must expose trade context once the micro loop lands.
+- Introduced a new checkpoint (S1.4) to stand up placeholder professions and crate-based goods immediately after S1.3.
+- Full economy milestone (M5) will build on the validated micro loop, expanding resources, pricing, and job depth.
+

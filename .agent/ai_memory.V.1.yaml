@@ -1,7 +1,7 @@
 ﻿# ai_memory.V.1.yaml
 version: 1
 project: "medieval_sim"
-updated_utc: "2025-10-10T17:16:31Z"
+updated_utc: "2025-10-13T18:00:00Z"
 
 # Short-term notes are tied to the active step. Promote durable lessons to long_term.
 short_term:
@@ -93,6 +93,16 @@ short_term:
     experiments: []
     open_questions:
       - "Which provider should we prototype first (OpenAI vs Anthropic vs local)?"
+  - step: "S1.3"
+    decisions:
+      - "Broker interface must surface hooks for upcoming micro trade loop events so dialogue can reference tangible exchanges."
+      - "Prioritise rate limiting primitives that can incorporate economy-driven priorities later."
+    risks:
+      - "If the micro trade loop lands before broker integration, trade events could pile up without a dialogue consumer. Coordinate timelines closely."
+      - "Placeholder goods may need richer metadata than originally planned; design broker payloads for extension."
+    experiments: []
+    open_questions:
+      - "Do we tag trade events by profession or by good type when feeding dialogue prompts?"
 
 # Accumulates durable lessons and conventions.
 long_term:

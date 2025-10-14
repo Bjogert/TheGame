@@ -52,3 +52,7 @@ All notable changes to this project will be documented in this file.
 ## 2025-10-13 - Planning: Plain-Language Overview
 - Added `docs/plan_overview.md` to describe the near-term destination and the major steps to reach it in human-readable terms.
 
+## 2025-10-13 - Planning: Micro Trade Checkpoint Added
+- Updated `docs/plan_overview.md` with a new Step 6 checkpoint that introduces a placeholder micro trade loop before the full economy milestone.
+- Refreshed `AGENT.md`, `.agent/tasks.yaml`, and `.agent/ai_memory.V.1.yaml` to reflect S1.3 being in progress and to queue S1.4 for the upcoming micro economy spike.
+
