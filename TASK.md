@@ -1,6 +1,6 @@
 # TASK PLAN
 
-_Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution plan so humans can follow the flow easily. For day-to-day coordination between agents, see `.agent/tasks.yaml`._
+_Last updated: 2025-10-13 (UTC). This file explains the step-by-step execution plan so humans can follow the flow easily. For day-to-day coordination between agents, see `.agent/tasks.yaml`._
 
 ---
 
@@ -97,8 +97,10 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 
 ---
 
-## Step S1.2 - Dialogue Scaffolding Research\n**Overview:** Gather information about which AI chat services to consider, how fast they can talk, and what information they need from our villagers before we build anything.
-**Goal:** Capture LLM provider options, rate limiting strategy, and prompt scaffolding requirements.\n
+## Step S1.2 - Dialogue Scaffolding Research
+**Overview:** Gather information about which AI chat services to consider, how fast they can talk, and what information they need from our villagers before we build anything.
+**Goal:** Capture LLM provider options, rate limiting strategy, and prompt scaffolding requirements.
+
 - [x] Enumerate managed vs. local LLM providers with pros/cons.
 - [x] Define global/per-NPC rate limiting strategy and queue behaviour.
 - [x] Draft prompt template and identify required simulation context.
@@ -109,8 +111,7 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 ---
 
 ## What Comes Next
-Upcoming work focuses on S1.3 (Dialogue broker prototype) to prepare for integrating LLM-driven conversations once scheduling foundations are in place.
-\nUpcoming work focuses on S1.2 (Dialogue scaffolding research) to prepare for integrating LLM-driven conversations once scheduling foundations are in place.\n
+S1.3 (Dialogue broker prototype) remains in progress so we can start delivering lines that reflect current simulation state. As soon as that scaffolding is stable, we will tackle S1.4 (Micro trade loop spike) to validate placeholder professions, goods hand-offs, and dialogue hooks against a tangible barter scenario.
 
 
 

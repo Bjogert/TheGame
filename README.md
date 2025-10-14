@@ -7,40 +7,6 @@ An experimental Bevy-based project exploring long-form medieval life simulation 
 ## Getting Started
 1. **Install prerequisites**
    - Rust toolchain (stable, 1.78+ recommended)
-## Docker
-- **Heads-up on this repo's hosted workspace:** the execution sandbox used for
-  automated agents (including the one that produced this README) does not expose
-  the Docker daemon. Attempts to run `docker build` or `docker compose` there
-  will fail with "Cannot connect to the Docker daemon"-style errors because the
-  container is itself unprivileged. When working on your own machine—with
-  Docker Desktop, Rancher, or a native Docker Engine installation—these
-  commands succeed normally.
-- **Build a release image** (multi-stage Dockerfile):
-  `bash
-  docker build -t thegame:latest .
-  `
-  Run the image with GPU/display access: `bash
-  docker run --rm \
-    --env DISPLAY=$DISPLAY \
-    --volume /tmp/.X11-unix:/tmp/.X11-unix \
-    --device /dev/dri \
-    thegame:latest
-  `
-  Adjust the display flags for your platform (WSL2 users can forward the display to Windows via an X server such as VcXsrv).
-- **Iterate inside a container** using docker compose. The `thegame` service mounts the repository and caches cargo artifacts:
-  `bash
-  docker compose run --rm thegame cargo check --all-targets
-  docker compose run --rm thegame cargo run
-  `
-  Compose uses the `dev` stage of the Dockerfile, so additional devices (e.g., `/dev/dri`) can be passed via `docker compose run` when you need graphical output.
-- **Linux desktop usage:** the container now ships Vulkan userspace drivers. To launch with host rendering:
-  1. Determine the render group ID (usually `getent group render` → `109`). Export it as `RENDER_GROUP` when invoking compose if it differs.
-  2. Permit the container to talk to your compositor: `xhost +local:` for X11, or share the wayland runtime directory via `XDG_RUNTIME_DIR`.
-  3. Run the service with the Linux override: `docker compose -f docker-compose.yml -f docker-compose.linux.yml run --rm thegame cargo run`.
-  The override binds `/dev/dri`, forwards the display sockets, and relaxes seccomp enough for wgpu to initialise Vulkan.
-
----
-
    - ustup component add rustfmt clippy
    - Optional: cargo install cargo-watch for live rebuilds
 2. **Run the scaffold**

@@ -39,20 +39,9 @@ All notable changes to this project will be documented in this file.
 - Consolidated schedule updates into tick_schedule_state, logging activity transitions at a 5s cadence.
 - Updated NPC documentation and planning artifacts to reflect the scheduling scaffold.
 
-## 2025-10-11 - Tooling: Docker Environment Baseline
-- Added a multi-stage Dockerfile with dedicated dev, build, and runtime stages for Bevy dependencies.
-- Introduced docker-compose.yml to streamline iterative development with mounted sources and cached cargo artifacts.
-- Documented container workflows in README.md.
-
-## 2025-10-12 - Tooling: Linux Docker Enablement
-- Installed Vulkan headers and Mesa Vulkan drivers in the Docker base/runtime images so Linux hosts can start wgpu without extra packages.
-- Added docker-compose.linux.yml override that wires `/dev/dri`, display sockets, and render group membership for desktop runs.
-- Documented the Linux workflow across README.md and docs/tech_notes.md.
-
-## 2025-10-13 - Planning: Plain-Language Overview
-- Added `docs/plan_overview.md` to describe the near-term destination and the major steps to reach it in human-readable terms.
-
 ## 2025-10-13 - Planning: Micro Trade Checkpoint Added
-- Updated `docs/plan_overview.md` with a new Step 6 checkpoint that introduces a placeholder micro trade loop before the full economy milestone.
-- Refreshed `AGENT.md`, `.agent/tasks.yaml`, and `.agent/ai_memory.V.1.yaml` to reflect S1.3 being in progress and to queue S1.4 for the upcoming micro economy spike.
+- Added docs/plan_overview.md to describe the phase goals and the newly introduced micro trade checkpoint in plain language.
+- Updated AGENT.md, .agent/tasks.yaml, and .agent/ai_memory.V.1.yaml to mark S1.3 as in progress and queue S1.4 for the trade loop spike.
+- Logged the planning alignment in docs/tech_notes.md so future contributors understand the sequencing.
+- Removed the Docker-focused tooling notes from this branch to avoid clashing with downstream container work.
 
