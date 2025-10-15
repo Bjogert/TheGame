@@ -29,6 +29,12 @@
 - A daily loop produces grain, flour, and tool crates, emitting `TradeCompletedEvent` records for each exchange.
 - Trade events enqueue dialogue requests with matching context, proving the dialogue hook can react to simulation activity.
 
+## Economy Planning Blueprint (S1.5)
+- Reviewed the placeholder micro loop and documented the path to a data-driven economy in `docs/economy_blueprint.md`.
+- Step 7 will introduce TOML-driven profession/recipe definitions, persistent inventories, and a work-order queue.
+- Dialogue hooks will expand to cover shortages and assignments; economy events will broaden beyond the existing trade event.
+- Risks include configuration sprawl and schedule integration complexity; mitigations and open questions are tracked in the blueprint.
+
 ## Tooling - Docker Environment (2025-10-11)
 - Multi-stage Dockerfile provides `dev`, `build`, and `runtime` targets. Use `docker build --target runtime` for slim release images.
 - Base stage now installs Vulkan headers (`libvulkan-dev`) and Mesa Vulkan drivers so Linux hosts can initialise wgpu inside the container without extra host setup beyond the kernel driver.

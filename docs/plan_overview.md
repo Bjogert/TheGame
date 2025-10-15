@@ -18,6 +18,6 @@ We are steering the game toward a living medieval settlement that runs even when
 We will consider this phase complete once a small cast of villagers can go through a day: the sun rises and sets, routines adjust accordingly, conversations reflect what characters are doing, and the simulation survives a save-and-load cycle. At that point we will have the confidence to scale outward—adding weather, more complex economies, and eventually multiplayer—because the basic loop is already proving itself in a believable slice of life.
 
 ### Current status
-- Step 5 (dialogue broker prototype) is now implemented with a queued broker and rate limiting.
-- Step 6 (micro trade loop checkpoint) is in place: the farmer, miller, and blacksmith trade crates each day and broadcast events to dialogue.
-- Step 7 (full economy groundwork) is queued once the placeholder loop proves stable.
+- Step 5 (dialogue broker prototype) is implemented with a queued broker and rate limiting.
+- Step 6 (micro trade loop checkpoint) remains stable: the farmer, miller, and blacksmith trade crates each day and broadcast events to dialogue.
+- Step 7 (economy foundations) now has a published blueprint in `docs/economy_blueprint.md`, detailing config-driven professions, work orders, and expanded events.

@@ -183,3 +183,22 @@
   notes:
     - "EconomyPlugin schedules trades after the world clock ticks, logging production/processing/exchange steps."
     - "Trade exchanges enqueue dialogue prompts so NPC chatter reflects the daily loop."
+
+- id: S1.5
+  title: "Economy foundation blueprint"
+  state: done
+  deps: [S1.4]
+  deliverables:
+    - "Document data-driven economy plan covering professions, recipes, and inventories"
+    - "Identify work order pipeline and event taxonomy updates"
+    - "Capture risks/open questions for Step 7"
+  docs_update:
+    - "docs/economy_blueprint.md"
+    - "docs/tech_notes.md"
+    - "docs/plan_overview.md"
+    - "CHANGELOG.md"
+    - "TASK.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Blueprint outlines EconomyRegistry, WorkOrderQueue, and expanded events feeding dialogue/UI."
+    - "Risks called out for config sprawl and schedule integration; mitigations drafted."

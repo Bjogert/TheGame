@@ -8,3 +8,5 @@ The current economy slice is a placeholder "micro trade loop" that proves invent
 - Each exchange queues a dialogue request with trade context, ensuring NPC chatter references the latest activity.
 
 This loop is intentionally small; expect it to be replaced by a data-driven economy once Step 7 begins.
+
+Design for the transition lives in `docs/economy_blueprint.md`, which introduces an `EconomyRegistry`, work-order queues, and an expanded event taxonomy to bridge economy, NPC schedules, and dialogue.
