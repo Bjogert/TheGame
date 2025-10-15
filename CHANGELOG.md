@@ -59,3 +59,8 @@ All notable changes to this project will be documented in this file.
 - Emitted `TradeCompletedEvent` records for production, processing, and exchange steps while logging inventory flow.
 - Wired trade exchanges into the dialogue queue, queuing contextualised trade conversations for participating NPCs.
 
+## 2025-10-13 - S1.5: Economy Foundation Blueprint
+- Documented the path from the placeholder micro loop to a configurable economy in `docs/economy_blueprint.md`.
+- Established plans for an `EconomyRegistry`, `WorkOrderQueue`, and expanded economy event types feeding dialogue and UI.
+- Recorded risks, mitigations, and next actions to guide Step 7 implementation tasks.
+

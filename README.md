@@ -50,11 +50,16 @@ An experimental Bevy-based project exploring long-form medieval life simulation 
    The current binary opens a Bevy window using the default plugins plus our CorePlugin, WorldPlugin, and NpcPlugin.
 3. **Format and lint**
    `powershell
-   cargo fmt
-   cargo clippy -- -D warnings
-   cargo check --all-targets
-   `
-   Every change should pass these before it lands in main.
+- Dialogue integration is in place at the prototype level. See docs/dialogue_research.md for provider comparisons and rate-limiting notes captured during Step S1.2.
+- The active broker queues requests with global/per-NPC cooldowns while we prepare to swap in real providers.
+
+## Economy Blueprint
+- Step S1.5 produced docs/economy_blueprint.md outlining how the placeholder micro trade loop evolves into a config-driven economy slice.
+- Upcoming work will add an EconomyRegistry, WorkOrderQueue, and expanded event taxonomy feeding dialogue and UI systems.
+- **Milestone S1 (current focus):** NPC scaffolding, dialogue groundwork, and economy planning.
+- **Active Step:** S1.5 (economy foundation blueprint) completed; Step 7 implementation tasks are now being drafted in the planning artifacts.
+│  ├─ dialogue_research.md# Dialogue provider and prompt considerations
+│  └─ economy_blueprint.md# Step S1.5 economy design plan
 
 ---
 

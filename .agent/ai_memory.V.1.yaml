@@ -1,7 +1,7 @@
 ﻿# ai_memory.V.1.yaml
 version: 1
 project: "medieval_sim"
-updated_utc: "2025-10-12T18:30:00Z"
+updated_utc: "2025-10-13T00:00:00Z"
 
 # Short-term notes are tied to the active step. Promote durable lessons to long_term.
 short_term:
@@ -115,6 +115,19 @@ short_term:
     open_questions:
       - "Should trade history be summarised per NPC for later prompt compression?"
       - "How do we generalise the loop to support deliveries that span multiple ticks or locations?"
+  - step: "S1.5"
+    decisions:
+      - "Economy foundations will revolve around an EconomyRegistry loading profession/recipe data from TOML configs."
+      - "WorkOrderQueue becomes the bridge between economy production plans and NPC schedule claims."
+      - "Economy events will be split into production/transfer/shortage variants to better feed dialogue and UI layers."
+    risks:
+      - "Config sprawl could make tuning difficult; plan to split files per profession and add validation tests."
+      - "Work order integration with NPC schedules may introduce ordering contention; prototype with explicit claim/confirm steps."
+    experiments: []
+    open_questions:
+      - "Do we model logistics (routes, travel time) before a proper pathfinding system lands?"
+      - "Which economy data must persist across saves versus regenerate on load?"
+      - "Should shortages automatically spawn new work orders or rely on manual planning initially?"
 
 # Accumulates durable lessons and conventions.
 long_term:

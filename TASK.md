@@ -133,8 +133,19 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 
 ---
 
+## Step S1.5 - Economy Foundation Blueprint
+**Goal:** Capture the design for evolving the placeholder micro loop into the first configurable economy slice.
+
+- [x] Survey the current economy, dialogue, and NPC integrations to identify extension points.
+- [x] Define resources (EconomyRegistry, WorkOrderQueue), config approach, and event taxonomy for Step 7.
+- [x] Record risks, mitigations, and open questions plus next actions leading into implementation.
+- **Outcome:** `docs/economy_blueprint.md` documents the data-driven economy plan, informing Step 7 backlog items.
+- **Exit criteria:** Blueprint published, supporting docs updated, and planning artifacts reflect the new direction.
+
+---
+
 ## What Comes Next
-Monitor the placeholder loop for stability, then expand into Step S1.5 (planning) to transition from crates to a more complete economy model in Step 7.
+Use the S1.5 blueprint to draft implementation tasks for Step 7: load profession/recipe configs, add work-order queues, and expand economy events.
 
 
 
