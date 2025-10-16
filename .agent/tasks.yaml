@@ -202,3 +202,22 @@
   notes:
     - "Blueprint outlines EconomyRegistry, WorkOrderQueue, and expanded events feeding dialogue/UI."
     - "Risks called out for config sprawl and schedule integration; mitigations drafted."
+
+- id: S1.6
+  title: "NPC locomotion & profession crates"
+  state: done
+  deps: [S1.5]
+  deliverables:
+    - "Profession crate entities spawned for farmer, miller, and blacksmith"
+    - "Micro trade loop assigns crate destinations before processing work orders"
+    - "NpcLocomotion component/system moves villagers toward their targets"
+    - "Movement telemetry logged on travel start and arrival"
+  docs_update:
+    - "TASK.md"
+    - "AGENT.md"
+    - "src/npc/README.md"
+    - "src/economy/README.md"
+    - "docs/tech_notes.md"
+  notes:
+    - "Trade loop now pauses until all professions reach their crates, providing visible build-up to exchanges."
+    - "Locomotion entries capture destination labels for future UI surfacing."

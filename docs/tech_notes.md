@@ -36,6 +36,12 @@
 - Dialogue hooks will expand to cover shortages and assignments; economy events will broaden beyond the existing trade event.
 - Risks include configuration sprawl and schedule integration complexity; mitigations and open questions are tracked in the blueprint.
 
+## NPC Locomotion & Profession Crates (S1.6)
+- `ProfessionCrateRegistry` tracks dedicated crate entities spawned at startup; each profession now has a visible work location.
+- `NpcLocomotion` moves villagers toward their assigned crate along the ground plane, logging travel start and arrival for telemetry.
+- The micro trade loop waits until the farmer, miller, and blacksmith reach their crates before processing daily exchanges, giving trades a visible lead-in.
+- Movement destinations currently rely on straight-line travel; pathfinding and avoidance remain future work once richer level geometry exists.
+
 ## Tooling - Docker Environment (2025-10-11)
 - Multi-stage Dockerfile provides `dev`, `build`, and `runtime` targets. Use `docker build --target runtime` for slim release images.
 - Base stage now installs Vulkan headers (`libvulkan-dev`) and Mesa Vulkan drivers so Linux hosts can initialise wgpu inside the container without extra host setup beyond the kernel driver.

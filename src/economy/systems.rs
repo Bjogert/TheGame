@@ -1,5 +1,5 @@
 //! Systems powering the placeholder micro trade loop.
-use bevy::prelude::*;
+use bevy::{math::primitives::Cuboid, prelude::*};
 
 use crate::{
     dialogue::{
@@ -9,14 +9,14 @@ use crate::{
             TradeContext, TradeContextReason, TradeDescriptor,
         },
     },
-    npc::components::{Identity, NpcId},
+    npc::components::{Identity, MovementTarget, NpcId, NpcLocomotion},
     world::time::WorldClock,
 };
 
 use super::{
-    components::{Inventory, Profession, TradeGood},
+    components::{Inventory, Profession, ProfessionCrate, TradeGood},
     events::{TradeCompletedEvent, TradeReason},
-    resources::MicroTradeLoopState,
+    resources::{MicroTradeLoopState, ProfessionCrateRegistry},
 };
 
 const FARMER_NAME: &str = "Alric";
@@ -27,6 +27,62 @@ const TRADE_PROMPT_VERB: &str = "discusses exchanging a";
 const SCHEDULE_PROMPT_ACTION: &str = "reviews the day's schedule";
 const SCHEDULE_SUMMARY_PREFIX: &str = "Daily plan:";
 const SENTENCE_SUFFIX: &str = ".";
+
+/// Spawns placeholder crate entities representing profession work spots.
+pub fn spawn_profession_crates(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut registry: ResMut<ProfessionCrateRegistry>,
+) {
+    let crate_specs = [
+        (
+            Profession::Farmer,
+            Vec3::new(8.0, 0.25, 3.0),
+            Color::srgb_u8(190, 150, 80),
+        ),
+        (
+            Profession::Miller,
+            Vec3::new(0.0, 0.25, -6.5),
+            Color::srgb_u8(140, 170, 215),
+        ),
+        (
+            Profession::Blacksmith,
+            Vec3::new(-6.0, 0.25, 1.5),
+            Color::srgb_u8(110, 110, 130),
+        ),
+    ];
+
+    for (profession, translation, color) in crate_specs {
+        if registry.get(profession).is_some() {
+            continue;
+        }
+
+        let entity = commands
+            .spawn((
+                Mesh3d(meshes.add(Mesh::from(Cuboid::new(0.9, 0.6, 0.9)))),
+                MeshMaterial3d(materials.add(StandardMaterial {
+                    base_color: color,
+                    perceptual_roughness: 0.6,
+                    metallic: 0.1,
+                    ..default()
+                })),
+                Transform::from_translation(translation),
+                ProfessionCrate { profession },
+                Name::new(format!("{} crate", profession.label())),
+            ))
+            .id();
+
+        registry.insert(profession, entity);
+        info!(
+            "Spawned {} crate at ({:.1}, {:.1}, {:.1})",
+            profession.label(),
+            translation.x,
+            translation.y,
+            translation.z
+        );
+    }
+}
 
 #[derive(Clone, Copy)]
 struct TradeDialogueInput {
@@ -70,6 +126,9 @@ pub fn process_micro_trade_loop(
     world_clock: Res<WorldClock>,
     mut state: ResMut<MicroTradeLoopState>,
     identity_query: Query<(Entity, &Identity, &Profession)>,
+    mut locomotion_query: Query<(&GlobalTransform, &mut NpcLocomotion)>,
+    crate_transforms: Query<&GlobalTransform, With<ProfessionCrate>>,
+    registry: Res<ProfessionCrateRegistry>,
     mut inventories: Query<&mut Inventory>,
     mut trade_writer: MessageWriter<TradeCompletedEvent>,
     mut dialogue_queue: ResMut<DialogueRequestQueue>,
@@ -78,7 +137,6 @@ pub fn process_micro_trade_loop(
     if state.last_processed_day == Some(day) {
         return;
     }
-    state.last_processed_day = Some(day);
 
     let mut farmer = None;
     let mut miller = None;
@@ -119,6 +177,36 @@ pub fn process_micro_trade_loop(
             return;
         }
     };
+
+    let workers = [
+        WorkerAssignment {
+            entity: farmer_entity,
+            profession: Profession::Farmer,
+            display_name: farmer_name.clone(),
+        },
+        WorkerAssignment {
+            entity: miller_entity,
+            profession: Profession::Miller,
+            display_name: miller_name.clone(),
+        },
+        WorkerAssignment {
+            entity: smith_entity,
+            profession: Profession::Blacksmith,
+            display_name: smith_name.clone(),
+        },
+    ];
+
+    if !ensure_profession_workers_ready(
+        day,
+        &workers,
+        &registry,
+        &crate_transforms,
+        &mut locomotion_query,
+    ) {
+        return;
+    }
+
+    state.last_processed_day = Some(day);
 
     let Ok([mut farmer_inv, mut miller_inv, mut smith_inv]) =
         inventories.get_many_mut([farmer_entity, miller_entity, smith_entity])
@@ -251,6 +339,74 @@ pub fn process_micro_trade_loop(
     } else {
         warn!("{} missing tool crate for delivery", smith_name);
     }
+}
+
+struct WorkerAssignment {
+    entity: Entity,
+    profession: Profession,
+    display_name: String,
+}
+
+fn ensure_profession_workers_ready(
+    day: u64,
+    workers: &[WorkerAssignment],
+    registry: &ProfessionCrateRegistry,
+    crate_transforms: &Query<&GlobalTransform, With<ProfessionCrate>>,
+    locomotion_query: &mut Query<(&GlobalTransform, &mut NpcLocomotion)>,
+) -> bool {
+    let mut all_ready = true;
+
+    for worker in workers {
+        let Some(crate_entity) = registry.get(worker.profession) else {
+            warn!(
+                "Trade loop day {} skipped: no crate registered for {}",
+                day,
+                worker.profession.label()
+            );
+            return false;
+        };
+
+        let Ok((npc_transform, mut locomotion)) = locomotion_query.get_mut(worker.entity) else {
+            warn!(
+                "Trade loop day {} skipped: {} missing locomotion component",
+                day, worker.display_name
+            );
+            return false;
+        };
+
+        let Ok(crate_transform) = crate_transforms.get(crate_entity) else {
+            warn!(
+                "Trade loop day {} skipped: crate entity {:?} missing transform",
+                day, crate_entity
+            );
+            return false;
+        };
+
+        let current: Vec3 = npc_transform.translation().into();
+        let mut target: Vec3 = crate_transform.translation().into();
+        target.y = current.y;
+
+        let displacement = Vec2::new(target.x - current.x, target.z - current.z);
+        let distance = displacement.length();
+        let tolerance = locomotion.arrive_distance();
+
+        if distance > tolerance {
+            let label = format!("{} crate", worker.profession.label());
+            if locomotion.set_target(MovementTarget::Entity(crate_entity), label.clone()) {
+                info!("{} starts walking toward {}", worker.display_name, label);
+            }
+            all_ready = false;
+        }
+    }
+
+    if !all_ready {
+        debug!(
+            "Day {} trade loop paused: workers still travelling to crates",
+            day
+        );
+    }
+
+    all_ready
 }
 
 fn queue_schedule_brief(

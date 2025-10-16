@@ -99,9 +99,9 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 - DialogueRequestQueue executes with documented cooldown constants and logs rate-limited retries.
 - Event consumers bridge TradeCompleted events into dialogue prompts; docs kept in sync with the warning cleanup.
 
-**Recently completed:** S1.2 (dialogue scaffolding research) finished on 2025-10-10; findings documented in docs/dialogue_research.md.
+**Recently completed:** S1.2 (dialogue scaffolding research) finished on 2025-10-10; findings documented in docs/dialogue_research.md. S1.6 (profession crates + locomotion) delivered so the micro trade loop now waits for NPCs to reach their work spots.
 
-**Next in queue:** Replace the stub with a real OpenAI client and persist dialogue telemetry for UI hooks. Following that, Step S1.6 introduces profession crates and basic locomotion so NPCs walk to their work spots before trading.
+**Next in queue:** Replace the stub with a real OpenAI client and persist dialogue telemetry for UI hooks. Use the new movement telemetry to surface travel/exchange status in upcoming UI work.
 
 ---
 

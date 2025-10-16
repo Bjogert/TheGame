@@ -37,6 +37,12 @@ impl TradeGood {
     }
 }
 
+/// Marker identifying a crate entity representing a profession's work spot.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ProfessionCrate {
+    pub profession: Profession,
+}
+
 /// Inventory storing simple stacks of goods.
 #[derive(Component, Debug, Clone, Default)]
 pub struct Inventory {
@@ -110,5 +116,10 @@ mod tests {
 
         assert_eq!(Profession::Farmer.label(), "farmer");
         assert_eq!(TradeGood::Tools.label(), "tool crate");
+
+        let marker = ProfessionCrate {
+            profession: Profession::Farmer,
+        };
+        assert_eq!(marker.profession, Profession::Farmer);
     }
 }

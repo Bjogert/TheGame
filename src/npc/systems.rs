@@ -4,7 +4,8 @@ use bevy::{math::primitives::Capsule3d, prelude::*};
 use crate::{
     core::plugin::SimulationClock,
     npc::components::{
-        DailySchedule, Identity, NpcIdGenerator, ScheduleEntry, ScheduleState, ScheduleTicker,
+        DailySchedule, Identity, LocomotionState, MovementTarget, NpcIdGenerator, NpcLocomotion,
+        ScheduleEntry, ScheduleState, ScheduleTicker,
     },
     world::time::WorldClock,
 };
@@ -66,6 +67,7 @@ pub fn spawn_debug_npcs(
             identity,
             DailySchedule::new(schedule_entries),
             ScheduleState::default(),
+            NpcLocomotion::default(),
             Name::new(format!("{} ({})", name, id)),
         ));
     }
@@ -124,4 +126,72 @@ fn current_activity(schedule: &DailySchedule, time_of_day: f32) -> &str {
     }
 
     selected.activity.as_str()
+}
+
+/// Moves NPCs toward their active destinations using the simulation clock delta.
+pub fn drive_npc_locomotion(
+    sim_clock: Res<SimulationClock>,
+    mut movers: Query<(&Identity, &mut Transform, &mut NpcLocomotion)>,
+    world_transforms: Query<&GlobalTransform>,
+) {
+    let delta_seconds = sim_clock.last_scaled_delta().as_secs_f32();
+    if delta_seconds <= f32::EPSILON {
+        return;
+    }
+
+    for (identity, mut transform, mut locomotion) in movers.iter_mut() {
+        let Some(target) = locomotion.target() else {
+            continue;
+        };
+
+        let target_position = match target {
+            MovementTarget::Entity(entity) => match world_transforms.get(entity) {
+                Ok(global) => {
+                    let mut pos: Vec3 = global.translation().into();
+                    pos.y = transform.translation.y;
+                    pos
+                }
+                Err(_) => {
+                    warn!(
+                        "Clearing locomotion target for {}: entity {entity:?} missing transform",
+                        identity.display_name
+                    );
+                    locomotion.clear_target();
+                    continue;
+                }
+            },
+        };
+
+        let displacement = Vec2::new(
+            target_position.x - transform.translation.x,
+            target_position.z - transform.translation.z,
+        );
+        let distance = displacement.length();
+        let arrive_distance = locomotion.arrive_distance();
+
+        let was_moving = locomotion.state() == LocomotionState::Moving;
+
+        if distance <= arrive_distance {
+            let arrival_label = locomotion.active_label().map(|label| label.to_string());
+            transform.translation.x = target_position.x;
+            transform.translation.z = target_position.z;
+            locomotion.clear_target();
+
+            if was_moving {
+                if let Some(label) = arrival_label {
+                    info!("{} arrived at {}", identity.display_name, label);
+                } else {
+                    info!("{} completed travel", identity.display_name);
+                }
+            }
+            continue;
+        }
+
+        let direction = displacement / distance;
+        let step = locomotion.move_speed() * delta_seconds;
+        let travel = direction * step.min(distance);
+
+        transform.translation.x += travel.x;
+        transform.translation.z += travel.y;
+    }
 }

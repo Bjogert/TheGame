@@ -64,3 +64,7 @@ All notable changes to this project will be documented in this file.
 - Established plans for an `EconomyRegistry`, `WorkOrderQueue`, and expanded economy event types feeding dialogue and UI.
 - Recorded risks, mitigations, and next actions to guide Step 7 implementation tasks.
 
+## 2025-10-13 - S1.6: NPC Locomotion & Profession Crates
+- Spawned crate entities for farmer, miller, and blacksmith professions and recorded them in a `ProfessionCrateRegistry`.
+- Added an `NpcLocomotion` component/system pair that steers villagers toward crate destinations using scaled simulation time.
+- Updated the micro trade loop to halt until each profession reaches its crate, producing visible travel before exchanges fire and logging movement telemetry for future UI hooks.

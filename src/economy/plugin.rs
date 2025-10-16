@@ -1,12 +1,15 @@
 //! Economy plugin wiring placeholder trade systems.
 use bevy::{ecs::schedule::IntoScheduleConfigs, prelude::*};
 
-use crate::{npc::systems::spawn_debug_npcs, world::time::advance_world_clock};
+use crate::{
+    npc::systems::spawn_debug_npcs,
+    world::{systems::spawn_world_environment, time::advance_world_clock},
+};
 
 use super::{
     events::TradeCompletedEvent,
-    resources::MicroTradeLoopState,
-    systems::{assign_placeholder_professions, process_micro_trade_loop},
+    resources::{MicroTradeLoopState, ProfessionCrateRegistry},
+    systems::{assign_placeholder_professions, process_micro_trade_loop, spawn_profession_crates},
 };
 
 const SYSTEM_ACTOR_LABEL: &str = "system";
@@ -16,7 +19,12 @@ pub struct EconomyPlugin;
 impl Plugin for EconomyPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MicroTradeLoopState>()
+            .init_resource::<ProfessionCrateRegistry>()
             .add_message::<TradeCompletedEvent>()
+            .add_systems(
+                Startup,
+                spawn_profession_crates.after(spawn_world_environment),
+            )
             .add_systems(
                 Startup,
                 assign_placeholder_professions.after(spawn_debug_npcs),

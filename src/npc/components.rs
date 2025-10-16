@@ -131,3 +131,91 @@ impl NpcIdGenerator {
         NpcId::new(id)
     }
 }
+
+/// Simple locomotion controller tracking destinations and movement state.
+#[derive(Component, Debug, Clone)]
+pub struct NpcLocomotion {
+    move_speed: f32,
+    arrive_distance: f32,
+    target: Option<MovementTarget>,
+    state: LocomotionState,
+    active_label: Option<String>,
+}
+
+impl NpcLocomotion {
+    pub fn new(move_speed: f32, arrive_distance: f32) -> Self {
+        Self {
+            move_speed,
+            arrive_distance,
+            target: None,
+            state: LocomotionState::Idle,
+            active_label: None,
+        }
+    }
+
+    pub fn move_speed(&self) -> f32 {
+        self.move_speed
+    }
+
+    pub fn arrive_distance(&self) -> f32 {
+        self.arrive_distance
+    }
+
+    pub fn target(&self) -> Option<MovementTarget> {
+        self.target
+    }
+
+    pub fn state(&self) -> LocomotionState {
+        self.state
+    }
+
+    pub fn active_label(&self) -> Option<&str> {
+        self.active_label.as_deref()
+    }
+
+    /// Returns true when a new travel target is registered.
+    pub fn set_target(&mut self, target: MovementTarget, label: impl Into<String>) -> bool {
+        let label_string = label.into();
+        let is_duplicate = self.state == LocomotionState::Moving
+            && self.target == Some(target)
+            && self
+                .active_label
+                .as_ref()
+                .map(|existing| existing == &label_string)
+                .unwrap_or(false);
+
+        if is_duplicate {
+            return false;
+        }
+
+        self.target = Some(target);
+        self.state = LocomotionState::Moving;
+        self.active_label = Some(label_string);
+        true
+    }
+
+    pub fn clear_target(&mut self) {
+        self.target = None;
+        self.state = LocomotionState::Idle;
+        self.active_label = None;
+    }
+}
+
+impl Default for NpcLocomotion {
+    fn default() -> Self {
+        Self::new(2.5, 0.35)
+    }
+}
+
+/// Where a locomotion controller should move.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MovementTarget {
+    Entity(Entity),
+}
+
+/// Locomotion phase for logging and telemetry.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LocomotionState {
+    Idle,
+    Moving,
+}
