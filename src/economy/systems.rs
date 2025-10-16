@@ -3,8 +3,11 @@ use bevy::prelude::*;
 
 use crate::{
     dialogue::{
-        DialogueContext, DialogueContextEvent, DialogueRequest, DialogueRequestQueue,
-        DialogueTopicHint, TradeContext, TradeContextReason, TradeDescriptor,
+        queue::DialogueRequestQueue,
+        types::{
+            DialogueContext, DialogueContextEvent, DialogueRequest, DialogueTopicHint,
+            TradeContext, TradeContextReason, TradeDescriptor,
+        },
     },
     npc::components::{Identity, NpcId},
     world::time::WorldClock,
@@ -16,6 +19,25 @@ use super::{
     resources::MicroTradeLoopState,
 };
 
+const FARMER_NAME: &str = "Alric";
+const MILLER_NAME: &str = "Bryn";
+const BLACKSMITH_NAME: &str = "Cedric";
+const DAILY_UNIT_QUANTITY: u32 = 1;
+const TRADE_PROMPT_VERB: &str = "discusses exchanging a";
+const SCHEDULE_PROMPT_ACTION: &str = "reviews the day's schedule";
+const SCHEDULE_SUMMARY_PREFIX: &str = "Daily plan:";
+const SENTENCE_SUFFIX: &str = ".";
+
+#[derive(Clone, Copy)]
+struct TradeDialogueInput {
+    day: u64,
+    from: Option<NpcId>,
+    to: Option<NpcId>,
+    good: TradeGood,
+    quantity: u32,
+    reason: TradeReason,
+}
+
 /// Assigns placeholder professions and empty inventories to debug NPCs.
 pub fn assign_placeholder_professions(
     mut commands: Commands,
@@ -23,16 +45,17 @@ pub fn assign_placeholder_professions(
 ) {
     for (entity, identity) in query.iter() {
         let profession = match identity.display_name.as_str() {
-            "Alric" => Some(Profession::Farmer),
-            "Bryn" => Some(Profession::Miller),
-            "Cedric" => Some(Profession::Blacksmith),
+            FARMER_NAME => Some(Profession::Farmer),
+            MILLER_NAME => Some(Profession::Miller),
+            BLACKSMITH_NAME => Some(Profession::Blacksmith),
             _ => None,
         };
 
         if let Some(profession) = profession {
             info!(
-                "Assigning {} as {}",
+                "Assigning {} (age {:.1}) as {}",
                 identity.display_name,
+                identity.age_years,
                 profession.label()
             );
             commands
@@ -48,7 +71,7 @@ pub fn process_micro_trade_loop(
     mut state: ResMut<MicroTradeLoopState>,
     identity_query: Query<(Entity, &Identity, &Profession)>,
     mut inventories: Query<&mut Inventory>,
-    mut trade_writer: EventWriter<TradeCompletedEvent>,
+    mut trade_writer: MessageWriter<TradeCompletedEvent>,
     mut dialogue_queue: ResMut<DialogueRequestQueue>,
 ) {
     let day = world_clock.day_count();
@@ -105,29 +128,31 @@ pub fn process_micro_trade_loop(
     };
 
     // Farmer produces grain for the day.
-    farmer_inv.add_good(TradeGood::GrainCrate, 1);
-    trade_writer.send(TradeCompletedEvent {
+    farmer_inv.add_good(TradeGood::Grain, DAILY_UNIT_QUANTITY);
+    trade_writer.write(TradeCompletedEvent {
         day,
         from: None,
         to: Some(farmer_id),
-        good: TradeGood::GrainCrate,
-        quantity: 1,
+        good: TradeGood::Grain,
+        quantity: DAILY_UNIT_QUANTITY,
         reason: TradeReason::Production,
     });
     info!("{} harvests a grain crate", farmer_name);
 
     // Farmer delivers grain to the miller.
-    if farmer_inv.remove_good(TradeGood::GrainCrate, 1) {
-        miller_inv.add_good(TradeGood::GrainCrate, 1);
+    if farmer_inv.remove_good(TradeGood::Grain, DAILY_UNIT_QUANTITY) {
+        miller_inv.add_good(TradeGood::Grain, DAILY_UNIT_QUANTITY);
         send_trade_and_dialogue(
             &mut trade_writer,
             &mut dialogue_queue,
-            day,
-            Some(farmer_id),
-            Some(miller_id),
-            TradeGood::GrainCrate,
-            1,
-            TradeReason::Exchange,
+            TradeDialogueInput {
+                day,
+                from: Some(farmer_id),
+                to: Some(miller_id),
+                good: TradeGood::Grain,
+                quantity: DAILY_UNIT_QUANTITY,
+                reason: TradeReason::Exchange,
+            },
         );
         info!("{} passes grain crate to {}", farmer_name, miller_name);
     } else {
@@ -136,14 +161,14 @@ pub fn process_micro_trade_loop(
     }
 
     // Miller processes grain into flour.
-    if miller_inv.remove_good(TradeGood::GrainCrate, 1) {
-        miller_inv.add_good(TradeGood::FlourCrate, 1);
-        trade_writer.send(TradeCompletedEvent {
+    if miller_inv.remove_good(TradeGood::Grain, DAILY_UNIT_QUANTITY) {
+        miller_inv.add_good(TradeGood::Flour, DAILY_UNIT_QUANTITY);
+        trade_writer.write(TradeCompletedEvent {
             day,
             from: Some(miller_id),
             to: Some(miller_id),
-            good: TradeGood::FlourCrate,
-            quantity: 1,
+            good: TradeGood::Flour,
+            quantity: DAILY_UNIT_QUANTITY,
             reason: TradeReason::Processing,
         });
     } else {
@@ -152,17 +177,19 @@ pub fn process_micro_trade_loop(
     }
 
     // Miller delivers flour to the blacksmith.
-    if miller_inv.remove_good(TradeGood::FlourCrate, 1) {
-        smith_inv.add_good(TradeGood::FlourCrate, 1);
+    if miller_inv.remove_good(TradeGood::Flour, DAILY_UNIT_QUANTITY) {
+        smith_inv.add_good(TradeGood::Flour, DAILY_UNIT_QUANTITY);
         send_trade_and_dialogue(
             &mut trade_writer,
             &mut dialogue_queue,
-            day,
-            Some(miller_id),
-            Some(smith_id),
-            TradeGood::FlourCrate,
-            1,
-            TradeReason::Exchange,
+            TradeDialogueInput {
+                day,
+                from: Some(miller_id),
+                to: Some(smith_id),
+                good: TradeGood::Flour,
+                quantity: DAILY_UNIT_QUANTITY,
+                reason: TradeReason::Exchange,
+            },
         );
         info!("{} sends flour crate to {}", miller_name, smith_name);
     } else {
@@ -171,14 +198,14 @@ pub fn process_micro_trade_loop(
     }
 
     // Blacksmith processes flour into tool crate (placeholder transformation).
-    if smith_inv.remove_good(TradeGood::FlourCrate, 1) {
-        smith_inv.add_good(TradeGood::ToolCrate, 1);
-        trade_writer.send(TradeCompletedEvent {
+    if smith_inv.remove_good(TradeGood::Flour, DAILY_UNIT_QUANTITY) {
+        smith_inv.add_good(TradeGood::Tools, DAILY_UNIT_QUANTITY);
+        trade_writer.write(TradeCompletedEvent {
             day,
             from: Some(smith_id),
             to: Some(smith_id),
-            good: TradeGood::ToolCrate,
-            quantity: 1,
+            good: TradeGood::Tools,
+            quantity: DAILY_UNIT_QUANTITY,
             reason: TradeReason::Processing,
         });
     } else {
@@ -187,54 +214,97 @@ pub fn process_micro_trade_loop(
     }
 
     // Blacksmith returns tools to the farmer.
-    if smith_inv.remove_good(TradeGood::ToolCrate, 1) {
-        farmer_inv.add_good(TradeGood::ToolCrate, 1);
+    if smith_inv.remove_good(TradeGood::Tools, DAILY_UNIT_QUANTITY) {
+        farmer_inv.add_good(TradeGood::Tools, DAILY_UNIT_QUANTITY);
         send_trade_and_dialogue(
             &mut trade_writer,
             &mut dialogue_queue,
-            day,
-            Some(smith_id),
-            Some(farmer_id),
-            TradeGood::ToolCrate,
-            1,
-            TradeReason::Exchange,
+            TradeDialogueInput {
+                day,
+                from: Some(smith_id),
+                to: Some(farmer_id),
+                good: TradeGood::Tools,
+                quantity: DAILY_UNIT_QUANTITY,
+                reason: TradeReason::Exchange,
+            },
         );
         info!("{} supplies tool crate to {}", smith_name, farmer_name);
+        queue_schedule_brief(
+            &mut dialogue_queue,
+            day,
+            farmer_id,
+            format!(
+                "{} coordinated tool deliveries with {} and {}",
+                farmer_name, miller_name, smith_name
+            ),
+        );
+        debug!(
+            "Inventory snapshot -> farmer: grain {} flour {} tools {}; miller: grain {} flour {}; smith: flour {} tools {}",
+            farmer_inv.quantity_of(TradeGood::Grain),
+            farmer_inv.quantity_of(TradeGood::Flour),
+            farmer_inv.quantity_of(TradeGood::Tools),
+            miller_inv.quantity_of(TradeGood::Grain),
+            miller_inv.quantity_of(TradeGood::Flour),
+            smith_inv.quantity_of(TradeGood::Flour),
+            smith_inv.quantity_of(TradeGood::Tools),
+        );
     } else {
         warn!("{} missing tool crate for delivery", smith_name);
     }
 }
 
-fn send_trade_and_dialogue(
-    trade_writer: &mut EventWriter<TradeCompletedEvent>,
+fn queue_schedule_brief(
     queue: &mut DialogueRequestQueue,
     day: u64,
-    from: Option<NpcId>,
-    to: Option<NpcId>,
-    good: TradeGood,
-    quantity: u32,
-    reason: TradeReason,
+    speaker: NpcId,
+    description: String,
 ) {
-    trade_writer.send(TradeCompletedEvent {
-        day,
-        from,
-        to,
-        good,
-        quantity,
-        reason,
+    let mut context =
+        DialogueContext::with_events(vec![DialogueContextEvent::ScheduleUpdate { description }]);
+    context.summary = Some(format!("{SCHEDULE_SUMMARY_PREFIX} Day {day}"));
+
+    let prompt = format!(
+        "{speaker} {action}{suffix}",
+        speaker = speaker,
+        action = SCHEDULE_PROMPT_ACTION,
+        suffix = SENTENCE_SUFFIX
+    );
+
+    let request = DialogueRequest::new(speaker, None, prompt, DialogueTopicHint::Schedule, context);
+    let id = queue.enqueue(request);
+    debug!(
+        "Queued schedule update dialogue {} for speaker {} on day {}",
+        id.value(),
+        speaker,
+        day
+    );
+}
+
+fn send_trade_and_dialogue(
+    trade_writer: &mut MessageWriter<TradeCompletedEvent>,
+    queue: &mut DialogueRequestQueue,
+    input: TradeDialogueInput,
+) {
+    trade_writer.write(TradeCompletedEvent {
+        day: input.day,
+        from: input.from,
+        to: input.to,
+        good: input.good,
+        quantity: input.quantity,
+        reason: input.reason,
     });
 
-    if let (Some(speaker), Some(target)) = (from, to) {
-        let descriptor = TradeDescriptor::new(good.label(), quantity);
+    if let (Some(speaker), Some(target)) = (input.from, input.to) {
+        let descriptor = TradeDescriptor::new(input.good.label(), input.quantity);
         let context =
             DialogueContext::with_events(vec![DialogueContextEvent::Trade(TradeContext {
-                day,
-                from,
-                to,
+                day: input.day,
+                from: input.from,
+                to: input.to,
                 descriptor,
-                reason: reason.into(),
+                reason: input.reason.into(),
             })]);
-        let prompt = format!("{} discusses exchanging a {}.", speaker, good.label());
+        let prompt = build_trade_prompt(speaker, input.good.label());
         let request = DialogueRequest::new(
             speaker,
             Some(target),
@@ -255,4 +325,14 @@ impl From<TradeReason> for TradeContextReason {
             TradeReason::Exchange => TradeContextReason::Exchange,
         }
     }
+}
+
+fn build_trade_prompt(speaker: NpcId, good_label: &str) -> String {
+    format!(
+        "{speaker} {verb} {good}{suffix}",
+        speaker = speaker,
+        verb = TRADE_PROMPT_VERB,
+        good = good_label,
+        suffix = SENTENCE_SUFFIX
+    )
 }

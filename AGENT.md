@@ -95,13 +95,13 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 > Update this section whenever the top backlog item changes. Keep scope small (0.5-2 focused days).
 
 ### Current Focus - S1.3: Dialogue Broker Prototype
-- Implement a DialogueBroker trait plus provider enum (OpenAI/Anthropic/local).
-- Stub a queued request runner with global/per-NPC rate limiting.
-- Outline error handling (timeouts, retries, throttling) prior to full integration.
+- OpenAI stub now guards prompt/ context validation, emits structured errors, and drives logging for dialogue responses/failures.
+- DialogueRequestQueue executes with documented cooldown constants and logs rate-limited retries.
+- Event consumers bridge TradeCompleted events into dialogue prompts; docs kept in sync with the warning cleanup.
 
 **Recently completed:** S1.2 (dialogue scaffolding research) finished on 2025-10-10; findings documented in docs/dialogue_research.md.
 
-**Next in queue:** Build the dialogue broker stub (S1.3) to prepare for end-to-end conversation tests.
+**Next in queue:** Replace the stub with a real OpenAI client and persist dialogue telemetry for UI hooks.
 
 ---
 

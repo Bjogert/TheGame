@@ -13,6 +13,11 @@ use super::{
     types::{DialogueRequest, DialogueRequestId},
 };
 
+const DEFAULT_GLOBAL_COOLDOWN_SECONDS: f32 = 1.5;
+const DEFAULT_PER_NPC_COOLDOWN_SECONDS: f32 = 8.0;
+const DEFAULT_MAX_RETRIES: u8 = 2;
+const DEFAULT_RETRY_BACKOFF_SECONDS: f32 = 5.0;
+
 /// Configurable rate limit values for the dialogue queue.
 #[derive(Resource, Debug, Clone)]
 pub struct DialogueRateLimitConfig {
@@ -25,10 +30,10 @@ pub struct DialogueRateLimitConfig {
 impl Default for DialogueRateLimitConfig {
     fn default() -> Self {
         Self {
-            global_cooldown_seconds: 1.5,
-            per_npc_cooldown_seconds: 8.0,
-            max_retries: 2,
-            retry_backoff_seconds: 5.0,
+            global_cooldown_seconds: DEFAULT_GLOBAL_COOLDOWN_SECONDS,
+            per_npc_cooldown_seconds: DEFAULT_PER_NPC_COOLDOWN_SECONDS,
+            max_retries: DEFAULT_MAX_RETRIES,
+            retry_backoff_seconds: DEFAULT_RETRY_BACKOFF_SECONDS,
         }
     }
 }
@@ -58,10 +63,7 @@ impl DialogueRateLimitState {
         if self.global_remaining > 0.0 {
             return false;
         }
-        match self.npc_remaining.get(&speaker) {
-            Some(value) if *value > 0.0 => false,
-            _ => true,
-        }
+        !matches!(self.npc_remaining.get(&speaker), Some(value) if *value > 0.0)
     }
 
     pub fn record_success(&mut self, speaker: NpcId, config: &DialogueRateLimitConfig) {
@@ -160,7 +162,7 @@ pub fn advance_dialogue_queue_timers(
     mut queue: ResMut<DialogueRequestQueue>,
     mut limits: ResMut<DialogueRateLimitState>,
 ) {
-    let delta = time.delta_seconds().max(0.0);
+    let delta = time.delta_secs().max(0.0);
     queue.tick(delta);
     limits.tick(delta);
 }
@@ -171,9 +173,13 @@ pub fn run_dialogue_request_queue(
     mut limits: ResMut<DialogueRateLimitState>,
     config: Res<DialogueRateLimitConfig>,
     broker: Res<ActiveDialogueBroker>,
-    mut response_writer: EventWriter<DialogueResponseEvent>,
-    mut failure_writer: EventWriter<DialogueRequestFailedEvent>,
+    mut response_writer: MessageWriter<DialogueResponseEvent>,
+    mut failure_writer: MessageWriter<DialogueRequestFailedEvent>,
 ) {
+    if queue.is_empty() {
+        return;
+    }
+
     if !queue.front_ready() {
         return;
     }
@@ -190,7 +196,7 @@ pub fn run_dialogue_request_queue(
     match broker.process(queued.id, &queued.request) {
         Ok(response) => {
             limits.record_success(queued.request.speaker, &config);
-            response_writer.send(DialogueResponseEvent { response });
+            response_writer.write(DialogueResponseEvent { response });
         }
         Err(err) => {
             queued.attempts = queued.attempts.saturating_add(1);
@@ -210,8 +216,38 @@ pub fn run_dialogue_request_queue(
                 queued.cooldown_remaining = config.retry_backoff_seconds;
                 queue.pending.push_back(queued);
             } else {
-                failure_writer.send(DialogueRequestFailedEvent { error: err });
+                failure_writer.write(DialogueRequestFailedEvent { error: err });
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::dialogue::types::{DialogueContext, DialogueRequest, DialogueTopicHint};
+    use crate::npc::components::NpcId;
+
+    #[test]
+    fn queue_reports_ready_state() {
+        let mut queue = DialogueRequestQueue::default();
+        assert!(queue.is_empty());
+
+        let request = DialogueRequest::new(
+            NpcId::new(1),
+            None,
+            "Hello",
+            DialogueTopicHint::Status,
+            DialogueContext::default(),
+        );
+        let request_id = queue.enqueue(request);
+
+        assert_eq!(request_id.value(), 0);
+        assert!(!queue.is_empty());
+        assert!(queue.front_ready());
+
+        // Tick the queue and ensure it remains ready with zero cooldown.
+        queue.tick(0.5);
+        assert!(queue.front_ready());
     }
 }

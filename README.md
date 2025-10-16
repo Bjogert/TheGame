@@ -82,7 +82,7 @@ Run any task via Ctrl+Shift+P → *Run Task*.
 
 ## Dialogue Research
 - Dialogue integration is currently in the research phase. See docs/dialogue_research.md for provider comparisons and rate-limiting notes.
-- Plan: start with managed LLM APIs (OpenAI/Anthropic), wrap requests behind a DialogueBroker abstraction, and enforce both global and per-NPC rate limits with queued requests for backpressure.
+- Plan: start with managed LLM APIs (OpenAI), wrap requests behind a DialogueBroker abstraction, and enforce both global and per-NPC rate limits with queued requests for backpressure.
 
 ---
 

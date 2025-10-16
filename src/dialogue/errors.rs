@@ -97,3 +97,53 @@ impl fmt::Display for DialogueError {
 }
 
 impl std::error::Error for DialogueError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn constructs_error_variants() {
+        let rate_limited = DialogueErrorKind::rate_limited(2.5);
+        match rate_limited {
+            DialogueErrorKind::RateLimited {
+                retry_after_seconds,
+            } => assert_eq!(retry_after_seconds, 2.5),
+            _ => panic!("expected rate limited variant"),
+        }
+
+        let provider_failure = DialogueErrorKind::provider_failure("unreachable");
+        assert!(matches!(
+            provider_failure,
+            DialogueErrorKind::ProviderFailure { .. }
+        ));
+
+        let missing_schedule =
+            DialogueErrorKind::context_missing(DialogueContextSource::ScheduleState);
+        let missing_inventory =
+            DialogueErrorKind::context_missing(DialogueContextSource::InventoryState);
+
+        for missing in [&missing_schedule, &missing_inventory] {
+            if let DialogueErrorKind::ContextMissing { missing } = missing {
+                // Ensure Display implementation is exercised.
+                assert!(
+                    missing.to_string().contains("state")
+                        || missing.to_string().contains("history")
+                );
+            } else {
+                panic!("expected context missing variant");
+            }
+        }
+
+        let request_id = DialogueRequestId::new(7);
+        assert_eq!(request_id.value(), 7);
+
+        let error = DialogueError::new(
+            request_id,
+            DialogueProviderKind::OpenAi,
+            provider_failure.clone(),
+        );
+        assert!(error.to_string().contains("OpenAi"));
+        assert_eq!(format!("{}", error.kind), format!("{}", provider_failure));
+    }
+}

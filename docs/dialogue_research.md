@@ -4,11 +4,10 @@
 | Provider | Pros | Cons | Notes |
 |----------|------|------|-------|
 | OpenAI (GPT-4o mini / Turbo) | High quality, robust tooling, streaming support | Paid API, strict rate limits | Good default; budget needs monitoring |
-| Anthropic (Claude Haiku/Sonnet) | Strong instruction following, long context | Availability varies, per-token costs | Investigate safety filters |
 | Local Models (Llama 3, Mistral) | Full control, no per-token cost | Requires on-prem GPU/quant hosting, ops overhead | Option for later hybrid deployments |
 
 ## Proposed API Strategy
-- Start with managed providers (OpenAI + Anthropic) for rapid iteration.
+- Start with managed providers (OpenAI) for rapid iteration.
 - Wrap calls behind a DialogueBroker abstraction so swapping vendors is trivial.
 - Store credentials/rate limits in environment config; avoid hardcoding.
 

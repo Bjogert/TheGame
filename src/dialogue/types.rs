@@ -139,3 +139,76 @@ pub enum TradeContextReason {
 
 // DialogueProviderKind is defined in broker.rs but referenced here.
 use super::broker::DialogueProviderKind;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dialogue_types_cover_all_variants() {
+        let speaker = NpcId::new(1);
+        let target = Some(NpcId::new(2));
+
+        let descriptor = TradeDescriptor::new("grain crate", 3);
+        assert_eq!(descriptor.label, "grain crate");
+        assert_eq!(descriptor.quantity, 3);
+
+        let trade_context = TradeContext {
+            day: 12,
+            from: Some(speaker),
+            to: target,
+            descriptor: descriptor.clone(),
+            reason: TradeContextReason::Production,
+        };
+
+        let events = vec![
+            DialogueContextEvent::Trade(trade_context.clone()),
+            DialogueContextEvent::ScheduleUpdate {
+                description: "Updated chores".to_string(),
+            },
+        ];
+
+        let mut context = DialogueContext::with_events(events);
+        context.summary = Some("Busy day".to_string());
+        assert_eq!(context.summary.as_deref(), Some("Busy day"));
+        assert_eq!(context.events.len(), 2);
+
+        let request = DialogueRequest::new(
+            speaker,
+            target,
+            "Status report",
+            DialogueTopicHint::Schedule,
+            context.clone(),
+        );
+        assert!(matches!(request.topic_hint, DialogueTopicHint::Schedule));
+
+        if let DialogueContextEvent::Trade(trade) = &context.events[0] {
+            assert_eq!(trade.day, 12);
+            assert_eq!(trade.descriptor.label, "grain crate");
+            assert_eq!(trade.reason, TradeContextReason::Production);
+            assert_eq!(trade.to, target);
+        } else {
+            panic!("expected trade event");
+        }
+
+        if let DialogueContextEvent::ScheduleUpdate { description } = &context.events[1] {
+            assert!(description.contains("Updated"));
+        } else {
+            panic!("expected schedule update");
+        }
+
+        let request_id = DialogueRequestId::new(42);
+        assert_eq!(request_id.value(), 42);
+
+        let response = DialogueResponse::new(
+            request_id,
+            DialogueProviderKind::OpenAi,
+            speaker,
+            target,
+            "All good",
+        );
+        assert_eq!(response.provider, DialogueProviderKind::OpenAi);
+        assert_eq!(response.content, "All good");
+        assert_eq!(response.target, target);
+    }
+}

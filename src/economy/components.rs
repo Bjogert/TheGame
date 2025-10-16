@@ -22,17 +22,17 @@ impl Profession {
 /// Simplified trade goods used for placeholder exchanges.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TradeGood {
-    GrainCrate,
-    FlourCrate,
-    ToolCrate,
+    Grain,
+    Flour,
+    Tools,
 }
 
 impl TradeGood {
     pub fn label(self) -> &'static str {
         match self {
-            Self::GrainCrate => "grain crate",
-            Self::FlourCrate => "flour crate",
-            Self::ToolCrate => "tool crate",
+            Self::Grain => "grain crate",
+            Self::Flour => "flour crate",
+            Self::Tools => "tool crate",
         }
     }
 }
@@ -88,4 +88,27 @@ impl Inventory {
 struct InventoryItem {
     good: TradeGood,
     quantity: u32,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inventory_manages_quantities() {
+        let mut inventory = Inventory::default();
+        assert_eq!(inventory.quantity_of(TradeGood::Grain), 0);
+
+        inventory.add_good(TradeGood::Grain, 5);
+        inventory.add_good(TradeGood::Grain, 2);
+        inventory.add_good(TradeGood::Tools, 1);
+
+        assert_eq!(inventory.quantity_of(TradeGood::Grain), 7);
+        assert!(inventory.remove_good(TradeGood::Grain, 4));
+        assert_eq!(inventory.quantity_of(TradeGood::Grain), 3);
+        assert!(!inventory.remove_good(TradeGood::Grain, 5));
+
+        assert_eq!(Profession::Farmer.label(), "farmer");
+        assert_eq!(TradeGood::Tools.label(), "tool crate");
+    }
 }

@@ -50,6 +50,7 @@ node_modules/
 # Local configuration files
 .env
 .env.local
+secrets.env
 
 # Game saves/data (if you add them later)
 saves/

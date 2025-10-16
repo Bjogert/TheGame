@@ -2,13 +2,16 @@
 use bevy::prelude::*;
 
 use super::{
-    broker::LocalDialogueBroker,
+    broker::OpenAiDialogueBroker,
+    errors::DialogueErrorKind,
     events::{DialogueRequestFailedEvent, DialogueResponseEvent},
     queue::{
         advance_dialogue_queue_timers, run_dialogue_request_queue, ActiveDialogueBroker,
         DialogueRateLimitConfig, DialogueRateLimitState, DialogueRequestQueue,
     },
 };
+
+const FALLBACK_DIALOGUE_TARGET: &str = "player";
 
 pub struct DialoguePlugin;
 
@@ -18,14 +21,19 @@ impl Plugin for DialoguePlugin {
             .init_resource::<DialogueRateLimitState>()
             .init_resource::<DialogueRequestQueue>()
             .insert_resource(ActiveDialogueBroker::new(Box::new(
-                LocalDialogueBroker::new(),
+                OpenAiDialogueBroker::new(),
             )))
-            .add_event::<DialogueResponseEvent>()
-            .add_event::<DialogueRequestFailedEvent>()
+            .add_message::<DialogueResponseEvent>()
+            .add_message::<DialogueRequestFailedEvent>()
             .add_systems(Startup, log_dialogue_provider)
             .add_systems(
                 Update,
-                (advance_dialogue_queue_timers, run_dialogue_request_queue).chain(),
+                (
+                    advance_dialogue_queue_timers,
+                    run_dialogue_request_queue,
+                    log_dialogue_events,
+                )
+                    .chain(),
             );
     }
 }
@@ -35,4 +43,54 @@ fn log_dialogue_provider(broker: Res<ActiveDialogueBroker>) {
         "DialoguePlugin initialised with provider: {}",
         broker.provider_kind()
     );
+}
+
+fn log_dialogue_events(
+    mut responses: MessageReader<DialogueResponseEvent>,
+    mut failures: MessageReader<DialogueRequestFailedEvent>,
+) {
+    for event in responses.read() {
+        let response = &event.response;
+        let target = response
+            .target
+            .map(|id| id.to_string())
+            .unwrap_or_else(|| FALLBACK_DIALOGUE_TARGET.to_string());
+
+        info!(
+            "Dialogue response [{} | {} -> {} | {}]: {}",
+            response.request_id.value(),
+            response.speaker,
+            target,
+            response.provider,
+            response.content
+        );
+    }
+
+    for event in failures.read() {
+        let error = &event.error;
+        match &error.kind {
+            DialogueErrorKind::RateLimited {
+                retry_after_seconds,
+            } => {
+                warn!(
+                    "Dialogue request {} rate limited for {:.2}s",
+                    error.request_id.value(),
+                    retry_after_seconds
+                );
+            }
+            DialogueErrorKind::ProviderFailure { message } => {
+                warn!(
+                    "Dialogue provider failure ({}): {}",
+                    error.provider, message
+                );
+            }
+            DialogueErrorKind::ContextMissing { missing } => {
+                warn!(
+                    "Dialogue request {} missing context: {}",
+                    error.request_id.value(),
+                    missing
+                );
+            }
+        }
+    }
 }

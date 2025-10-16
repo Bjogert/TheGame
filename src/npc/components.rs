@@ -20,7 +20,6 @@ impl fmt::Display for NpcId {
 }
 
 /// Minimal identity data for debugging and future systems.
-#[allow(dead_code)]
 #[derive(Component, Debug, Clone)]
 pub struct Identity {
     pub id: NpcId,

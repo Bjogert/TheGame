@@ -14,15 +14,16 @@
 - Schedule data currently lives in code; migrate to config/persistence in later milestones.
 
 ## Dialogue Scaffolding (S1.2)
-- Managed LLM APIs (OpenAI/Anthropic) chosen for rapid iteration; abstract via DialogueBroker.
+- Managed LLM APIs (OpenAI) chosen for rapid iteration; abstract via DialogueBroker.
 - Rate limiting plan: global 60 req/min bucket + per-NPC 30s cooldown with queued requests.
 - Prompt context uses Identity, ScheduleState, WorldClock; future fields include relationships, goals, mood.
 - See docs/dialogue_research.md for provider comparison and next steps.
 
 ## Dialogue Broker Prototype (S1.3)
-- Added `DialoguePlugin` with a queue runner, global/per-NPC rate limits, and stubbed `LocalDialogueBroker` responses.
-- Requests carry structured context events (including trades) so providers can reference live simulation data.
-- Failures emit events for future retry/telemetry handling; context-missing errors surface missing trade history.
+- `DialoguePlugin` now initialises the queue, rate-limit resources, and logs both dialogue responses and retryable failures to keep telemetry flowing while the OpenAI stub is active.
+- `OpenAiDialogueBroker` validates prompts/context, emits explicit provider errors, and expands responses with summaries, targets, and trade history snippets.
+- Warning debt cleared: every exported type is exercised either by runtime systems or focused tests, keeping `cargo check` and `cargo clippy -D warnings` clean.
+- Dialogue module tests explicitly import the `DialogueBroker` trait so the OpenAI stub’s `process` path remains covered without re-exporting the trait publicly.
 
 ## Micro Trade Loop Spike (S1.4)
 - Economy module assigns farmer, miller, and blacksmith professions, each with simple inventories.
