@@ -101,7 +101,7 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 
 **Recently completed:** S1.2 (dialogue scaffolding research) finished on 2025-10-10; findings documented in docs/dialogue_research.md.
 
-**Next in queue:** Replace the stub with a real OpenAI client and persist dialogue telemetry for UI hooks.
+**Next in queue:** Replace the stub with a real OpenAI client and persist dialogue telemetry for UI hooks. Following that, Step S1.6 introduces profession crates and basic locomotion so NPCs walk to their work spots before trading.
 
 ---
 

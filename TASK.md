@@ -144,6 +144,18 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 
 ---
 
+## Step S1.6 - NPC Locomotion & Profession Crates
+**Goal:** Give NPCs tangible work locations and simple pathing so their schedules produce visible movement.
+
+- [ ] Spawn placeholder crate entities for each profession (farmer, miller, blacksmith) in consistent world positions.
+- [ ] Extend schedules/work orders to assign NPCs a destination crate before performing trade or craft actions.
+- [ ] Add a lightweight locomotion system that moves NPCs toward their assigned crate with speed clamping and arrival tolerance.
+- [ ] Emit telemetry/logs for movement start/complete events and capture follow-ups in planning docs.
+- **Outcome:** NPCs walk from their idle position to the crate that matches their current task, creating clear visual activity loops ahead of future field/workshop assets.
+- **Exit criteria:** When the simulation runs, each profession NPC visibly travels to its crate before executing the trade loop; logs/documentation record the new behaviour and remaining movement limitations.
+
+---
+
 ## What Comes Next
 Use the S1.5 blueprint to draft implementation tasks for Step 7: load profession/recipe configs, add work-order queues, and expand economy events.
 
