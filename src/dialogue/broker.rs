@@ -1,5 +1,13 @@
-//! Dialogue broker trait and a local placeholder implementation.
-use std::fmt;
+//! Dialogue broker trait and OpenAI-backed implementation.
+use std::{env, fmt, time::Duration};
+
+use bevy::log::warn;
+use reqwest::{
+    blocking::Client,
+    header::{HeaderMap, RETRY_AFTER},
+    StatusCode,
+};
+use serde::{Deserialize, Serialize};
 
 use super::{
     errors::{DialogueContextSource, DialogueError, DialogueErrorKind},
@@ -16,6 +24,14 @@ const FALLBACK_TARGET_LABEL: &str = "player";
 const SUMMARY_PREFIX: &str = "Summary:";
 const SCHEDULE_NOTE_PREFIX: &str = "Schedule note:";
 const CONTEXT_FALLBACK_MESSAGE: &str = "No notable context available.";
+
+const DEFAULT_BASE_URL: &str = "https://api.openai.com";
+const DEFAULT_CHAT_PATH: &str = "/v1/chat/completions";
+const DEFAULT_MODEL: &str = "gpt-4o-mini";
+const DEFAULT_TEMPERATURE: f32 = 0.7;
+const DEFAULT_MAX_OUTPUT_TOKENS: u16 = 220;
+const DEFAULT_TIMEOUT_SECS: u64 = 15;
+const DEFAULT_RATE_LIMIT_BACKOFF: f32 = 10.0;
 
 /// Dialogue provider flavours we can route to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -43,12 +59,199 @@ pub trait DialogueBroker: Send + Sync {
     ) -> Result<DialogueResponse, DialogueError>;
 }
 
-/// Placeholder broker for the OpenAI backend until the API client lands.
-pub struct OpenAiDialogueBroker;
+/// OpenAI chat configuration sourced from the environment.
+#[derive(Debug, Clone)]
+struct OpenAiConfig {
+    api_key: String,
+    base_url: String,
+    model: String,
+    max_output_tokens: u16,
+    temperature: f32,
+    timeout: Duration,
+}
+
+impl OpenAiConfig {
+    fn from_env() -> Result<Self, OpenAiConfigError> {
+        let api_key = env::var("OPENAI_API_KEY")
+            .map_err(|_| OpenAiConfigError::MissingApiKey)
+            .and_then(|value| {
+                let trimmed = value.trim();
+                if trimmed.is_empty() {
+                    Err(OpenAiConfigError::MissingApiKey)
+                } else {
+                    Ok(trimmed.to_string())
+                }
+            })?;
+
+        let base_url = env::var("OPENAI_BASE_URL")
+            .map(|value| value.trim().to_string())
+            .unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
+
+        let model = env::var("OPENAI_MODEL")
+            .map(|value| value.trim().to_string())
+            .unwrap_or_else(|_| DEFAULT_MODEL.to_string());
+
+        let timeout = env::var("OPENAI_TIMEOUT_SECS")
+            .ok()
+            .and_then(|value| value.parse::<u64>().ok())
+            .filter(|value| *value > 0)
+            .map(Duration::from_secs)
+            .unwrap_or_else(|| Duration::from_secs(DEFAULT_TIMEOUT_SECS));
+
+        let max_output_tokens = env::var("OPENAI_MAX_OUTPUT_TOKENS")
+            .ok()
+            .and_then(|value| value.parse::<u16>().ok())
+            .filter(|value| *value > 0)
+            .unwrap_or(DEFAULT_MAX_OUTPUT_TOKENS);
+
+        let temperature = env::var("OPENAI_TEMPERATURE")
+            .ok()
+            .and_then(|value| value.parse::<f32>().ok())
+            .filter(|value| *value >= 0.0)
+            .unwrap_or(DEFAULT_TEMPERATURE);
+
+        Ok(Self {
+            api_key,
+            base_url,
+            model,
+            max_output_tokens,
+            temperature,
+            timeout,
+        })
+    }
+
+    fn chat_url(&self) -> String {
+        format!(
+            "{}{}",
+            self.base_url.trim_end_matches('/'),
+            DEFAULT_CHAT_PATH
+        )
+    }
+}
+
+#[derive(Debug)]
+enum OpenAiConfigError {
+    MissingApiKey,
+    ClientBuild(String),
+}
+
+impl fmt::Display for OpenAiConfigError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MissingApiKey => write!(f, "missing OPENAI_API_KEY"),
+            Self::ClientBuild(message) => write!(f, "client build failure: {}", message),
+        }
+    }
+}
+
+impl std::error::Error for OpenAiConfigError {}
+
+/// Primary OpenAI dialogue broker.
+pub struct OpenAiDialogueBroker {
+    mode: BrokerMode,
+}
+
+enum BrokerMode {
+    Live(OpenAiLiveClient),
+    Fallback,
+}
 
 impl OpenAiDialogueBroker {
     pub fn new() -> Self {
-        Self
+        match OpenAiConfig::from_env() {
+            Ok(config) => match OpenAiLiveClient::new(config) {
+                Ok(client) => Self {
+                    mode: BrokerMode::Live(client),
+                },
+                Err(err) => {
+                    warn!(
+                        "OpenAI broker running in fallback mode ({}). Check HTTP client configuration.",
+                        err
+                    );
+                    Self {
+                        mode: BrokerMode::Fallback,
+                    }
+                }
+            },
+            Err(OpenAiConfigError::MissingApiKey) => {
+                warn!("OPENAI_API_KEY not set; dialogue broker using local fallback responses.");
+                Self {
+                    mode: BrokerMode::Fallback,
+                }
+            }
+            Err(OpenAiConfigError::ClientBuild(message)) => {
+                warn!(
+                    "Failed to construct OpenAI HTTP client ({}). Falling back to local responses.",
+                    message
+                );
+                Self {
+                    mode: BrokerMode::Fallback,
+                }
+            }
+        }
+    }
+
+    fn validate(&self, request: &DialogueRequest) -> Result<(), DialogueErrorKind> {
+        if request.prompt.trim().is_empty() {
+            return Err(DialogueErrorKind::provider_failure(EMPTY_PROMPT_ERROR));
+        }
+
+        if request.prompt.eq_ignore_ascii_case(MANUAL_RETRY_PROMPT) {
+            return Err(DialogueErrorKind::rate_limited(
+                MANUAL_RETRY_BACKOFF_SECONDS,
+            ));
+        }
+
+        match request.topic_hint {
+            DialogueTopicHint::Trade => {
+                if request.context.summary.is_none() {
+                    return Err(DialogueErrorKind::context_missing(
+                        DialogueContextSource::InventoryState,
+                    ));
+                }
+
+                if !request
+                    .context
+                    .events
+                    .iter()
+                    .any(|event| matches!(event, DialogueContextEvent::Trade(_)))
+                {
+                    return Err(DialogueErrorKind::context_missing(
+                        DialogueContextSource::TradeHistory,
+                    ));
+                }
+            }
+            DialogueTopicHint::Schedule => {
+                if !request
+                    .context
+                    .events
+                    .iter()
+                    .any(|event| matches!(event, DialogueContextEvent::ScheduleUpdate { .. }))
+                {
+                    return Err(DialogueErrorKind::context_missing(
+                        DialogueContextSource::ScheduleState,
+                    ));
+                }
+            }
+            DialogueTopicHint::Status => {}
+        }
+
+        Ok(())
+    }
+
+    fn fabricate_response(
+        &self,
+        request_id: DialogueRequestId,
+        request: &DialogueRequest,
+    ) -> DialogueResponse {
+        let content = compose_context_segments(request);
+        DialogueResponse::new(
+            request_id,
+            self.provider_kind(),
+            request.speaker,
+            request.target,
+            content,
+        )
     }
 }
 
@@ -62,117 +265,342 @@ impl DialogueBroker for OpenAiDialogueBroker {
         request_id: DialogueRequestId,
         request: &DialogueRequest,
     ) -> Result<DialogueResponse, DialogueError> {
-        if request.prompt.trim().is_empty() {
-            return Err(DialogueError::new(
-                request_id,
-                self.provider_kind(),
-                DialogueErrorKind::provider_failure(EMPTY_PROMPT_ERROR),
-            ));
+        if let Err(kind) = self.validate(request) {
+            return Err(DialogueError::new(request_id, self.provider_kind(), kind));
         }
 
-        if request.prompt.eq_ignore_ascii_case(MANUAL_RETRY_PROMPT) {
-            return Err(DialogueError::new(
-                request_id,
-                self.provider_kind(),
-                DialogueErrorKind::rate_limited(MANUAL_RETRY_BACKOFF_SECONDS),
-            ));
+        match &self.mode {
+            BrokerMode::Live(client) => match client.send(request_id, request) {
+                Ok(response) => Ok(response),
+                Err(kind) => Err(DialogueError::new(request_id, self.provider_kind(), kind)),
+            },
+            BrokerMode::Fallback => Ok(self.fabricate_response(request_id, request)),
+        }
+    }
+}
+
+struct OpenAiLiveClient {
+    http: Client,
+    config: OpenAiConfig,
+}
+
+impl OpenAiLiveClient {
+    fn new(config: OpenAiConfig) -> Result<Self, OpenAiConfigError> {
+        let http = Client::builder()
+            .timeout(config.timeout)
+            .build()
+            .map_err(|err| OpenAiConfigError::ClientBuild(err.to_string()))?;
+
+        Ok(Self { http, config })
+    }
+
+    fn send(
+        &self,
+        request_id: DialogueRequestId,
+        request: &DialogueRequest,
+    ) -> Result<DialogueResponse, DialogueErrorKind> {
+        let payload = ChatCompletionRequest {
+            model: self.config.model.as_str(),
+            messages: build_messages(request),
+            max_tokens: Some(self.config.max_output_tokens.into()),
+            temperature: self.config.temperature,
+        };
+
+        let url = self.config.chat_url();
+        let response = self
+            .http
+            .post(url)
+            .bearer_auth(&self.config.api_key)
+            .json(&payload)
+            .send()
+            .map_err(|err| DialogueErrorKind::provider_failure(err.to_string()))?;
+
+        let status = response.status();
+        let headers = response.headers().clone();
+
+        if status == StatusCode::TOO_MANY_REQUESTS {
+            let retry_after = parse_retry_after(&headers).unwrap_or(DEFAULT_RATE_LIMIT_BACKOFF);
+            return Err(DialogueErrorKind::rate_limited(retry_after));
         }
 
-        match request.topic_hint {
-            DialogueTopicHint::Trade => {
-                if request.context.summary.is_none() {
-                    return Err(DialogueError::new(
-                        request_id,
-                        self.provider_kind(),
-                        DialogueErrorKind::context_missing(DialogueContextSource::InventoryState),
-                    ));
-                }
-
-                if !request
-                    .context
-                    .events
-                    .iter()
-                    .any(|event| matches!(event, DialogueContextEvent::Trade(_)))
-                {
-                    return Err(DialogueError::new(
-                        request_id,
-                        self.provider_kind(),
-                        DialogueErrorKind::context_missing(DialogueContextSource::TradeHistory),
-                    ));
-                }
+        if !status.is_success() {
+            if let Ok(body) = response.json::<OpenAiErrorResponse>() {
+                let message = format!(
+                    "{} (type: {}, code: {:?})",
+                    body.error.message, body.error.error_type, body.error.code
+                );
+                return Err(DialogueErrorKind::provider_failure(message));
             }
-            DialogueTopicHint::Schedule => {
-                if !request
-                    .context
-                    .events
-                    .iter()
-                    .any(|event| matches!(event, DialogueContextEvent::ScheduleUpdate { .. }))
-                {
-                    return Err(DialogueError::new(
-                        request_id,
-                        self.provider_kind(),
-                        DialogueErrorKind::context_missing(DialogueContextSource::ScheduleState),
-                    ));
-                }
-            }
-            DialogueTopicHint::Status => {}
+
+            return Err(DialogueErrorKind::provider_failure(format!(
+                "HTTP {} from OpenAI",
+                status
+            )));
         }
 
-        let mut segments = Vec::new();
-        segments.push(request.prompt.trim().to_string());
+        let completion: ChatCompletionResponse = response
+            .json()
+            .map_err(|err| DialogueErrorKind::provider_failure(err.to_string()))?;
 
-        if let Some(summary) = &request.context.summary {
-            if !summary.trim().is_empty() {
-                segments.push(format!("{} {}", SUMMARY_PREFIX, summary.trim()));
-            }
-        }
+        let content = completion
+            .choices
+            .into_iter()
+            .find_map(|choice| choice.message.content)
+            .map(|text| text.trim().to_string())
+            .filter(|text| !text.is_empty())
+            .ok_or_else(|| {
+                DialogueErrorKind::provider_failure(
+                    "OpenAI returned an empty completion for dialogue request",
+                )
+            })?;
 
-        let target_label = request
-            .target
-            .map(|id| id.to_string())
-            .unwrap_or_else(|| FALLBACK_TARGET_LABEL.to_string());
-        segments.push(format!("Target: {}", target_label));
-
-        for event in &request.context.events {
-            match event {
-                DialogueContextEvent::Trade(trade) => {
-                    let quantity = trade.descriptor.quantity;
-                    let label = &trade.descriptor.label;
-                    let action = match trade.reason {
-                        TradeContextReason::Production => "produced",
-                        TradeContextReason::Processing => "processed",
-                        TradeContextReason::Exchange => "exchanged",
-                    };
-                    let mut detail = format!(
-                        "On day {} they {} {} {}",
-                        trade.day, action, quantity, label
-                    );
-                    if let Some(target) = trade.to {
-                        detail.push_str(&format!(" with {}", target));
-                    }
-                    if let Some(source) = trade.from {
-                        detail.push_str(&format!(" after receiving it from {}", source));
-                    }
-                    detail.push('.');
-                    segments.push(detail);
-                }
-                DialogueContextEvent::ScheduleUpdate { description } => {
-                    segments.push(format!("{} {}.", SCHEDULE_NOTE_PREFIX, description));
-                }
-            }
-        }
-
-        if segments.is_empty() {
-            segments.push(CONTEXT_FALLBACK_MESSAGE.to_string());
-        }
-
-        let content = segments.join(" ");
         Ok(DialogueResponse::new(
             request_id,
-            self.provider_kind(),
+            DialogueProviderKind::OpenAi,
             request.speaker,
             request.target,
             content,
         ))
+    }
+}
+
+fn parse_retry_after(headers: &HeaderMap) -> Option<f32> {
+    headers.get(RETRY_AFTER).and_then(|value| {
+        value
+            .to_str()
+            .ok()
+            .and_then(|text| text.parse::<f32>().ok())
+    })
+}
+
+fn build_messages(request: &DialogueRequest) -> Vec<ChatMessage> {
+    let mut messages = Vec::new();
+    messages.push(ChatMessage {
+        role: "system",
+        content: SYSTEM_PROMPT.to_string(),
+    });
+
+    messages.push(ChatMessage {
+        role: "user",
+        content: build_user_message(request),
+    });
+
+    messages
+}
+
+const SYSTEM_PROMPT: &str = "You are a medieval villager in a life-simulation game. Respond briefly (1-3 sentences), stay in character, and reference only the supplied context. If information is missing, acknowledge the gap.";
+
+fn build_user_message(request: &DialogueRequest) -> String {
+    let mut sections = Vec::new();
+    sections.push(format!("Speaker: {}", request.speaker));
+    let target = request
+        .target
+        .map(|id| id.to_string())
+        .unwrap_or_else(|| FALLBACK_TARGET_LABEL.to_string());
+    sections.push(format!("Target: {}", target));
+    sections.push(format!("Topic: {}", topic_label(request.topic_hint)));
+    sections.push(format!("Prompt: {}", request.prompt.trim()));
+
+    if let Some(summary) = &request.context.summary {
+        if !summary.trim().is_empty() {
+            sections.push(format!("Context summary: {}", summary.trim()));
+        }
+    }
+
+    for event in &request.context.events {
+        match event {
+            DialogueContextEvent::Trade(trade) => {
+                let action = match trade.reason {
+                    TradeContextReason::Production => "produced",
+                    TradeContextReason::Processing => "processed",
+                    TradeContextReason::Exchange => "exchanged",
+                };
+                let mut detail = format!(
+                    "Trade event: Day {} {} {} {}",
+                    trade.day, action, trade.descriptor.quantity, trade.descriptor.label
+                );
+                if let Some(from) = trade.from {
+                    detail.push_str(&format!(" (from {})", from));
+                }
+                if let Some(to) = trade.to {
+                    detail.push_str(&format!(" (to {})", to));
+                }
+                sections.push(detail);
+            }
+            DialogueContextEvent::ScheduleUpdate { description } => {
+                if !description.trim().is_empty() {
+                    sections.push(format!("Schedule update: {}", description.trim()));
+                }
+            }
+        }
+    }
+
+    if sections.len() == 4 {
+        sections.push(CONTEXT_FALLBACK_MESSAGE.to_string());
+    }
+
+    sections.push("Respond as the speaker, addressing the target naturally.".to_string());
+    sections.join("\n")
+}
+
+fn compose_context_segments(request: &DialogueRequest) -> String {
+    let mut segments = Vec::new();
+    segments.push(request.prompt.trim().to_string());
+
+    if let Some(summary) = &request.context.summary {
+        if !summary.trim().is_empty() {
+            segments.push(format!("{} {}", SUMMARY_PREFIX, summary.trim()));
+        }
+    }
+
+    let target_label = request
+        .target
+        .map(|id| id.to_string())
+        .unwrap_or_else(|| FALLBACK_TARGET_LABEL.to_string());
+    segments.push(format!("Target: {}", target_label));
+
+    for event in &request.context.events {
+        match event {
+            DialogueContextEvent::Trade(trade) => {
+                let quantity = trade.descriptor.quantity;
+                let label = &trade.descriptor.label;
+                let action = match trade.reason {
+                    TradeContextReason::Production => "produced",
+                    TradeContextReason::Processing => "processed",
+                    TradeContextReason::Exchange => "exchanged",
+                };
+                let mut detail = format!(
+                    "On day {} they {} {} {}",
+                    trade.day, action, quantity, label
+                );
+                if let Some(target) = trade.to {
+                    detail.push_str(&format!(" with {}", target));
+                }
+                if let Some(source) = trade.from {
+                    detail.push_str(&format!(" after receiving it from {}", source));
+                }
+                detail.push('.');
+                segments.push(detail);
+            }
+            DialogueContextEvent::ScheduleUpdate { description } => {
+                segments.push(format!("{} {}.", SCHEDULE_NOTE_PREFIX, description));
+            }
+        }
+    }
+
+    if segments.is_empty() {
+        segments.push(CONTEXT_FALLBACK_MESSAGE.to_string());
+    }
+
+    segments.join(" ")
+}
+
+fn topic_label(topic: DialogueTopicHint) -> &'static str {
+    match topic {
+        DialogueTopicHint::Status => "status",
+        DialogueTopicHint::Trade => "trade",
+        DialogueTopicHint::Schedule => "schedule",
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct ChatCompletionRequest<'a> {
+    model: &'a str,
+    messages: Vec<ChatMessage>,
+    #[serde(rename = "max_tokens")]
+    max_tokens: Option<u32>,
+    temperature: f32,
+}
+
+#[derive(Debug, Serialize)]
+struct ChatMessage {
+    role: &'static str,
+    content: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ChatCompletionResponse {
+    choices: Vec<ChatChoice>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ChatChoice {
+    message: ChatChoiceMessage,
+}
+
+#[derive(Debug, Deserialize)]
+struct ChatChoiceMessage {
+    content: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OpenAiErrorResponse {
+    error: OpenAiErrorDetail,
+}
+
+#[derive(Debug, Deserialize)]
+struct OpenAiErrorDetail {
+    message: String,
+    #[serde(rename = "type")]
+    error_type: String,
+    code: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::npc::components::NpcId;
+
+    #[test]
+    fn fallback_response_includes_context() {
+        let broker = OpenAiDialogueBroker {
+            mode: BrokerMode::Fallback,
+        };
+
+        let trade_context = DialogueContextEvent::Trade(super::super::types::TradeContext {
+            day: 3,
+            from: Some(NpcId::new(1)),
+            to: Some(NpcId::new(2)),
+            descriptor: super::super::types::TradeDescriptor::new("grain crate", 2),
+            reason: TradeContextReason::Exchange,
+        });
+
+        let request = DialogueRequest::new(
+            NpcId::new(1),
+            Some(NpcId::new(2)),
+            "Discuss the latest trade",
+            DialogueTopicHint::Trade,
+            super::super::types::DialogueContext {
+                summary: Some("Short summary".to_string()),
+                events: vec![trade_context],
+            },
+        );
+
+        let response = broker
+            .process(DialogueRequestId::new(7), &request)
+            .expect("fallback should succeed");
+        assert!(response.content.contains("Summary"));
+        assert!(response.content.contains("grain crate"));
+        assert_eq!(response.provider, DialogueProviderKind::OpenAi);
+    }
+
+    #[test]
+    fn manual_retry_prompt_triggers_backoff() {
+        let broker = OpenAiDialogueBroker {
+            mode: BrokerMode::Fallback,
+        };
+
+        let request = DialogueRequest::new(
+            NpcId::new(1),
+            None,
+            MANUAL_RETRY_PROMPT,
+            DialogueTopicHint::Status,
+            super::super::types::DialogueContext::default(),
+        );
+
+        let error = broker
+            .process(DialogueRequestId::new(1), &request)
+            .expect_err("retry prompt should error");
+        assert!(matches!(error.kind, DialogueErrorKind::RateLimited { .. }));
     }
 }

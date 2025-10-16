@@ -11,6 +11,8 @@ core_debug = []
 bevy = "0.17"
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
+reqwest = { version = "0.12", features = ["blocking", "json"] }
+serde_json = "1.0"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
