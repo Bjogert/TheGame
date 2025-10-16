@@ -105,7 +105,32 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 
 ---
 
-## 5) Tooling & Automation
+## 5) MCP Server Tools
+AI assistants working on this project have access to configured Model Context Protocol servers:
+
+### 5.1 Available MCP Servers
+- **filesystem** - Navigate and modify project files efficiently
+  - Command: `npx @modelcontextprotocol/server-filesystem c:\Users\robert\TheGame`
+  - Use for: Reading code, editing files, understanding project structure
+- **memory** - Persistent knowledge graph for NPC relationships and world state
+  - Command: `npx @modelcontextprotocol/server-memory`
+  - Use for: Storing NPC knowledge, tracking relationships, world events
+  - Schema: Entities (NPCs, settlements, events), Relations (connections), Observations (facts)
+- **serena** - Enhanced conversational AI assistance and task coordination
+  - Use for: Intelligent task planning, context-aware assistance, workflow optimization
+  - Integration: Complements other MCP servers with advanced reasoning capabilities
+
+### 5.2 Usage Guidelines
+- **File Operations:** Use filesystem server for all code reading/writing instead of manual file operations
+- **NPC Memory Design:** Plan knowledge graph schema for NPCs, settlements, relationships, and historical events
+- **Integration Points:** 
+  - DialogueBroker should query memory server for NPC context
+  - Save/load systems should sync with memory server
+  - World events should create memory entities and relations
+
+---
+
+## 6) Tooling & Automation
 - Use VS Code tasks from `.vscode/tasks.json` for routine commands (Run, Check, Clippy, Fmt, Test, Doc, Watch).
 - Before merging, run `cargo fmt`, `cargo clippy -D warnings`, and `cargo check --all-targets` at minimum.
 - For live-edit loops, prefer `cargo watch -x "check --all-targets"` or `-x run` (install `cargo-watch`).
@@ -113,7 +138,7 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 
 ---
 
-## 6) Trusted References
+## 7) Trusted References
 - Bevy Book and example repository matching the tracked minor version.
 - Official Bevy migration guides (e.g., 0.16 -> 0.17) once available.
 - `bevy_rapier` docs for physics, `bevy_ecs` deep dives for ECS patterns, `leafwing_input_manager` or similar when input abstractions are needed.

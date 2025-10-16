@@ -17,6 +17,70 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Feature-gated debug instrumentation with zero runtime cost
 - No circular dependencies detected
 
+## MCP Server Tools
+
+This project has Model Context Protocol (MCP) servers configured to enhance AI assistant capabilities. These tools provide persistent memory, file system access, and other utilities for development work.
+
+### Available MCP Servers
+
+**Filesystem Server (`@modelcontextprotocol/server-filesystem`)**
+- **Purpose:** Read, write, create, and list files and directories
+- **Scope:** Full access to project directory (`c:\Users\robert\TheGame`)
+- **Use Cases:** Code analysis, file modifications, project structure exploration
+- **Key Operations:** `read_file`, `write_file`, `create_directory`, `list_directory`, `move_file`, `search_files`
+- **Compatibility:** ✅ Claude Code (MCP-compatible)  ❌ GitHub Copilot (no MCP support)
+
+**Memory Server (`@modelcontextprotocol/server-memory`)**
+- **Purpose:** Persistent storage of information across conversation sessions
+- **Use Cases:** Remember project decisions, track todo items, store research findings
+- **Key Operations:** `add_memory`, `search_memories`, `list_memories`, `delete_memory`
+- **Persistence:** Data survives between sessions for continuity
+- **Compatibility:** ✅ Claude Code (MCP-compatible)  ❌ GitHub Copilot (no MCP support)
+
+**Serena MCP Server**
+- **Purpose:** Enhanced conversational AI assistance and intelligent task coordination
+- **Use Cases:** Advanced reasoning, workflow optimization, context-aware assistance
+- **Key Operations:** Intelligent task planning, reasoning support, enhanced dialogue capabilities
+- **Integration:** Works alongside other MCP servers to provide sophisticated AI assistance
+- **Compatibility:** ✅ Claude Code (MCP-compatible)  ❌ GitHub Copilot (no MCP support)
+
+### MCP Usage Guidelines
+
+**When to Use Filesystem Server:**
+- Reading configuration files (`config/time.toml`, `Cargo.toml`)
+- Analyzing code structure and dependencies
+- Making targeted edits to source files
+- Creating new modules or documentation files
+- Searching for specific patterns across the codebase
+
+**When to Use Memory Server:**
+- Storing architectural decisions for future reference
+- Remembering user preferences and project patterns
+- Tracking long-term development goals and milestones
+- Maintaining context between coding sessions
+- Documenting lessons learned from debugging sessions
+
+**Best Practices:**
+- Use filesystem server for immediate project work and analysis
+- Use memory server to maintain continuity and avoid repeating research
+- Store important project insights in memory for future AI assistants
+- Document significant decisions in both memory and project files
+- Use specific, searchable keys when storing memories
+
+**MCP Compatibility Note:**
+MCP is an open protocol, but tool support varies:
+- **Claude interfaces:** ✅ Full MCP support (Claude Code, Claude.ai web, API clients)
+- **GitHub Copilot/Codex:** ❌ No MCP support (uses different architecture)
+- **Future AI tools:** ✅ Any tool implementing MCP protocol can access these servers
+
+### Integration with Development Workflow
+
+The MCP servers complement the existing VS Code tasks and Rust toolchain:
+- **File Operations:** Use MCP filesystem tools for analysis, VS Code tasks for builds/tests
+- **Project Memory:** Store development context in MCP memory, technical details in project docs
+- **Code Quality:** MCP can help maintain consistency with project patterns documented in memory
+- **Documentation:** Update both project files and MCP memories when making architectural changes
+
 ## Common Commands
 
 ### Development Workflow
