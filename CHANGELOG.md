@@ -73,3 +73,14 @@ All notable changes to this project will be documented in this file.
 - Expanded planning docs (README, TASK.md, BigPicturePlan.md, docs/plan_overview.md, docs/tech_notes.md) to cover the upcoming profession/resource dependency matrix and dopamine-driven motivation system.
 - Added S1.7 to the task queue, documenting dopamine decay/gain rules, mood thresholds, and alcohol trade-offs that will influence product quality.
 - Updated economy blueprint goals and .agent memory with the dependency matrix requirement so economy configs remain the single source of truth.
+
+## 2025-10-15 - S1.7: NPC Motivation & Wellbeing Spike
+- Added `config/motivation.toml` and a `MotivationConfig` resource that loads dopamine caps, decay, gains, thresholds, and alcohol behaviour at startup.
+- Introduced `NpcMotivation` components with mood tracking, intoxication/hangover handling, and daily dependency evaluation tied to the new economy dependency matrix.
+- Emitted `NpcActivityChangedEvent` signals, rewarding leisure/social moments, marking food satisfaction, and linking trade/dialogue events to motivation rewards.
+- Extended the economy module with a placeholder dependency matrix and daily snapshots so wellbeing penalties/rewards reflect tool and food access.
+
+## 2025-10-16 - S1.8: Dialogue Telemetry Persistence
+- Added a `DialogueTelemetryLog` resource that writes dialogue responses and failures to `logs/dialogue_history.jsonl` for offline inspection.
+- Extended `DialoguePlugin` to initialise the telemetry log and flush it after queue processing so persisted history stays in sync with in-memory records.
+- Updated documentation and planning artifacts to describe the new log output and remove the telemetry persistence item from the active backlog.

@@ -22,16 +22,15 @@ We are building a medieval life simulation anchored on a deterministic ECS core,
 - **S1.4 – Micro trade loop spike:** Farmer → Miller → Blacksmith loop runs daily, emitting trade events that feed dialogue prompts.
 - **S1.5 – Economy foundation blueprint:** Long-form economy design (resources, work orders, event taxonomy) captured for future implementation.
 - **S1.6 – NPC locomotion & profession crates:** Profession crates spawned, locomotion systems move NPCs to crates, and movement telemetry is logged.
+- **S1.7 – NPC motivation & wellbeing spike:** Dopamine meters, mood thresholds, alcohol boosts/hangovers, and dependency-driven rewards now influence villager wellbeing via the new motivation systems.
 
 ## Current Position
-All S1 tasks through locomotion are complete. The dialogue broker stub still stands in for a real OpenAI client, and the newly captured locomotion telemetry has not yet surfaced in UI. These are the immediate integration targets before the roadmap advances.
+All S1 tasks through the motivation spike are complete. Dialogue telemetry now persists to `logs/dialogue_history.jsonl`, the dialogue broker stub still stands in for a real OpenAI client, locomotion telemetry has not yet surfaced in UI, and the dependency matrix remains a placeholder awaiting Step 7's data-driven configs.
 
 ## Upcoming Work (Near-Term)
 1. **Dialogue broker integration:** Replace the local dialogue stub with the production OpenAI client, including configuration, authentication, and error handling.
-2. **Telemetry persistence:** Store dialogue request/response metadata so that future UI panels can visualize conversations and movement summaries.
-3. **UI status surfacing:** Feed locomotion and trade telemetry into HUD elements or debug overlays, making villager activity legible in real time.
-4. **Resource dependency matrix:** Document the farmer → miller → blacksmith exchange (and future professions) in a tunable matrix that lists required inputs, produced goods, upkeep hardware, and shared needs. Keep it close to the economy configs so balancing remains readable as the cast grows.
-5. **Motivation model spike:** Prototype a lightweight dopamine-inspired reward resource that increments on task completion or social exchanges, decays over time, and exposes hooks for mood-driven behavior adjustments.
+2. **UI status surfacing:** Feed locomotion, motivation, and trade telemetry into HUD elements or debug overlays, making villager activity legible in real time.
+3. **Resource dependency matrix:** Promote the placeholder matrix into Step 7's config-driven tables so economy balancing and wellbeing hooks share a single source of truth.
 
 ## Roadmap Outlook (Mid to Long Term)
 - **M2 – Persistence Layer:** Introduce SQLite-backed save/load, with migrations and world snapshotting so sessions can resume reliably.
@@ -45,10 +44,10 @@ All S1 tasks through locomotion are complete. The dialogue broker stub still sta
 - **M10 – Multiplayer Prototype:** Explore headless server ticks, client synchronization, and rollback strategies.
 
 ## NPC Motivation & Wellbeing Direction
-- **Reward resource design:** Represent dopamine as a bounded scalar stored per NPC, with configurable gain sources (task completion, social interaction, leisure) and decay curves. Keep the initial spike experimental so it can be tuned or replaced as psychological modeling improves.
-- **Quality vs. self-medication trade-off:** Allow stimulants like alcohol to temporarily raise dopamine at the cost of output quality penalties and a post-effect crash, enabling narratives around coping strategies.
-- **Mood states:** Map dopamine thresholds to mood descriptors (content, fatigued, depressed) that influence behavior scheduling, dialogue tone, and productivity, while ensuring fail-safes prevent colony death spirals.
-- **Extensibility:** Frame the system so additional neurotransmitters or alternative motivation models (e.g., morale, stress) can plug in later without rewriting NPC scheduling.
+- **Reward resource design:** Dopamine is now a bounded scalar stored per NPC, with configurable gains from tasks, social exchanges, leisure, and daily dependency satisfaction. Future work can extend the config with profession-specific modifiers.
+- **Quality vs. self-medication trade-off:** Alcohol already provides a temporary boost followed by a configurable hangover crash and diminished work rewards. Explore additional coping tools (e.g., festivals, comfort food) once more goods exist.
+- **Mood states:** Mood descriptors (energised, content, tired, depressed) already influence logging and telemetry; upcoming schedule work should let moods modulate behaviour, dialogue tone, and productivity modifiers.
+- **Extensibility:** The motivation module is data-driven via TOML. Additional neurotransmitters or alternative wellbeing models can extend the config/resource without rewriting NPC scheduling.
 
 ## Monitoring & Documentation Expectations
 Every behavior change must refresh the CHANGELOG, relevant READMEs, tech notes, and the planning artifacts in `.agent/`. Risks, assumptions, and discoveries should be recorded promptly in `ai_memory.V.N.yaml` to keep this big picture accurate.

@@ -15,7 +15,8 @@ use crate::{
 
 use super::{
     components::{Inventory, Profession, ProfessionCrate, TradeGood},
-    events::{TradeCompletedEvent, TradeReason},
+    dependency::EconomyDependencyMatrix,
+    events::{ProfessionDependencyUpdateEvent, TradeCompletedEvent, TradeReason},
     resources::{MicroTradeLoopState, ProfessionCrateRegistry},
 };
 
@@ -129,8 +130,10 @@ pub fn process_micro_trade_loop(
     mut locomotion_query: Query<(&GlobalTransform, &mut NpcLocomotion)>,
     crate_transforms: Query<&GlobalTransform, With<ProfessionCrate>>,
     registry: Res<ProfessionCrateRegistry>,
+    dependency_matrix: Res<EconomyDependencyMatrix>,
     mut inventories: Query<&mut Inventory>,
     mut trade_writer: MessageWriter<TradeCompletedEvent>,
+    mut dependency_writer: MessageWriter<ProfessionDependencyUpdateEvent>,
     mut dialogue_queue: ResMut<DialogueRequestQueue>,
 ) {
     let day = world_clock.day_count();
@@ -339,12 +342,60 @@ pub fn process_micro_trade_loop(
     } else {
         warn!("{} missing tool crate for delivery", smith_name);
     }
+
+    emit_dependency_updates(
+        day,
+        &dependency_matrix,
+        &mut dependency_writer,
+        [
+            (farmer_id, Profession::Farmer, &*farmer_inv),
+            (miller_id, Profession::Miller, &*miller_inv),
+            (smith_id, Profession::Blacksmith, &*smith_inv),
+        ],
+    );
 }
 
 struct WorkerAssignment {
     entity: Entity,
     profession: Profession,
     display_name: String,
+}
+
+fn emit_dependency_updates(
+    day: u64,
+    matrix: &EconomyDependencyMatrix,
+    writer: &mut MessageWriter<ProfessionDependencyUpdateEvent>,
+    snapshots: [(NpcId, Profession, &Inventory); 3],
+) {
+    for (npc_id, profession, inventory) in snapshots {
+        let mut satisfied = Vec::new();
+        let mut missing = Vec::new();
+        for category in matrix.requirements(profession) {
+            let category_met = [TradeGood::Grain, TradeGood::Flour, TradeGood::Tools]
+                .into_iter()
+                .any(|good| {
+                    matrix
+                        .categories_for_good(good)
+                        .iter()
+                        .any(|candidate| candidate == category)
+                        && inventory.quantity_of(good) > 0
+                });
+
+            if category_met {
+                satisfied.push(*category);
+            } else {
+                missing.push(*category);
+            }
+        }
+
+        writer.write(ProfessionDependencyUpdateEvent {
+            day,
+            npc: npc_id,
+            profession,
+            satisfied_categories: satisfied,
+            missing_categories: missing,
+        });
+    }
 }
 
 fn ensure_profession_workers_ready(

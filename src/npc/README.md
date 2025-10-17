@@ -4,8 +4,9 @@ Provides the scaffolding for non-player characters (NPCs). The current focus is 
 
 ## Contents
 - `components.rs` - defines `NpcId`, `Identity`, scheduling data, the `NpcIdGenerator` resource, and the `NpcLocomotion` component used by movement systems.
+- `motivation.rs` - loads `config/motivation.toml`, exposes `NpcMotivation`, and houses systems that reward/penalise dopamine from trades, dialogue, and leisure.
 - `plugin.rs` - wires the module into the Bevy app and spawns debug NPCs after the world environment loads.
-- `systems.rs` - holds `spawn_debug_npcs`, schedule ticking, and the `drive_npc_locomotion` system.
+- `systems.rs` - holds `spawn_debug_npcs`, schedule ticking (now emitting `NpcActivityChangedEvent`), and the `drive_npc_locomotion` system.
 
 ## Usage
 - Register the plugin after `WorldPlugin`:
@@ -22,6 +23,7 @@ Provides the scaffolding for non-player characters (NPCs). The current focus is 
 - Debug NPCs use capsule meshes, start at pre-defined positions on the ground plane, and log activity changes approximately every five seconds of simulation time.
 - `NpcLocomotion` steers villagers toward destinations provided by other systems (currently profession crates), moving only along the XZ plane while respecting the scaled simulation delta.
 - `Identity` carries a unique `NpcId`, display name, and placeholder age. Extend this struct as more simulation data becomes available.
+- `NpcMotivation` tracks dopamine, mood, and intoxication state. The motivation systems reward productive work, social chatter, and leisure while penalising unmet dependency categories reported by the economy module.
 
 ## Follow-ups
 - Replace debug meshes with animated GLTF assets when art is ready.
