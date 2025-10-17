@@ -22,5 +22,5 @@ We will consider this phase complete once a small cast of villagers can go throu
 - Step 5 (dialogue broker prototype) is implemented with a queued broker and rate limiting.
 - Step 6 (micro trade loop checkpoint) remains stable: the farmer, miller, and blacksmith trade crates each day and broadcast events to dialogue.
 - Step 7 (economy foundations) now has a published blueprint in `docs/economy_blueprint.md`, detailing config-driven professions, work orders, expanded events, and the upcoming resource dependency matrix.
-- Step 8 (motivation spike) landed: dopamine meters, mood thresholds, alcohol boosts/hangovers, and dependency-driven rewards now drive villager wellbeing.
+- Step 8 (motivation spike) landed: dopamine meters, mood thresholds, alcohol boosts/hangovers, and dependency-driven rewards now drive villager wellbeing after each in-game day rolls over.
 - Step 9 (dialogue telemetry persistence) landed: dialogue responses and failures now stream to `logs/dialogue_history.jsonl` for offline review alongside the in-memory telemetry buffer.

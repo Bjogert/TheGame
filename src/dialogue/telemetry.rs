@@ -129,9 +129,7 @@ impl DialogueTelemetryLog {
 
     fn ensure_directory(&self) -> std::io::Result<()> {
         if let Some(parent) = self.output_path.parent() {
-            if !parent.as_os_str().is_empty() {
-                create_dir_all(parent)?;
-            }
+            create_dir_all(parent)?;
         }
         Ok(())
     }

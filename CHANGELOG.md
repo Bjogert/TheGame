@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2025-10-17 - Fix: Motivation dependency evaluation
+- Leisure dopamine rewards no longer mark food dependencies as satisfied, keeping wellbeing data aligned with actual supplies.
+- Daily dependency snapshots now queue per-world-day, ensuring bonuses and penalties apply once the calendar advances.
+- Dependency matrix checks only credit categories when matching goods are present, and dialogue telemetry logging simplifies directory creation.
+
 ## 2025-10-08 - S0.1b: CorePlugin & SimulationClock
 - Added `CorePlugin` and `SimulationClock` resource under `src/core/`.
 - Registered `CorePlugin` in `main.rs`, ensuring simulation time scaling is centralised.

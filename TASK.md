@@ -162,7 +162,7 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 - [x] Add a per-NPC dopamine resource with configurable caps, baseline decay, and gains tied to completed tasks, social interactions, and leisure events.
 - [x] Map dopamine thresholds to mood states (content, tired, depressed) that influence schedule modifiers, dialogue tone, and production efficiency.
 - [x] Model alcohol as a temporary dopamine boost with intoxication penalties (reduced work rewards) and a hangover crash that dips below the starting point.
-- [x] Connect the motivation data to the economy dependency matrix so resource access (food, tools, housing) can influence long-term wellbeing.
+- [x] Connect the motivation data to the economy dependency matrix so resource access (food, tools, housing) can influence long-term wellbeing, evaluating snapshots after the day rolls over instead of relying on leisure to spoof needs.
 - [x] Update planning docs, tech notes, and telemetry plans to cover the new resource and its tuning knobs.
 - **Exit criteria:** Motivation metrics surface in telemetry/docs, mood thresholds and alcohol side effects are documented, and follow-up tasks for full integration are queued.
 

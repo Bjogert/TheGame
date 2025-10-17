@@ -25,8 +25,6 @@ use super::{
 pub fn reward_from_leisure(
     mut events: MessageReader<NpcActivityChangedEvent>,
     config: Res<MotivationConfig>,
-    clock: Res<WorldClock>,
-    mut tracker: ResMut<DailyDependencyTracker>,
     mut query: Query<(&Identity, &mut NpcMotivation)>,
 ) {
     #[derive(Default)]
@@ -67,7 +65,6 @@ pub fn reward_from_leisure(
                     "{} enjoys downtime and gains leisure dopamine",
                     identity.display_name
                 );
-                tracker.record(clock.day_count(), identity.id, DependencyCategory::Food);
             }
 
             if adjustment.alcohol {
@@ -141,6 +138,7 @@ pub fn track_dependency_satisfaction(
     mut tracker: ResMut<DailyDependencyTracker>,
 ) {
     for update in updates.read() {
+        tracker.prepare_day(update.day);
         for category in &update.satisfied_categories {
             tracker.record(update.day, update.npc, *category);
         }
@@ -169,12 +167,11 @@ pub fn evaluate_dependency_impacts(
     mut query: Query<(&Identity, &Profession, &mut NpcMotivation)>,
 ) {
     let current_day = clock.day_count();
-    if current_day == tracker.tracking_day() {
+    let Some(evaluated_day) = tracker.next_ready_day(current_day) else {
         return;
-    }
+    };
 
-    let evaluated_day = tracker.tracking_day();
-    let satisfied_map = tracker.take_satisfied();
+    let satisfied_map = tracker.take_satisfied_for_day(evaluated_day);
     for (identity, profession, mut motivation) in query.iter_mut() {
         let requirements = matrix.requirements(*profession);
         if requirements.is_empty() {
@@ -207,8 +204,6 @@ pub fn evaluate_dependency_impacts(
             );
         }
     }
-
-    tracker.reset_for_day(current_day);
 }
 
 pub fn decay_npc_motivation(

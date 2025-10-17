@@ -245,7 +245,7 @@ impl From<RawMotivationConfig> for MotivationConfig {
     fn from(value: RawMotivationConfig) -> Self {
         let defaults = MotivationDefaults {
             min: value.defaults.min.min(value.defaults.max),
-            max: value.defaults.max.max(value.defaults.min + f32::EPSILON),
+            max: value.defaults.max.max(value.defaults.min + 1.0),
             start: value
                 .defaults
                 .start

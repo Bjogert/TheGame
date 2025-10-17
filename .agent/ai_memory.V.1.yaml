@@ -133,9 +133,11 @@ short_term:
     decisions:
       - "MotivationConfig now loads from config/motivation.toml, providing clamped dopamine ranges, decay, gains, thresholds, and alcohol behaviour."
       - "NpcMotivation reacts to trade, dialogue, and leisure events; mood changes and hangover transitions are logged for observability."
-      - "EconomyDependencyMatrix snapshots feed DailyDependencyTracker so food/tool access applies daily bonuses or penalties alongside leisure-supplied nourishment."
+      - "EconomyDependencyMatrix snapshots feed DailyDependencyTracker so food/tool access applies daily bonuses or penalties once the next world day begins."
+      - "Leisure rewards stay dopamine-only; dependency satisfaction now depends entirely on profession goods instead of keyword matches."
     risks:
       - "Placeholder dependency matrix only covers food/tools; housing satisfaction will remain missing until Step 7 adds richer configs."
+      - "Dependency impacts now queue until the world day advances; stalled clocks would delay wellbeing adjustments."
       - "Alcohol boosts can stack if leisure keywords fire too frequently; tuning keywords or cooldowns may be necessary once more activities exist."
     experiments:
       - "Trialled reduced task rewards during intoxication/hangover to simulate quality penalties; keep adjusting multipliers as professions diversify."

@@ -50,9 +50,10 @@
 ## NPC Motivation & Wellbeing Spike (S1.7)
 - `config/motivation.toml` loads dopamine caps, decay, gains, mood thresholds, and alcohol behaviour at startup. Adjusting the file changes runtime tuning after a restart.
 - `NpcMotivation` tracks dopamine, mood state, intoxication timers, and hangovers. Baseline decay runs each tick; mood shifts are logged so designers can watch wellbeing trends.
-- Activity transitions emit `NpcActivityChangedEvent`. Leisure keywords (e.g., supper, tavern) award dopamine, mark food needs as satisfied, and optionally trigger alcohol boosts that later crash into hangovers.
+- Activity transitions emit `NpcActivityChangedEvent`. Leisure keywords (e.g., supper, tavern) award dopamine and can trigger alcohol boosts that later crash into hangovers, but they no longer spoof food dependency satisfaction.
 - Trade completions and dialogue responses feed rewards into motivation systems. While intoxicated or hungover, work rewards are reduced by the configured quality penalty.
-- `EconomyDependencyMatrix` and `ProfessionDependencyUpdateEvent` expose which wellbeing categories each profession satisfied. Missing tools/food apply penalties, while meeting all needs grants a daily bonus.
+- Daily dependency snapshots are evaluated once the world day advances, so bonuses and penalties reflect the previous day's access to tools, food, and other categories.
+- `EconomyDependencyMatrix` and `ProfessionDependencyUpdateEvent` expose which wellbeing categories each profession satisfied. Categories only count when matching goods exist in inventory; missing requirements apply penalties while complete coverage grants a daily bonus.
 
 ## Tooling - Docker Environment (2025-10-11)
 - Multi-stage Dockerfile provides `dev`, `build`, and `runtime` targets. Use `docker build --target runtime` for slim release images.

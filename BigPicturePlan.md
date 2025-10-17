@@ -22,7 +22,7 @@ We are building a medieval life simulation anchored on a deterministic ECS core,
 - **S1.4 – Micro trade loop spike:** Farmer → Miller → Blacksmith loop runs daily, emitting trade events that feed dialogue prompts.
 - **S1.5 – Economy foundation blueprint:** Long-form economy design (resources, work orders, event taxonomy) captured for future implementation.
 - **S1.6 – NPC locomotion & profession crates:** Profession crates spawned, locomotion systems move NPCs to crates, and movement telemetry is logged.
-- **S1.7 – NPC motivation & wellbeing spike:** Dopamine meters, mood thresholds, alcohol boosts/hangovers, and dependency-driven rewards now influence villager wellbeing via the new motivation systems.
+- **S1.7 – NPC motivation & wellbeing spike:** Dopamine meters, mood thresholds, alcohol boosts/hangovers, and dependency-driven rewards now influence villager wellbeing via the new motivation systems once each world day advances.
 
 ## Current Position
 All S1 tasks through the motivation spike are complete. Dialogue telemetry now persists to `logs/dialogue_history.jsonl`, the dialogue broker stub still stands in for a real OpenAI client, locomotion telemetry has not yet surfaced in UI, and the dependency matrix remains a placeholder awaiting Step 7's data-driven configs.

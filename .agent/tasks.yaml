@@ -240,8 +240,8 @@
     - "README.md"
     - ".agent/ai_memory.V.1.yaml"
   notes:
-    - "NpcMotivation component plus config-driven tuning rewards work, dialogue, and leisure while hooking into the economy dependency matrix."
-    - "Alcohol boosts feed into hangover penalties and reduced task rewards; daily dependency snapshots drive wellbeing bonuses or shortages."
+    - "NpcMotivation component plus config-driven tuning rewards work, dialogue, and leisure while hooking into the economy dependency matrix after the world day advances."
+    - "Alcohol boosts feed into hangover penalties and reduced task rewards; leisure no longer fakes food access and daily dependency snapshots only satisfy categories backed by matching goods."
 
 - id: S1.8
   title: "Dialogue telemetry persistence"

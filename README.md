@@ -51,7 +51,7 @@ An experimental Bevy-based project exploring long-form medieval life simulation 
 ## NPC Motivation & Wellbeing
 - Villager motivation now tracks a dopamine-style meter via `NpcMotivation`, rewarding productive tasks, dialogue responses, and leisure activities while decaying over time.
 - Alcohol triggers a configurable boost from `config/motivation.toml`, followed by a hangover crash that amplifies decay and reduces work rewards until the penalty clears.
-- Daily wellbeing is tied to the economy dependency matrix: receiving tools or enjoying supper marks needs as satisfied, while shortages apply penalties that visibly shift mood states.
+- Daily wellbeing is tied to the economy dependency matrix: matching goods delivered by professions mark needs as satisfied once the next day begins, while shortages apply penalties that visibly shift mood states.
 - Tune dopamine caps, gains, thresholds, and alcohol behaviour by editing `config/motivation.toml`; changes require a restart today.
 - **Milestone S1 (current focus):** NPC scaffolding, dialogue groundwork, locomotion, economy planning, and the newly landed motivation slice.
 - **Active queue:** Surface locomotion/trade telemetry in the UI and expand the profession dependency matrix for Step 7.

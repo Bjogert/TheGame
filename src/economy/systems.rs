@@ -371,15 +371,16 @@ fn emit_dependency_updates(
         let mut satisfied = Vec::new();
         let mut missing = Vec::new();
         for category in matrix.requirements(profession) {
-            let category_met = [TradeGood::Grain, TradeGood::Flour, TradeGood::Tools]
+            let goods_for_category = [TradeGood::Grain, TradeGood::Flour, TradeGood::Tools]
                 .into_iter()
-                .any(|good| {
+                .filter(|good| {
                     matrix
-                        .categories_for_good(good)
+                        .categories_for_good(*good)
                         .iter()
                         .any(|candidate| candidate == category)
-                        && inventory.quantity_of(good) > 0
                 });
+
+            let category_met = goods_for_category.any(|good| inventory.quantity_of(good) > 0);
 
             if category_met {
                 satisfied.push(*category);

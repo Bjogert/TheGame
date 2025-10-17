@@ -1,3 +1,5 @@
+use std::collections::{BTreeMap, HashMap};
+
 use bevy::prelude::*;
 
 use crate::economy::dependency::DependencyCategory;
@@ -139,33 +141,35 @@ fn determine_mood(level: f32, config: &MotivationConfig) -> NpcMood {
 
 #[derive(Resource, Debug, Default)]
 pub struct DailyDependencyTracker {
-    tracking_day: u64,
-    satisfied: std::collections::HashMap<NpcId, CategoryFlags>,
+    satisfied_by_day: BTreeMap<u64, HashMap<NpcId, CategoryFlags>>,
 }
 
 impl DailyDependencyTracker {
+    pub fn prepare_day(&mut self, day: u64) {
+        self.satisfied_by_day
+            .entry(day)
+            .or_insert_with(HashMap::new);
+    }
+
     pub fn record(&mut self, day: u64, npc: NpcId, category: DependencyCategory) {
-        if day != self.tracking_day {
-            self.tracking_day = day;
-            self.satisfied.clear();
+        self.prepare_day(day);
+        if let Some(entries) = self.satisfied_by_day.get_mut(&day) {
+            entries
+                .entry(npc)
+                .or_insert_with(CategoryFlags::default)
+                .insert(category);
         }
-        self.satisfied
-            .entry(npc)
-            .or_insert_with(CategoryFlags::default)
-            .insert(category);
     }
 
-    pub fn tracking_day(&self) -> u64 {
-        self.tracking_day
+    pub fn next_ready_day(&self, current_day: u64) -> Option<u64> {
+        self.satisfied_by_day
+            .keys()
+            .copied()
+            .find(|tracked_day| *tracked_day < current_day)
     }
 
-    pub fn take_satisfied(&mut self) -> std::collections::HashMap<NpcId, CategoryFlags> {
-        std::mem::take(&mut self.satisfied)
-    }
-
-    pub fn reset_for_day(&mut self, day: u64) {
-        self.tracking_day = day;
-        self.satisfied.clear();
+    pub fn take_satisfied_for_day(&mut self, day: u64) -> HashMap<NpcId, CategoryFlags> {
+        self.satisfied_by_day.remove(&day).unwrap_or_default()
     }
 }
 
@@ -214,9 +218,9 @@ mod tests {
         let mut tracker = DailyDependencyTracker::default();
         let npc = NpcId::new(1);
         tracker.record(0, npc, DependencyCategory::Food);
-        let satisfied = tracker.take_satisfied();
+        let day = tracker.next_ready_day(1).expect("day should be ready");
+        assert_eq!(day, 0);
+        let satisfied = tracker.take_satisfied_for_day(day);
         assert!(satisfied[&npc].contains(DependencyCategory::Food));
-        tracker.reset_for_day(1);
-        assert_eq!(tracker.tracking_day(), 1);
     }
 }
