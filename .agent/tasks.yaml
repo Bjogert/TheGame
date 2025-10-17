@@ -131,10 +131,6 @@
   notes:
     - "ScheduleTicker accumulates simulation time and drives tick_schedule_state."
 
-
-
-
-
 - id: S1.2
   title: "Dialogue scaffolding research"
   state: done
@@ -147,7 +143,6 @@
     - ".agent/ai_memory.V.1.yaml"
   notes:
     - "Research documented in docs/dialogue_research.md; README/tech notes updated."
-
 
 - id: S1.3
   title: "Dialogue broker prototype"
@@ -167,20 +162,21 @@
     - "Requests carry structured context (trade descriptors, schedule notes) and emit response/failure events."
 
 - id: S1.4
-  title: "Micro trade loop spike"
+  title: "Config-driven micro trade planner"
   state: done
   deps: [S1.3]
   deliverables:
-    - "Assign farmer/miller/blacksmith professions with inventories"
-    - "Daily placeholder trade loop emitting TradeCompletedEvent"
-    - "Bridge trade events into dialogue requests"
+    - "Load recipes and daily requests from config/economy.toml via EconomyRegistry"
+    - "Planner creates per-profession ActorTask queues (WaitForGood/Manufacture/Deliver)"
+    - "advance_actor_tasks executes queues, waits for partners, and emits TradeCompletedEvent + dialogue prompts"
   docs_update:
     - "docs/tech_notes.md"
     - "docs/plan_overview.md"
     - "CHANGELOG.md"
     - "TASK.md"
-    - ".agent/ai_memory.V.1.yaml"
   notes:
+    - "Villagers now wait at crates, manufacture goods, and deliver them using data-driven plans. Placeholder meshes stay in sync with inventory."
+    - ".agent/ai_memory.V.1.yaml"
     - "EconomyPlugin schedules trades after the world clock ticks, logging production/processing/exchange steps."
     - "Trade exchanges enqueue dialogue prompts so NPC chatter reflects the daily loop."
 

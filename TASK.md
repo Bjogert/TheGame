@@ -46,7 +46,7 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 - [x] Scaffold `src/world/` with modules for components, systems, and `WorldPlugin`.
 - [x] Spawn a ground plane, directional light, and placeholder camera controller (keyboard + mouse) to inspect the scene.
 - [x] Ensure assets/configs loaded are documented (e.g., primitives vs. GLTF placeholders).
-- **Outcome:** `WorldPlugin` now spawns a 200×200 plane, directional light, and a fly camera with WASD + Space/LShift movement and right-mouse look (cursor grab toggled automatically). Documentation covers usage and future follow-ups.
+- **Outcome:** `WorldPlugin` now spawns a 200200 plane, directional light, and a fly camera with WASD + Space/LShift movement and right-mouse look (cursor grab toggled automatically). Documentation covers usage and future follow-ups.
 - **Exit criteria:** Running the app shows the simple environment and allows basic camera movement.
 
 ---
@@ -122,14 +122,14 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 
 ---
 
-## Step S1.4 - Micro Trade Loop Spike
-**Goal:** Prove that simulation events (placeholder trades) can update inventories and feed the dialogue system.
+## Step S1.4 - Config-driven Micro Trade Planner
+**Goal:** Replace the hard-coded trade loop with a data-driven planner so professions act naturally and can scale with new recipes.
 
-- [x] Introduce an `EconomyPlugin` assigning farmer, miller, and blacksmith professions with inventories.
-- [x] Run a daily micro loop creating grain → flour → tool crates, emitting `TradeCompletedEvent` records.
-- [x] Queue dialogue requests from trade events to validate the broker context path.
-- **Outcome:** Each in-game day now generates trade events that update inventories and trigger contextual dialogue.
-- **Exit criteria:** Logs show the trade chain, inventories mutate correctly, and dialogue responses cite the exchange.
+- [x] Load recipes and daily requests from `config/economy.toml` via `EconomyRegistry`.
+- [x] Derive per-profession `ActorTask` queues (`WaitForGood`, `Manufacture`, `Deliver`) when needs are detected.
+- [x] Execute tasks only after villagers reach their crates, emit `TradeCompletedEvent` + dialogue prompts on delivery, and keep crate placeholders in sync with inventory.
+- **Outcome:** Villagers plan each workday from data, wait for partners before trades, and the loop now supports additional professions/recipes without code changes.
+- **Exit criteria:** Planner queues populate from config, goods appear/disappear beside crates with inventory counts, and trade deliveries emit telemetry/dialogue after both actors are present.
 
 ---
 

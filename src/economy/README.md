@@ -1,15 +1,11 @@
 # Economy Module
 
-The current economy slice is a placeholder "micro trade loop" that proves inventories, schedules, and dialogue integrations work together.
+The economy prototype now builds daily work plans from configuration rather than hard-coding a single trade loop. A small planner walks the recipe graph and converts each request into per-profession tasks.
 
-- `EconomyPlugin` assigns professions to the debug NPCs after they spawn and runs a daily trade loop once the world clock advances.
-- `TradeCompletedEvent` records production, processing, and exchange steps. Dialogue systems listen for these events to build conversation context.
-- `Inventory` and simple `TradeGood` enums keep track of crate-style goods passed between the farmer, miller, and blacksmith.
-- Each exchange queues a dialogue request with trade context, ensuring NPC chatter references the latest activity.
-- Profession-specific crates now spawn at world start. The micro loop orders each profession to travel to its crate before processing work, so trades trigger only after NPCs visibly arrive.
-- Goods now manifest as small placeholder boxes beside each profession crate. They appear when inventories gain matching items and disappear again once the stack is depleted, giving a quick visual read on local stock without changing the loop's authoritative inventory data.
-- `dependency.rs` defines a placeholder dependency matrix that maps professions and goods to wellbeing categories. Daily trade snapshots emit `ProfessionDependencyUpdateEvent` so NPC motivation systems can reward satisfied needs or penalise shortages, only crediting categories when matching goods are present in inventory.
+- EconomyRegistry loads recipes and daily requests from config/economy.toml. Each recipe defines the actor profession, required inputs, and produced goods.
+- prepare_economy_day creates requests (e.g., farmer needs tools) and the planner expands them into ActorTask entries per profession (WaitForGood, Manufacture, Deliver).
+- dvance_actor_tasks executes tasks once villagers reach their crates, waits naturally when inputs are missing, transfers inventory, and emits TradeCompletedEvent/dialogue prompts for deliveries.
+- Placeholder goods (TradeGoodPlaceholder) spawn beside crates while inventory stacks exist. Visuals come from TradeGoodPlaceholderVisuals, so goods linger until consumed or traded away.
+- EconomyDependencyMatrix still maps wellbeing categories to goods. After tasks complete, daily snapshots emit ProfessionDependencyUpdateEvent so motivation systems can react to shortages or satisfied needs.
 
-This loop is intentionally small; expect it to be replaced by a data-driven economy once Step 7 begins.
-
-Design for the transition lives in `docs/economy_blueprint.md`, which introduces an `EconomyRegistry`, work-order queues, and an expanded event taxonomy to bridge economy, NPC schedules, and dialogue.
+The configuration-driven approach keeps behaviour extensible while we iterate on more professions and goods. Design notes for broader expansion live in docs/economy_blueprint.md.

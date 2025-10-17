@@ -1,0 +1,22 @@
+[[recipes]]
+id = "grain_harvest"
+actor = "farmer"
+produces = [{ good = "grain", quantity = 1 }]
+consumes = []
+
+[[recipes]]
+id = "flour_milling"
+actor = "miller"
+produces = [{ good = "flour", quantity = 1 }]
+consumes = [{ good = "grain", quantity = 1 }]
+
+[[recipes]]
+id = "toolsmithing"
+actor = "blacksmith"
+produces = [{ good = "tools", quantity = 1 }]
+consumes = [{ good = "flour", quantity = 1 }]
+
+[[daily_requests]]
+requester = "farmer"
+good = "tools"
+quantity = 1

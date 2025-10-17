@@ -1,8 +1,10 @@
 //! Economy-related components such as professions and inventories.
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 /// Placeholder professions used by the micro trade loop.
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Profession {
     Farmer,
     Miller,
@@ -20,7 +22,8 @@ impl Profession {
 }
 
 /// Simplified trade goods used for placeholder exchanges.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum TradeGood {
     Grain,
     Flour,

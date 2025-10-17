@@ -94,14 +94,14 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 ## 4) Active Steps (Plan 3)
 > Update this section whenever the top backlog item changes. Keep scope small (0.5-2 focused days).
 
-### Current Focus - S1.3: Dialogue Broker Prototype
-- OpenAI stub now guards prompt/ context validation, emits structured errors, and drives logging for dialogue responses/failures.
-- DialogueRequestQueue executes with documented cooldown constants and logs rate-limited retries.
-- Event consumers bridge TradeCompleted events into dialogue prompts; docs kept in sync with the warning cleanup.
+### Current Focus - S1.4: Config-Driven Economy Planner Spike
+- `EconomyRegistry` now loads recipes and daily requests from `config/economy.toml`, replacing the hard-coded farmer → miller → blacksmith loop.
+- The planner converts needs into queued `ActorTask`s (`WaitForGood`, `Manufacture`, `Deliver`) so professions act when inputs are present and exchanges feel natural.
+- `advance_actor_tasks` keeps villagers at their crates while producing, hands off goods with telemetry, and maintains placeholder meshes tied to inventory counts.
 
-**Recently completed:** S1.2 (dialogue scaffolding research) finished on 2025-10-10; findings documented in docs/dialogue_research.md. S1.6 (profession crates + locomotion) delivered so the micro trade loop now waits for NPCs to reach their work spots.
+**Recently completed:** S1.3 (dialogue broker prototype) established the request queue and telemetry. S1.6 added profession crates/locomotion, and S1.7 delivered the motivation spike that consumes dependency updates.
 
-**Next in queue:** Replace the stub with a real OpenAI client, surface movement/trade telemetry in upcoming UI work, and promote the profession/resource dependency matrix for Step 7 so wellbeing hooks and economy configs stay aligned.
+**Next in queue:** Formalise work-order data for Step 7, surface economy/motivation telemetry in UI overlays, and integrate the production dialogue client once the planner and dependency matrix stabilise.
 
 ---
 

@@ -1,14 +1,15 @@
-//! Economy resources for placeholder trade loops.
+//! Economy resources for economy task execution and visuals.
 use std::collections::HashMap;
 
-use bevy::prelude::{Entity, Resource};
+use bevy::{
+    ecs::world::FromWorld,
+    math::primitives::Cuboid,
+    prelude::{default, Assets, Color, Entity, Handle, Mesh, Resource, StandardMaterial, World},
+};
 
 use crate::economy::components::{Profession, TradeGood};
 
-#[derive(Resource, Debug, Default)]
-pub struct MicroTradeLoopState {
-    pub last_processed_day: Option<u64>,
-}
+pub const PLACEHOLDER_SIZE: f32 = 0.32;
 
 /// Tracks the spawned crate entity for each profession.
 #[derive(Resource, Debug, Default)]
@@ -43,5 +44,56 @@ impl TradeGoodPlaceholderRegistry {
 
     pub fn take(&mut self, profession: Profession, good: TradeGood) -> Option<Entity> {
         self.entries.remove(&(profession, good))
+    }
+}
+
+/// Shared mesh/material handles for placeholder goods.
+#[derive(Resource, Debug)]
+pub struct TradeGoodPlaceholderVisuals {
+    mesh: Handle<Mesh>,
+    materials: HashMap<TradeGood, Handle<StandardMaterial>>,
+}
+
+impl TradeGoodPlaceholderVisuals {
+    pub fn mesh(&self) -> Handle<Mesh> {
+        self.mesh.clone()
+    }
+
+    pub fn material(&self, good: TradeGood) -> Handle<StandardMaterial> {
+        self.materials.get(&good).cloned().unwrap_or_else(|| {
+            panic!("missing placeholder material for good {:?}", good);
+        })
+    }
+}
+
+impl FromWorld for TradeGoodPlaceholderVisuals {
+    fn from_world(world: &mut World) -> Self {
+        let mut meshes = world.resource_mut::<Assets<Mesh>>();
+        let mesh = meshes.add(Mesh::from(Cuboid::new(
+            PLACEHOLDER_SIZE,
+            PLACEHOLDER_SIZE,
+            PLACEHOLDER_SIZE,
+        )));
+
+        let mut materials_assets = world.resource_mut::<Assets<StandardMaterial>>();
+        let mut materials = HashMap::new();
+
+        let color_map = [
+            (TradeGood::Grain, Color::srgb_u8(214, 181, 102)),
+            (TradeGood::Flour, Color::srgb_u8(236, 235, 230)),
+            (TradeGood::Tools, Color::srgb_u8(110, 118, 132)),
+        ];
+
+        for (good, color) in color_map {
+            let handle = materials_assets.add(StandardMaterial {
+                base_color: color,
+                perceptual_roughness: 0.45,
+                metallic: 0.05,
+                ..default()
+            });
+            materials.insert(good, handle);
+        }
+
+        Self { mesh, materials }
     }
 }

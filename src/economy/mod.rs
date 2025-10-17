@@ -1,10 +1,13 @@
 //! Economy module hosting placeholder trade loops and resource definitions.
 pub mod components;
+pub mod data;
 pub mod dependency;
 pub mod events;
+pub mod planning;
 pub mod plugin;
 pub mod resources;
 pub mod systems;
+pub mod tasks;
 
 pub use plugin::EconomyPlugin;
 

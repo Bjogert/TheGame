@@ -7,10 +7,17 @@ use crate::{
 };
 
 use super::{
+    data::EconomyRegistry,
     dependency::EconomyDependencyMatrix,
     events::{ProfessionDependencyUpdateEvent, TradeCompletedEvent},
-    resources::{MicroTradeLoopState, ProfessionCrateRegistry, TradeGoodPlaceholderRegistry},
-    systems::{assign_placeholder_professions, process_micro_trade_loop, spawn_profession_crates},
+    resources::{
+        ProfessionCrateRegistry, TradeGoodPlaceholderRegistry, TradeGoodPlaceholderVisuals,
+    },
+    systems::{
+        advance_actor_tasks, assign_placeholder_professions, prepare_economy_day,
+        spawn_profession_crates,
+    },
+    tasks::{ActorTaskQueues, EconomyDayState},
 };
 
 const SYSTEM_ACTOR_LABEL: &str = "system";
@@ -19,9 +26,12 @@ pub struct EconomyPlugin;
 
 impl Plugin for EconomyPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<MicroTradeLoopState>()
+        app.init_resource::<EconomyRegistry>()
             .init_resource::<ProfessionCrateRegistry>()
             .init_resource::<TradeGoodPlaceholderRegistry>()
+            .init_resource::<TradeGoodPlaceholderVisuals>()
+            .init_resource::<ActorTaskQueues>()
+            .init_resource::<EconomyDayState>()
             .init_resource::<EconomyDependencyMatrix>()
             .add_message::<TradeCompletedEvent>()
             .add_message::<ProfessionDependencyUpdateEvent>()
@@ -35,11 +45,11 @@ impl Plugin for EconomyPlugin {
             )
             .add_systems(
                 Update,
-                (
-                    process_micro_trade_loop.after(advance_world_clock),
-                    log_trade_events,
-                ),
-            );
+                (prepare_economy_day, advance_actor_tasks)
+                    .chain()
+                    .after(advance_world_clock),
+            )
+            .add_systems(Update, log_trade_events);
     }
 }
 
