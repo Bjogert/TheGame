@@ -1,11 +1,12 @@
 //! Economy-specific events used by the micro trade loop.
 use bevy::prelude::{Event, Message};
 
-use crate::npc::components::NpcId;
-
-use super::{
-    components::TradeGood,
-    dependency::{DependencyCategory, EconomyDependencyMatrix},
+use crate::{
+    economy::{
+        components::{Profession, TradeGood},
+        dependency::DependencyCategory,
+    },
+    npc::components::NpcId,
 };
 
 #[derive(Event, Message, Debug, Clone)]
@@ -23,7 +24,7 @@ pub struct TradeCompletedEvent {
 pub struct ProfessionDependencyUpdateEvent {
     pub day: u64,
     pub npc: NpcId,
-    pub profession: super::components::Profession,
+    pub profession: Profession,
     pub satisfied_categories: Vec<DependencyCategory>,
     pub missing_categories: Vec<DependencyCategory>,
 }
@@ -38,6 +39,7 @@ pub enum TradeReason {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::economy::{components::Profession, dependency::EconomyDependencyMatrix};
     use crate::npc::components::NpcId;
 
     #[test]
@@ -66,7 +68,7 @@ mod tests {
         let event = ProfessionDependencyUpdateEvent {
             day: 8,
             npc: NpcId::new(12),
-            profession: super::components::Profession::Farmer,
+            profession: Profession::Farmer,
             satisfied_categories: categories.clone(),
             missing_categories: vec![DependencyCategory::Tools],
         };

@@ -371,7 +371,7 @@ fn emit_dependency_updates(
         let mut satisfied = Vec::new();
         let mut missing = Vec::new();
         for category in matrix.requirements(profession) {
-            let goods_for_category = [TradeGood::Grain, TradeGood::Flour, TradeGood::Tools]
+            let mut goods_for_category = [TradeGood::Grain, TradeGood::Flour, TradeGood::Tools]
                 .into_iter()
                 .filter(|good| {
                     matrix

@@ -7,7 +7,7 @@ use crate::{
     dialogue::events::DialogueResponseEvent,
     economy::{
         components::Profession,
-        dependency::{DependencyCategory, EconomyDependencyMatrix},
+        dependency::EconomyDependencyMatrix,
         events::{ProfessionDependencyUpdateEvent, TradeCompletedEvent, TradeReason},
     },
     npc::{
@@ -19,7 +19,7 @@ use crate::{
 
 use super::{
     config::MotivationConfig,
-    state::{adjusted_task_reward, DailyDependencyTracker, NpcMood, NpcMotivation},
+    state::{adjusted_task_reward, DailyDependencyTracker, NpcMotivation},
 };
 
 pub fn reward_from_leisure(
@@ -31,12 +31,14 @@ pub fn reward_from_leisure(
     struct Adjustment {
         leisure: bool,
         alcohol: bool,
+        last_time_of_day: Option<f32>,
     }
 
     let mut adjustments: HashMap<NpcId, Adjustment> = HashMap::new();
     for event in events.read() {
         let activity_lower = event.activity.to_ascii_lowercase();
         let entry = adjustments.entry(event.npc).or_default();
+        entry.last_time_of_day = Some(event.time_of_day);
 
         if config
             .leisure
@@ -61,18 +63,38 @@ pub fn reward_from_leisure(
         if let Some(adjustment) = adjustments.get(&identity.id) {
             if adjustment.leisure {
                 motivation.apply_reward(config.gains.leisure, &config);
-                info!(
-                    "{} enjoys downtime and gains leisure dopamine",
-                    identity.display_name
-                );
+                let mood_label = motivation.mood().label();
+                if let Some(fraction) = adjustment.last_time_of_day {
+                    info!(
+                        "{} enjoys downtime near day fraction {:.2} and feels {}",
+                        identity.display_name,
+                        fraction,
+                        mood_label
+                    );
+                } else {
+                    info!(
+                        "{} enjoys downtime and feels {}",
+                        identity.display_name, mood_label
+                    );
+                }
             }
 
             if adjustment.alcohol {
                 motivation.trigger_alcohol_boost(&config);
-                info!(
-                    "{} indulges in a drink and receives a temporary boost",
-                    identity.display_name
-                );
+                let mood_label = motivation.mood().label();
+                if let Some(fraction) = adjustment.last_time_of_day {
+                    info!(
+                        "{} indulges in a drink near day fraction {:.2} and now feels {}",
+                        identity.display_name,
+                        fraction,
+                        mood_label
+                    );
+                } else {
+                    info!(
+                        "{} indulges in a drink and now feels {}",
+                        identity.display_name, mood_label
+                    );
+                }
             }
         }
     }

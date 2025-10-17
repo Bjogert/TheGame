@@ -37,8 +37,7 @@ impl Plugin for EconomyPlugin {
                 (
                     process_micro_trade_loop.after(advance_world_clock),
                     log_trade_events,
-                )
-                    .chain(),
+                ),
             );
     }
 }

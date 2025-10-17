@@ -1,6 +1,8 @@
 //! Dependency matrix describing which goods satisfy wellbeing categories.
 use std::collections::HashMap;
 
+use bevy::prelude::Resource;
+
 use crate::economy::components::{Profession, TradeGood};
 
 /// High-level wellbeing categories used when evaluating profession needs.
@@ -8,7 +10,6 @@ use crate::economy::components::{Profession, TradeGood};
 pub enum DependencyCategory {
     Food,
     Tools,
-    Housing,
 }
 
 impl DependencyCategory {
@@ -16,7 +17,6 @@ impl DependencyCategory {
         match self {
             Self::Food => "food",
             Self::Tools => "tools",
-            Self::Housing => "housing",
         }
     }
 }
@@ -27,7 +27,7 @@ struct DependencyEntry {
 }
 
 /// Maps professions and goods to wellbeing categories.
-#[derive(Debug, Clone)]
+#[derive(Resource, Debug, Clone)]
 pub struct EconomyDependencyMatrix {
     profession_requirements: HashMap<Profession, DependencyEntry>,
     good_categories: HashMap<TradeGood, Vec<DependencyCategory>>,
