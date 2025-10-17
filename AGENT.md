@@ -95,7 +95,7 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 > Update this section whenever the top backlog item changes. Keep scope small (0.5-2 focused days).
 
 ### Current Focus - S1.4: Config-Driven Economy Planner Spike
-- `EconomyRegistry` now loads recipes and daily requests from `config/economy.toml`, replacing the hard-coded farmer → miller → blacksmith loop.
+- `EconomyRegistry` now loads recipes and daily requests from `config/economy.toml`, replacing the hard-coded farmer -> miller -> blacksmith loop.
 - The planner converts needs into queued `ActorTask`s (`WaitForGood`, `Manufacture`, `Deliver`) so professions act when inputs are present and exchanges feel natural.
 - `advance_actor_tasks` keeps villagers at their crates while producing, hands off goods with telemetry, and maintains placeholder meshes tied to inventory counts.
 

@@ -30,11 +30,11 @@
 - The log directory is created on demand; each entry stores provider, speaker/target labels, request ids, and error metadata so UI tooling or offline analysis can replay recent conversations.
 - Persistence runs immediately after the request queue processes an entry, keeping the JSONL file aligned with the records exposed to UI systems.
 
-## Micro Trade Loop Spike (S1.4)
-- Economy module assigns farmer, miller, and blacksmith professions, each with simple inventories.
-- A daily loop produces grain, flour, and tool crates, emitting `TradeCompletedEvent` records for each exchange.
-- Trade events enqueue dialogue requests with matching context, proving the dialogue hook can react to simulation activity.
-- Inventory changes now spawn tiny placeholder boxes beside the relevant profession crate. The boxes are purely visual—they follow the crate, appear when a stack becomes non-zero, and disappear when the final matching item leaves the inventory.
+## Config-Driven Micro Trade Planner (S1.4)
+- `EconomyRegistry` reads recipes and daily requests from `config/economy.toml`, replacing the hard-coded farmer → miller → blacksmith loop.
+- `prepare_economy_day` converts unmet needs into per-profession `ActorTask` queues (`WaitForGood`, `Manufacture`, `Deliver`) so villagers only act when inputs are present.
+- `advance_actor_tasks` waits for NPCs to reach their crates, performs manufacture/delivery steps, emits `TradeCompletedEvent`/dialogue prompts, and keeps crate-side placeholders synced with inventory counts.
+- Task execution leaves goods visible beside crates until they are consumed or traded away, giving a quick read on local stock levels.
 
 ## Economy Planning Blueprint (S1.5)
 - Reviewed the placeholder micro loop and documented the path to a data-driven economy in `docs/economy_blueprint.md`.

@@ -2,8 +2,9 @@
 # Economy Planner Refactor Plan
 
 ## Goal
-Replace the hard-coded farmer → miller → blacksmith loop with a needs-driven work/order system that scales to more professions, recipes, and multi-hop trades while keeping behaviour readable and natural.
+Replace the hard-coded farmer -> miller -> blacksmith loop with a needs-driven work/order system that scales to more professions, recipes, and multi-hop trades while keeping behaviour readable and natural.
 
+> **Status (2025-10-17):** The first pass of this planner now runs in-game. Daily requests and recipes load from `config/economy.toml`, villagers wait at their crates before manufacturing/delivering goods, and deliveries emit telemetry plus dialogue prompts. The remaining sections track future enhancements such as formal work orders, richer blocking logic, and UI hooks.
 ---
 
 ## 1. Data Model
@@ -43,7 +44,7 @@ Replace the hard-coded farmer → miller → blacksmith loop with a needs-driven
   - Holds active orders, issues new IDs, and exposes queries (e.g., open orders by profession or category).
   - Emits events when orders progress to keep motivation/telemetry in sync.
 - **Order lifecycle:**
-  1. At day start, each profession checks needs (via dependency matrix) and creates orders for unsatisfied categories (e.g., farmer: `Tools` → `target_good = tools`).
+  1. At day start, each profession checks needs (via dependency matrix) and creates orders for unsatisfied categories (e.g., farmer: `Tools` -> `target_good = tools`).
   2. Order gets assigned to the profession that can produce the good (`EconomyRegistry` lookup). The assignee becomes responsible for fulfilling it.
   3. If the assignee lacks inputs, they spawn sub-orders for each missing input (e.g., blacksmith needs flour).
   4. Orders complete when goods are delivered to the requester’s inventory.
@@ -86,7 +87,7 @@ Replace the hard-coded farmer → miller → blacksmith loop with a needs-driven
   2. `assign_pending_orders` (match orders with producers).
   3. `advance_work_orders` (executes plan steps; handles movement and trade logic).
 - Keep `TradeCompletedEvent` for telemetry but emit it when delivery steps finish instead of inline during hard-coded sequence.
-- Keep placeholders in sync via the new execution flow (spawn when inventory transitions from 0 → >0, despawn on >0 → 0).
+- Keep placeholders in sync via the new execution flow (spawn when inventory transitions from 0 -> >0, despawn on >0 -> 0).
 - Add debug logging for order creation, assignment, blocking, and completion so designers can trace behaviour.
 
 ---
