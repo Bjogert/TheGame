@@ -15,6 +15,7 @@ reviewing the existing systems.
 - `TradeCompletedEvent` emits production, processing, and exchange moments;
   dialogue systems translate each trade into contextual conversation prompts.
 - Rate limiting, retry logic, and scheduling currently live in `DialoguePlugin`.
+- A placeholder `EconomyDependencyMatrix` now maps professions/goods to wellbeing categories and emits `ProfessionDependencyUpdateEvent` snapshots so the motivation systems can reward satisfied needs.
 
 ## 2. Goals for Step 7 (Economy Foundations)
 1. **Data-driven professions and goods**

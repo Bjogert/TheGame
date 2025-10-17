@@ -3,7 +3,10 @@ use bevy::prelude::{Event, Message};
 
 use crate::npc::components::NpcId;
 
-use super::components::TradeGood;
+use super::{
+    components::TradeGood,
+    dependency::{DependencyCategory, EconomyDependencyMatrix},
+};
 
 #[derive(Event, Message, Debug, Clone)]
 pub struct TradeCompletedEvent {
@@ -13,6 +16,16 @@ pub struct TradeCompletedEvent {
     pub good: TradeGood,
     pub quantity: u32,
     pub reason: TradeReason,
+}
+
+/// Snapshot recording whether a profession satisfied dependency categories for a day.
+#[derive(Event, Message, Debug, Clone)]
+pub struct ProfessionDependencyUpdateEvent {
+    pub day: u64,
+    pub npc: NpcId,
+    pub profession: super::components::Profession,
+    pub satisfied_categories: Vec<DependencyCategory>,
+    pub missing_categories: Vec<DependencyCategory>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -44,5 +57,23 @@ mod tests {
         assert!(matches!(event.reason, TradeReason::Processing));
         assert_eq!(event.from.unwrap().to_string(), "NPC-0001");
         assert_eq!(event.to.unwrap().to_string(), "NPC-0002");
+    }
+
+    #[test]
+    fn dependency_update_lists_categories() {
+        let matrix = EconomyDependencyMatrix::default();
+        let categories = matrix.categories_for_good(TradeGood::Grain).to_vec();
+        let event = ProfessionDependencyUpdateEvent {
+            day: 8,
+            npc: NpcId::new(12),
+            profession: super::components::Profession::Farmer,
+            satisfied_categories: categories.clone(),
+            missing_categories: vec![DependencyCategory::Tools],
+        };
+
+        assert_eq!(event.day, 8);
+        assert_eq!(event.npc.to_string(), "NPC-0012");
+        assert_eq!(event.satisfied_categories, categories);
+        assert_eq!(event.missing_categories, vec![DependencyCategory::Tools]);
     }
 }

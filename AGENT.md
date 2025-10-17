@@ -94,14 +94,14 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 ## 4) Active Steps (Plan 3)
 > Update this section whenever the top backlog item changes. Keep scope small (0.5-2 focused days).
 
-### Current Focus - S1.3: Dialogue Broker Prototype
-- OpenAI stub now guards prompt/ context validation, emits structured errors, and drives logging for dialogue responses/failures.
-- DialogueRequestQueue executes with documented cooldown constants and logs rate-limited retries.
-- Event consumers bridge TradeCompleted events into dialogue prompts; docs kept in sync with the warning cleanup.
+### Current Focus - S1.10: UI telemetry surfacing
+- Project live widgets or overlays that display locomotion, motivation, and trade queue state so designers can observe villagers in real time.
+- Expose dialogue queue metrics (rate limits, provider failures) to aid debugging now that the OpenAI integration is active.
+- Keep updates lightweight so they can be reused once a proper HUD lands.
 
-**Recently completed:** S1.2 (dialogue scaffolding research) finished on 2025-10-10; findings documented in docs/dialogue_research.md. S1.6 (profession crates + locomotion) delivered so the micro trade loop now waits for NPCs to reach their work spots.
+**Recently completed:** S1.9 (OpenAI dialogue integration) replaced the local-only stub with live API calls plus fallback handling; S1.8 (dialogue telemetry persistence) keeps JSONL history aligned with the in-memory buffer.
 
-**Next in queue:** Replace the stub with a real OpenAI client and persist dialogue telemetry for UI hooks. Use the new movement telemetry to surface travel/exchange status in upcoming UI work, generate the profession/resource dependency matrix for Step 7, then spike the dopamine-driven motivation system so wellbeing can influence behaviour tuning.
+**Next in queue:** Promote the profession/resource dependency matrix into config data for Step 7 and add privacy/retention controls for persisted dialogue logs once UI surfaces exist.
 
 ---
 

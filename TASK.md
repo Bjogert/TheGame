@@ -159,12 +159,33 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 ## Step S1.7 - NPC Motivation & Wellbeing Spike
 **Goal:** Prototype a dopamine-style motivation meter that reacts to work, socialising, and coping mechanisms so behaviour and product quality feel grounded.
 
-- [ ] Add a per-NPC dopamine resource with configurable caps, baseline decay, and gains tied to completed tasks, social interactions, and leisure events.
-- [ ] Map dopamine thresholds to mood states (content, tired, depressed) that influence schedule modifiers, dialogue tone, and production efficiency.
-- [ ] Model alcohol as a temporary dopamine boost with intoxication penalties (reduced product quality) and a hangover crash that dips below the starting point.
-- [ ] Connect the motivation data to the economy dependency matrix so resource access (food, tools, housing) can influence long-term wellbeing.
-- [ ] Update planning docs, tech notes, and telemetry plans to cover the new resource and its tuning knobs.
+- [x] Add a per-NPC dopamine resource with configurable caps, baseline decay, and gains tied to completed tasks, social interactions, and leisure events.
+- [x] Map dopamine thresholds to mood states (content, tired, depressed) that influence schedule modifiers, dialogue tone, and production efficiency.
+- [x] Model alcohol as a temporary dopamine boost with intoxication penalties (reduced work rewards) and a hangover crash that dips below the starting point.
+- [x] Connect the motivation data to the economy dependency matrix so resource access (food, tools, housing) can influence long-term wellbeing, evaluating snapshots after the day rolls over instead of relying on leisure to spoof needs.
+- [x] Update planning docs, tech notes, and telemetry plans to cover the new resource and its tuning knobs.
 - **Exit criteria:** Motivation metrics surface in telemetry/docs, mood thresholds and alcohol side effects are documented, and follow-up tasks for full integration are queued.
+
+---
+
+## Step S1.8 - Dialogue Telemetry Persistence
+**Goal:** Capture dialogue telemetry in a persisted log so UI tooling and offline analysis can review recent conversations.
+
+- [x] Introduce a `DialogueTelemetryLog` resource that mirrors the in-memory telemetry buffer to disk.
+- [x] Flush dialogue responses and failures to `logs/dialogue_history.jsonl` after each queue tick, guarding the directory creation.
+- [x] Extend documentation (README, module README, tech notes) with instructions for inspecting or resetting the log.
+- [x] Update planning artifacts (`CHANGELOG.md`, `.agent/tasks.yaml`, `.agent/ai_memory.V.1.yaml`, `BigPicturePlan.md`, `docs/plan_overview.md`, `TASK.md`) to reflect the completed persistence step and upcoming UI/dependency matrix work.
+- **Outcome:** JSONL telemetry history accumulates under `logs/`, kept in sync with the ring buffer for UI consumers and ready for external tooling.
+- **Exit criteria:** Running the app produces dialogue entries in `logs/dialogue_history.jsonl`; docs describe the log and the backlog no longer lists telemetry persistence as pending.
+
+## Step S1.9 - OpenAI Dialogue Integration
+**Goal:** Replace the local-only dialogue responses with the production OpenAI Chat Completions API while keeping offline development simple.
+
+- [x] Load `OPENAI_API_KEY` (plus optional overrides for model, base URL, temperature, output tokens, and timeout) from the environment and call the live API when credentials are present.
+- [x] Preserve the deterministic fallback responses whenever secrets are missing or the HTTP client fails to initialise so tests and CI stay stable.
+- [x] Document the new configuration knobs, ship a `secrets.env.example` helper, and refresh planning artifacts to point at the UI telemetry and dependency matrix follow-ups.
+- **Outcome:** Dialogue requests hit OpenAI in credentialled environments while still returning informative stubbed responses offline.
+- **Exit criteria:** Running with a valid API key exercises the live provider; documentation and plans reference the new secrets workflow and updated backlog focus.
 
 ---
 

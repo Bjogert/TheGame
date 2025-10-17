@@ -44,7 +44,7 @@ WorldPlugin
 NpcPlugin
   +- depends on: WorldPlugin (for world context)
   +- provides: Identity component & NpcIdGenerator
-  +- systems: spawn_debug_npcs()
+  +- systems: spawn_debug_npcs(), tick_schedule_state(), motivation reward/decay loops
 
 Optional plugins (planned): DialoguePlugin, UiPlugin, WeatherPlugin
 ```
@@ -61,6 +61,7 @@ Guidelines:
 - `/config/time.toml` → parsed once at startup into `WorldTimeSettings`; invalid files fall back to defaults with a warning.
 - `PrimarySun` component marks the directional light that responds to the world clock.
 - Npc: `Identity` component and `NpcIdGenerator` resource supply unique ids for debug NPCs (expand to registry later).
+- Npc Motivation: `MotivationConfig` loads from `config/motivation.toml`, `NpcMotivation` components track dopamine/mood, and `DailyDependencyTracker` consumes economy snapshots to reward or penalise wellbeing.
 - Future: `NpcRegistry` for active entities, `DbResource` (Save) for SQLite state, `LlmJobQueue` (Dialogue) for prompt scheduling.
 
 Record concrete resource/component names in the nearest module README once implemented.

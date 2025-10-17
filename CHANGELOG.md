@@ -2,74 +2,97 @@
 
 All notable changes to this project will be documented in this file.
 
-## 2025-10-08 - S0.1b: CorePlugin & SimulationClock
-- Added `CorePlugin` and `SimulationClock` resource under `src/core/`.
-- Registered `CorePlugin` in `main.rs`, ensuring simulation time scaling is centralised.
-- Logged startup information to confirm the configured time scale.
-- Documented the new module in `src/core/README.md`.
+## 2025-10-17 - S1.9: OpenAI dialogue broker integration
+- Wired `OpenAiDialogueBroker` to call the real Chat Completions API when an `OPENAI_API_KEY` is available while keeping the offline fallback for local testing.
+- Added environment variable configuration knobs (model, base URL, temperature, output tokens, timeout) and shipped a sample secrets file for development.
+- Updated documentation and planning artifacts to reflect the live provider and the next UI/dependency-matrix tasks.
 
-## 2025-10-08 - S0.1c: core_debug Feature & Logging
-- Declared a `core_debug` cargo feature that enables per-second simulation tick logging.
-- Added a debug timer system that logs scaled time, real delta, and time scale when the feature is active.
-- Updated documentation and editor tasks to instruct how to use the debug toggle.
+## 2025-10-17 - Fix: Motivation dependency evaluation
+- Leisure dopamine rewards no longer mark food dependencies as satisfied, keeping wellbeing data aligned with actual supplies.
+- Daily dependency snapshots now queue per-world-day, ensuring bonuses and penalties apply once the calendar advances.
+- Dependency matrix checks only credit categories when matching goods are present, and dialogue telemetry logging simplifies directory creation.
 
-## 2025-10-08 - S0.2a: World Shell Bootstrap
-- Introduced `WorldPlugin` with ground plane, directional light, and fly camera controls.
-- Implemented WASD + Space/LShift movement and right-mouse look with cursor grab.
-- Added `src/world/README.md` describing module responsibilities and usage.
-- Registered `WorldPlugin` in `main.rs` to load the scene on startup.
-## 2025-10-08 - S0.2b: WorldClock & Configurable Lighting
-- Added `WorldTimeSettings` that loads from `config/time.toml` with sane fallbacks.
-- Introduced `WorldClock` resource driven by `SimulationClock` to advance time-of-day.
-- Implemented systems to rotate the primary sun and adjust ambient light across the day/night cycle.
-- Updated world documentation and VS Code tasks to reflect the new configuration knobs.
+## 2025-10-16 - S1.8: Dialogue Telemetry Persistence
+- Added a `DialogueTelemetryLog` resource that writes dialogue responses and failures to `logs/dialogue_history.jsonl` for offline inspection.
+- Extended `DialoguePlugin` to initialise the telemetry log and flush it after queue processing so persisted history stays in sync with in-memory records.
+- Updated documentation and planning artifacts to describe the new log output and remove the telemetry persistence item from the active backlog.
 
-## 2025-10-08 - S0.3a: Documentation & Automation Sweep
-- Refreshed README with time-configuration guidance and cleaned repository layout overview.
-- Updated `.agent/docs/arch.md` to include new dependencies and world-time data flow.
-- Added `docs/tech_notes.md` for ongoing technical notes and ensured planning artifacts mirror the current state.
-- Verified VS Code tasks and configuration files align with the updated workflow.
-## 2025-10-08 - S1.1a: NPC Identity & Debug Spawner
-- Added npc module with Identity component and NpcIdGenerator resource.
-- Registered NpcPlugin and spawned three placeholder NPCs with capsule meshes.
-- Documented the module (`src/npc/README.md`) and synced planning artifacts.
+## 2025-10-15 - S1.7: NPC Motivation & Wellbeing Spike
+- Added `config/motivation.toml` and a `MotivationConfig` resource that loads dopamine caps, decay, gains, thresholds, and alcohol behaviour at startup.
+- Introduced `NpcMotivation` components with mood tracking, intoxication/hangover handling, and daily dependency evaluation tied to the new economy dependency matrix.
+- Emitted `NpcActivityChangedEvent` signals, rewarding leisure/social moments, marking food satisfaction, and linking trade/dialogue events to motivation rewards.
+- Extended the economy module with a placeholder dependency matrix and daily snapshots so wellbeing penalties/rewards reflect tool and food access.
 
-## 2025-10-10 - S1.1b: NPC Schedule Scaffold
-- Added ScheduleTicker resource to accumulate simulation time and queue schedule ticks.
-- Consolidated schedule updates into tick_schedule_state, logging activity transitions at a 5s cadence.
-- Updated NPC documentation and planning artifacts to reflect the scheduling scaffold.
-
-## 2025-10-11 - Tooling: Docker Environment Baseline
-- Added a multi-stage Dockerfile with dedicated dev, build, and runtime stages for Bevy dependencies.
-- Introduced docker-compose.yml to streamline iterative development with mounted sources and cached cargo artifacts.
-- Documented container workflows in README.md.
-
-## 2025-10-12 - Tooling: Linux Docker Enablement
-- Installed Vulkan headers and Mesa Vulkan drivers in the Docker base/runtime images so Linux hosts can start wgpu without extra packages.
-- Added docker-compose.linux.yml override that wires `/dev/dri`, display sockets, and render group membership for desktop runs.
-- Documented the Linux workflow across README.md and docs/tech_notes.md.
-
-## 2025-10-12 - S1.3: Dialogue Broker Prototype
-- Introduced `DialoguePlugin` with a trait-based broker abstraction, active provider resource, and request queue.
-- Implemented global/per-NPC rate limiting, retry backoff, and response/error events for queued dialogue.
-- Added structured context events (including trade descriptors) so future providers can cite simulation data.
-
-## 2025-10-12 - S1.4: Micro Trade Loop Spike
-- Added `EconomyPlugin` with placeholder professions, inventories, and a daily farmer → miller → blacksmith trade chain.
-- Emitted `TradeCompletedEvent` records for production, processing, and exchange steps while logging inventory flow.
-- Wired trade exchanges into the dialogue queue, queuing contextualised trade conversations for participating NPCs.
-
-## 2025-10-13 - S1.5: Economy Foundation Blueprint
-- Documented the path from the placeholder micro loop to a configurable economy in `docs/economy_blueprint.md`.
-- Established plans for an `EconomyRegistry`, `WorkOrderQueue`, and expanded economy event types feeding dialogue and UI.
-- Recorded risks, mitigations, and next actions to guide Step 7 implementation tasks.
+## 2025-10-14 - Planning: Dependency Matrix & Motivation Spike
+- Expanded planning docs (README, TASK.md, BigPicturePlan.md, docs/plan_overview.md, docs/tech_notes.md) to cover the upcoming profession/resource dependency matrix and dopamine-driven motivation system.
+- Added S1.7 to the task queue, documenting dopamine decay/gain rules, mood thresholds, and alcohol trade-offs that will influence product quality.
+- Updated economy blueprint goals and .agent memory with the dependency matrix requirement so economy configs remain the single source of truth.
 
 ## 2025-10-13 - S1.6: NPC Locomotion & Profession Crates
 - Spawned crate entities for farmer, miller, and blacksmith professions and recorded them in a `ProfessionCrateRegistry`.
 - Added an `NpcLocomotion` component/system pair that steers villagers toward crate destinations using scaled simulation time.
 - Updated the micro trade loop to halt until each profession reaches its crate, producing visible travel before exchanges fire and logging movement telemetry for future UI hooks.
 
-## 2025-10-14 - Planning: Dependency Matrix & Motivation Spike
-- Expanded planning docs (README, TASK.md, BigPicturePlan.md, docs/plan_overview.md, docs/tech_notes.md) to cover the upcoming profession/resource dependency matrix and dopamine-driven motivation system.
-- Added S1.7 to the task queue, documenting dopamine decay/gain rules, mood thresholds, and alcohol trade-offs that will influence product quality.
-- Updated economy blueprint goals and .agent memory with the dependency matrix requirement so economy configs remain the single source of truth.
+## 2025-10-13 - S1.5: Economy Foundation Blueprint
+- Documented the path from the placeholder micro loop to a configurable economy in `docs/economy_blueprint.md`.
+- Established plans for an `EconomyRegistry`, `WorkOrderQueue`, and expanded economy event types feeding dialogue and UI.
+- Recorded risks, mitigations, and next actions to guide Step 7 implementation tasks.
+
+## 2025-10-12 - S1.4: Micro Trade Loop Spike
+- Added `EconomyPlugin` with placeholder professions, inventories, and a daily farmer → miller → blacksmith trade chain.
+- Emitted `TradeCompletedEvent` records for production, processing, and exchange steps while logging inventory flow.
+- Wired trade exchanges into the dialogue queue, queuing contextualised trade conversations for participating NPCs.
+
+## 2025-10-12 - S1.3: Dialogue Broker Prototype
+- Introduced `DialoguePlugin` with a trait-based broker abstraction, active provider resource, and request queue.
+- Implemented global/per-NPC rate limiting, retry backoff, and response/error events for queued dialogue.
+- Added structured context events (including trade descriptors) so future providers can cite simulation data.
+
+## 2025-10-12 - Tooling: Linux Docker Enablement
+- Installed Vulkan headers and Mesa Vulkan drivers in the Docker base/runtime images so Linux hosts can start wgpu without extra packages.
+- Added docker-compose.linux.yml override that wires `/dev/dri`, display sockets, and render group membership for desktop runs.
+- Documented the Linux workflow across README.md and docs/tech_notes.md.
+
+## 2025-10-11 - Tooling: Docker Environment Baseline
+- Added a multi-stage Dockerfile with dedicated dev, build, and runtime stages for Bevy dependencies.
+- Introduced docker-compose.yml to streamline iterative development with mounted sources and cached cargo artifacts.
+- Documented container workflows in README.md.
+
+## 2025-10-10 - S1.1b: NPC Schedule Scaffold
+- Added ScheduleTicker resource to accumulate simulation time and queue schedule ticks.
+- Consolidated schedule updates into tick_schedule_state, logging activity transitions at a 5s cadence.
+- Updated NPC documentation and planning artifacts to reflect the scheduling scaffold.
+
+## 2025-10-08 - S1.1a: NPC Identity & Debug Spawner
+- Added npc module with Identity component and NpcIdGenerator resource.
+- Registered NpcPlugin and spawned three placeholder NPCs with capsule meshes.
+- Documented the module (`src/npc/README.md`) and synced planning artifacts.
+
+## 2025-10-08 - S0.3a: Documentation & Automation Sweep
+- Refreshed README with time-configuration guidance and cleaned repository layout overview.
+- Updated `.agent/docs/arch.md` to include new dependencies and world-time data flow.
+- Added `docs/tech_notes.md` for ongoing technical notes and ensured planning artifacts mirror the current state.
+- Verified VS Code tasks and configuration files align with the updated workflow.
+
+## 2025-10-08 - S0.2b: WorldClock & Configurable Lighting
+- Added `WorldTimeSettings` that loads from `config/time.toml` with sane fallbacks.
+- Introduced `WorldClock` resource driven by `SimulationClock` to advance time-of-day.
+- Implemented systems to rotate the primary sun and adjust ambient light across the day/night cycle.
+- Updated world documentation and VS Code tasks to reflect the new configuration knobs.
+
+## 2025-10-08 - S0.2a: World Shell Bootstrap
+- Introduced `WorldPlugin` with ground plane, directional light, and fly camera controls.
+- Implemented WASD + Space/LShift movement and right-mouse look with cursor grab.
+- Added `src/world/README.md` describing module responsibilities and usage.
+- Registered `WorldPlugin` in `main.rs` to load the scene on startup.
+
+## 2025-10-08 - S0.1c: core_debug Feature & Logging
+- Declared a `core_debug` cargo feature that enables per-second simulation tick logging.
+- Added a debug timer system that logs scaled time, real delta, and time scale when the feature is active.
+- Updated documentation and editor tasks to instruct how to use the debug toggle.
+
+## 2025-10-08 - S0.1b: CorePlugin & SimulationClock
+- Added `CorePlugin` and `SimulationClock` resource under `src/core/`.
+- Registered `CorePlugin` in `main.rs`, ensuring simulation time scaling is centralised.
+- Logged startup information to confirm the configured time scale.
+- Documented the new module in `src/core/README.md`.

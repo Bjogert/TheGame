@@ -20,10 +20,20 @@
 - See docs/dialogue_research.md for provider comparison and next steps.
 
 ## Dialogue Broker Prototype (S1.3)
-- `DialoguePlugin` now initialises the queue, rate-limit resources, and logs both dialogue responses and retryable failures to keep telemetry flowing while the OpenAI stub is active.
+- `DialoguePlugin` now initialises the queue, rate-limit resources, and logs both dialogue responses and retryable failures regardless of whether the live OpenAI client or the offline fallback is active.
 - `OpenAiDialogueBroker` validates prompts/context, emits explicit provider errors, and expands responses with summaries, targets, and trade history snippets.
 - Warning debt cleared: every exported type is exercised either by runtime systems or focused tests, keeping `cargo check` and `cargo clippy -D warnings` clean.
-- Dialogue module tests explicitly import the `DialogueBroker` trait so the OpenAI stub’s `process` path remains covered without re-exporting the trait publicly.
+- Dialogue module tests explicitly import the `DialogueBroker` trait so the fallback path stays covered without re-exporting the trait publicly.
+
+## Dialogue Telemetry Persistence (S1.8)
+- `DialogueTelemetryLog` now mirrors the in-memory telemetry ring buffer to `logs/dialogue_history.jsonl`, appending JSON lines for both responses and failures.
+- The log directory is created on demand; each entry stores provider, speaker/target labels, request ids, and error metadata so UI tooling or offline analysis can replay recent conversations.
+- Persistence runs immediately after the request queue processes an entry, keeping the JSONL file aligned with the records exposed to UI systems.
+
+## OpenAI Dialogue Integration (S1.9)
+- `OpenAiDialogueBroker` now reads API credentials and optional overrides (model, base URL, temperature, max tokens, timeout) from the environment, calling the real Chat Completions API when `OPENAI_API_KEY` is set.
+- Missing or invalid credentials automatically fall back to the deterministic local response generator so offline testing and CI remain deterministic.
+- A `secrets.env.example` file documents the expected variables; copy it locally or export values before running the game to exercise the live provider.
 
 ## Micro Trade Loop Spike (S1.4)
 - Economy module assigns farmer, miller, and blacksmith professions, each with simple inventories.
@@ -43,10 +53,12 @@
 - Movement destinations currently rely on straight-line travel; pathfinding and avoidance remain future work once richer level geometry exists.
 
 ## NPC Motivation & Wellbeing Spike (S1.7)
-- Motivation will be represented by a bounded dopamine meter tracked per NPC, with configurable gains from task completion, social interaction, leisure, or other satisfying beats.
-- Natural decay and situational penalties (missed work, isolation) drain dopamine; thresholds map to mood states (content, tired, depressed) that influence schedules, dialogue tone, and productivity.
-- Alcohol and similar coping tools provide a temporary dopamine boost but flag a hangover crash that dips the meter below baseline and applies output-quality penalties while intoxicated.
-- The motivation system integrates with the economy dependency matrix so wellbeing modifiers can reference resource access (food, tools) when determining long-term happiness.
+- `config/motivation.toml` loads dopamine caps, decay, gains, mood thresholds, and alcohol behaviour at startup. Adjusting the file changes runtime tuning after a restart.
+- `NpcMotivation` tracks dopamine, mood state, intoxication timers, and hangovers. Baseline decay runs each tick; mood shifts are logged so designers can watch wellbeing trends.
+- Activity transitions emit `NpcActivityChangedEvent`. Leisure keywords (e.g., supper, tavern) award dopamine and can trigger alcohol boosts that later crash into hangovers, but they no longer spoof food dependency satisfaction.
+- Trade completions and dialogue responses feed rewards into motivation systems. While intoxicated or hungover, work rewards are reduced by the configured quality penalty.
+- Daily dependency snapshots are evaluated once the world day advances, so bonuses and penalties reflect the previous day's access to tools, food, and other categories.
+- `EconomyDependencyMatrix` and `ProfessionDependencyUpdateEvent` expose which wellbeing categories each profession satisfied. Categories only count when matching goods exist in inventory; missing requirements apply penalties while complete coverage grants a daily bonus.
 
 ## Tooling - Docker Environment (2025-10-11)
 - Multi-stage Dockerfile provides `dev`, `build`, and `runtime` targets. Use `docker build --target runtime` for slim release images.
