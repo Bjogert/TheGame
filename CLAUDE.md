@@ -97,7 +97,7 @@ Keep files under ~400 lines; split modules when responsibilities grow.
   - `DialogueRequestQueue` executes with documented cooldown constants and logs rate-limited retries.
   - Event consumers bridge `TradeCompleted` events into dialogue prompts; docs synced with warning cleanup.
 - **Recently completed:** S1.2 dialogue scaffolding research (2025-10-10) and S1.6 profession crates + locomotion, so NPCs now walk to work spots before trading.
-- **Next in queue:** Replace the stub with a real OpenAI client, persist dialogue telemetry for UI hooks, expose locomotion telemetry in UI, build the profession/resource dependency matrix for Step 7, then spike the dopamine-driven motivation system so wellbeing can influence behaviour tuning.
+- **Next in queue:** Replace the stub with a real OpenAI client, surface locomotion telemetry in UI, and build the profession/resource dependency matrix for Step 7 so wellbeing hooks and economy configs share a single source of truth.
 
 ---
 

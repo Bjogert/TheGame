@@ -101,7 +101,7 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 
 **Recently completed:** S1.2 (dialogue scaffolding research) finished on 2025-10-10; findings documented in docs/dialogue_research.md. S1.6 (profession crates + locomotion) delivered so the micro trade loop now waits for NPCs to reach their work spots.
 
-**Next in queue:** Replace the stub with a real OpenAI client and persist dialogue telemetry for UI hooks. Use the new movement telemetry to surface travel/exchange status in upcoming UI work, generate the profession/resource dependency matrix for Step 7, then spike the dopamine-driven motivation system so wellbeing can influence behaviour tuning.
+**Next in queue:** Replace the stub with a real OpenAI client, surface movement/trade telemetry in upcoming UI work, and promote the profession/resource dependency matrix for Step 7 so wellbeing hooks and economy configs stay aligned.
 
 ---
 

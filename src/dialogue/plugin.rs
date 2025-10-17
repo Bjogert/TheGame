@@ -9,7 +9,10 @@ use super::{
         advance_dialogue_queue_timers, run_dialogue_request_queue, ActiveDialogueBroker,
         DialogueRateLimitConfig, DialogueRateLimitState, DialogueRequestQueue,
     },
-    telemetry::{record_dialogue_telemetry, DialogueTelemetry},
+    telemetry::{
+        flush_dialogue_telemetry_log, record_dialogue_telemetry, DialogueTelemetry,
+        DialogueTelemetryLog,
+    },
 };
 
 const FALLBACK_DIALOGUE_TARGET: &str = "player";
@@ -22,6 +25,7 @@ impl Plugin for DialoguePlugin {
             .init_resource::<DialogueRateLimitState>()
             .init_resource::<DialogueRequestQueue>()
             .init_resource::<DialogueTelemetry>()
+            .init_resource::<DialogueTelemetryLog>()
             .insert_resource(ActiveDialogueBroker::new(Box::new(
                 OpenAiDialogueBroker::new(),
             )))
@@ -34,6 +38,7 @@ impl Plugin for DialoguePlugin {
                     advance_dialogue_queue_timers,
                     run_dialogue_request_queue,
                     record_dialogue_telemetry,
+                    flush_dialogue_telemetry_log,
                     log_dialogue_events,
                 )
                     .chain(),

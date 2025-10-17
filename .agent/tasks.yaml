@@ -225,7 +225,7 @@
 
 - id: S1.7
   title: "NPC motivation & wellbeing spike"
-  state: backlog
+  state: done
   deps: [S1.6]
   deliverables:
     - "Dopamine-style motivation resource per NPC with decay and reward hooks"
@@ -240,4 +240,26 @@
     - "README.md"
     - ".agent/ai_memory.V.1.yaml"
   notes:
-    - "Spike focuses on data shapes, telemetry, and tuning knobs; full behaviour integration will follow once metrics prove useful."
+    - "NpcMotivation component plus config-driven tuning rewards work, dialogue, and leisure while hooking into the economy dependency matrix after the world day advances."
+    - "Alcohol boosts feed into hangover penalties and reduced task rewards; leisure no longer fakes food access and daily dependency snapshots only satisfy categories backed by matching goods."
+
+- id: S1.8
+  title: "Dialogue telemetry persistence"
+  state: done
+  deps: [S1.7]
+  deliverables:
+    - "DialogueTelemetryLog resource mirrors the in-memory telemetry buffer to disk"
+    - "logs/dialogue_history.jsonl accumulates JSONL entries for responses and failures"
+    - "Documentation and planning artifacts updated with log usage and revised backlog"
+  docs_update:
+    - "README.md"
+    - "docs/tech_notes.md"
+    - "src/dialogue/README.md"
+    - "CHANGELOG.md"
+    - "TASK.md"
+    - "BigPicturePlan.md"
+    - "docs/plan_overview.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Telemetry persistence runs immediately after queue processing so the JSONL log matches UI-visible history."
+    - "logs/ is ignored from version control to prevent accidental commits of local dialogue history."

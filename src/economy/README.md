@@ -7,6 +7,7 @@ The current economy slice is a placeholder "micro trade loop" that proves invent
 - `Inventory` and simple `TradeGood` enums keep track of crate-style goods passed between the farmer, miller, and blacksmith.
 - Each exchange queues a dialogue request with trade context, ensuring NPC chatter references the latest activity.
 - Profession-specific crates now spawn at world start. The micro loop orders each profession to travel to its crate before processing work, so trades trigger only after NPCs visibly arrive.
+- `dependency.rs` defines a placeholder dependency matrix that maps professions and goods to wellbeing categories. Daily trade snapshots emit `ProfessionDependencyUpdateEvent` so NPC motivation systems can reward satisfied needs or penalise shortages, only crediting categories when matching goods are present in inventory.
 
 This loop is intentionally small; expect it to be replaced by a data-driven economy once Step 7 begins.
 

@@ -43,17 +43,19 @@ An experimental Bevy-based project exploring long-form medieval life simulation 
 
 - Upcoming work will add an EconomyRegistry, WorkOrderQueue, expanded event taxonomy, and a profession/resource dependency matrix so new trades stay readable.
 - **Milestone S1 (current focus):** NPC scaffolding, dialogue groundwork, locomotion polish, and economy planning.
-- **Active queue:** Wire up the production OpenAI client, persist dialogue telemetry, surface locomotion/trade status in the UI, publish the dependency matrix, then prototype the dopamine-driven motivation spike.
+- **Active queue:** Expose locomotion/trade status in the UI and publish the expanded dependency matrix for Step 7 now that dialogue telemetry persists to disk.
+- Dialogue telemetry now streams to `logs/dialogue_history.jsonl` as JSON lines for offline analysis or external tooling.
 - Dialogue integration is currently in the research phase. See docs/dialogue_research.md for provider comparisons and rate-limiting notes captured during Step S1.2.
 - The active broker queues requests with global/per-NPC cooldowns while we prepare to swap in real providers.
 
 ## NPC Motivation & Wellbeing
-- Upcoming work will track villager motivation as a dopamine-style meter that rewards productive tasks and social moments, decays over time, and maps thresholds to mood-driven behaviour changes.
-- Alcohol (and similar coping items) provide short-lived boosts with hangover crashes and product-quality penalties, reinforcing the dependency matrix between food, tools, and wellbeing.
-- The spike will live alongside Step 7's economy configs so designers can tune wellbeing inputs without digging through code.
-- **Milestone S1 (current focus):** NPC scaffolding, dialogue groundwork, trade loop, locomotion, and upcoming wellbeing systems.
-- **Active queue:** Replace the dialogue stub with the OpenAI client, record telemetry for UI hooks, publish the economy dependency matrix, and spike the dopamine-style motivation system.
-Check .agent/tasks.yaml for the authoritative backlog. Upcoming steps are wiring the production OpenAI client, persisting dialogue telemetry for UI hooks, generating the profession dependency matrix, and prototyping the dopamine-driven motivation spike. Keep documentation (README, AGENT, TASK.md, tasks, memory) in sync as each slice lands.
+- Villager motivation now tracks a dopamine-style meter via `NpcMotivation`, rewarding productive tasks, dialogue responses, and leisure activities while decaying over time.
+- Alcohol triggers a configurable boost from `config/motivation.toml`, followed by a hangover crash that amplifies decay and reduces work rewards until the penalty clears.
+- Daily wellbeing is tied to the economy dependency matrix: matching goods delivered by professions mark needs as satisfied once the next day begins, while shortages apply penalties that visibly shift mood states.
+- Tune dopamine caps, gains, thresholds, and alcohol behaviour by editing `config/motivation.toml`; changes require a restart today.
+- **Milestone S1 (current focus):** NPC scaffolding, dialogue groundwork, locomotion, economy planning, and the newly landed motivation slice.
+- **Active queue:** Surface locomotion/trade telemetry in the UI and expand the profession dependency matrix for Step 7.
+Check .agent/tasks.yaml for the authoritative backlog. Upcoming steps focus on UI telemetry surfacing and promoting the dependency matrix into Step 7's config-driven data. Keep documentation (README, AGENT, TASK.md, tasks, memory) in sync as each slice lands.
 3. **Format and lint**
    `powershell
 - Dialogue integration is in place at the prototype level. See docs/dialogue_research.md for provider comparisons and rate-limiting notes captured during Step S1.2.
@@ -72,7 +74,8 @@ Check .agent/tasks.yaml for the authoritative backlog. Upcoming steps are wiring
 ## VS Code Tasks
 .vscode/tasks.json wires common commands into VS Code's task runner:
 
-- S0.1a - Toolchain Report captures ustup show.
+- **Milestone S1 (current focus):** NPC scaffolding, dialogue groundwork, trade loop, locomotion polish, and motivation systems.
+- **Active focus:** Preparing to integrate the production OpenAI client, surface telemetry in the UI, and promote the dependency matrix into Step 7's config-driven data.
 - S0.1a - Format / Clippy / Check / Baseline Run validates the scaffold quickly.
 - S0.1c - Run with core_debug and S0.1c - Watch (core_debug) launch with the debug feature once needed (requires cargo-watch).
 - General utilities (Run, Test, Doc, Watch (check --all-targets)) support later milestones.

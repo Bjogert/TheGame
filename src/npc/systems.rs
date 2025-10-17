@@ -7,6 +7,8 @@ use crate::{
         DailySchedule, Identity, LocomotionState, MovementTarget, NpcIdGenerator, NpcLocomotion,
         ScheduleEntry, ScheduleState, ScheduleTicker,
     },
+    npc::events::NpcActivityChangedEvent,
+    npc::motivation::{MotivationConfig, NpcMotivation},
     world::time::WorldClock,
 };
 
@@ -16,6 +18,7 @@ pub fn spawn_debug_npcs(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut id_generator: ResMut<NpcIdGenerator>,
+    motivation_config: Res<MotivationConfig>,
 ) {
     let prototypes = [
         (
@@ -68,6 +71,7 @@ pub fn spawn_debug_npcs(
             DailySchedule::new(schedule_entries),
             ScheduleState::default(),
             NpcLocomotion::default(),
+            NpcMotivation::new(&motivation_config),
             Name::new(format!("{} ({})", name, id)),
         ));
     }
@@ -79,6 +83,7 @@ pub fn tick_schedule_state(
     sim_clock: Res<SimulationClock>,
     clock: Res<WorldClock>,
     mut query: Query<(&Identity, &DailySchedule, &mut ScheduleState)>,
+    mut activity_events: MessageWriter<NpcActivityChangedEvent>,
 ) {
     let delta = sim_clock.last_scaled_delta().as_secs_f32();
     ticker.accumulate(delta);
@@ -102,6 +107,11 @@ pub fn tick_schedule_state(
                 identity.display_name, current_activity
             );
             state.current_activity = current_activity.to_string();
+            activity_events.write(NpcActivityChangedEvent {
+                npc: identity.id,
+                activity: current_activity.to_string(),
+                time_of_day,
+            });
         }
     }
 }
