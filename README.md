@@ -41,13 +41,19 @@ An experimental Bevy-based project exploring long-form medieval life simulation 
 
 ---
 
-   - ustup component add rustfmt clippy
-   - Optional: cargo install cargo-watch for live rebuilds
-2. **Run the scaffold**
-   `powershell
-   cargo run
-   `
-   The current binary opens a Bevy window using the default plugins plus our CorePlugin, WorldPlugin, and NpcPlugin.
+- Upcoming work will add an EconomyRegistry, WorkOrderQueue, expanded event taxonomy, and a profession/resource dependency matrix so new trades stay readable.
+- **Milestone S1 (current focus):** NPC scaffolding, dialogue groundwork, locomotion polish, and economy planning.
+- **Active queue:** Wire up the production OpenAI client, persist dialogue telemetry, surface locomotion/trade status in the UI, publish the dependency matrix, then prototype the dopamine-driven motivation spike.
+- Dialogue integration is currently in the research phase. See docs/dialogue_research.md for provider comparisons and rate-limiting notes captured during Step S1.2.
+- The active broker queues requests with global/per-NPC cooldowns while we prepare to swap in real providers.
+
+## NPC Motivation & Wellbeing
+- Upcoming work will track villager motivation as a dopamine-style meter that rewards productive tasks and social moments, decays over time, and maps thresholds to mood-driven behaviour changes.
+- Alcohol (and similar coping items) provide short-lived boosts with hangover crashes and product-quality penalties, reinforcing the dependency matrix between food, tools, and wellbeing.
+- The spike will live alongside Step 7's economy configs so designers can tune wellbeing inputs without digging through code.
+- **Milestone S1 (current focus):** NPC scaffolding, dialogue groundwork, trade loop, locomotion, and upcoming wellbeing systems.
+- **Active queue:** Replace the dialogue stub with the OpenAI client, record telemetry for UI hooks, publish the economy dependency matrix, and spike the dopamine-style motivation system.
+Check .agent/tasks.yaml for the authoritative backlog. Upcoming steps are wiring the production OpenAI client, persisting dialogue telemetry for UI hooks, generating the profession dependency matrix, and prototyping the dopamine-driven motivation spike. Keep documentation (README, AGENT, TASK.md, tasks, memory) in sync as each slice lands.
 3. **Format and lint**
    `powershell
 - Dialogue integration is in place at the prototype level. See docs/dialogue_research.md for provider comparisons and rate-limiting notes captured during Step S1.2.

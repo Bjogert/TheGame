@@ -1,97 +1,146 @@
-# CLAUDE.md
+# CLAUDE.md - Medieval Simulation (AI-Driven)
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file mirrors `AGENT.md` so Claude Code follows the same operating protocol when collaborating on **TheGame**.
 
-## Project Overview
+---
 
-**TheGame** is a medieval life simulation built with Bevy 0.17, exploring long-form NPC simulation with AI assistance. The codebase (865 lines of Rust) demonstrates professional engineering patterns with clean plugin-based ECS architecture and data-driven configuration.
+## 0) Baseline & Environment
+- **Engine:** Bevy `0.17` (pre-release). Verify crate compatibility before adding dependencies and lock the exact patch once stable.
+- **Language:** Rust 1.78+ (edition 2021) with `rustfmt` and `clippy` components installed.
+- **Target Platform:** Windows desktop first; Linux should work opportunistically; macOS is aspirational.
+- **Physics:** Postpone until required. When needed, prefer `bevy_rapier3d` after confirming Bevy version support.
+- **Style:** Types/traits/enums use `PascalCase`; modules/files use `snake_case`. Only commit code after `cargo fmt` and `cargo clippy -D warnings` pass.
+- **Documentation cadence:** Any behaviour change must update `CHANGELOG.md`, `docs/tech_notes.md`, relevant `src/**/README.md`, `.agent/tasks.yaml`, and `.agent/ai_memory.V.N.yaml`.
 
-**Current State:** Milestone S1.3 (dialogue broker prototype logging responses + failures)
-**Architecture Maturity:** Early but well-designed; ready for horizontal expansion
-**Code Quality:** 61% documentation-to-code ratio, defensive validation throughout, no files exceed 400-line guideline
+---
 
-**Key Architectural Strengths:**
-- Clean 3-tier plugin dependency graph (Core → World → NPC)
-- Comprehensive time-scaling system cascading through all simulation layers
-- Defensive programming with validation, clamping, and fallback patterns
-- Feature-gated debug instrumentation with zero runtime cost
-- No circular dependencies detected
+## 1) Operating Protocol (Meta)
+- **Plans drive the work.**
+  1. **Plan 1 – Masterplan:** Architecture north star (Sections 1–2 of `AGENT.md`). Modify only when direction shifts.
+  2. **Plan 2 – Roadmap:** Milestones with dependencies (Section 3). Refresh when scope/order changes.
+  3. **Plan 3 – Active Steps:** Current execution queue (Section 4). Treat entries as binding until delivered or superseded.
+- `.agent/` holds all coordination artifacts. Do not create parallel plans elsewhere.
+- Capture new assumptions or discoveries in `.agent/ai_memory.V.N.yaml` (`short_term`, promote durable notes to `long_term`).
+- Refactors are welcome when they unblock the current task; record rationale and follow-ups in `ai_memory`.
+- Add debug tooling behind feature flags or config toggles; remove or gate once the need passes.
+- When logic becomes complex (economy math, scheduling, save/load), add unit/integration tests. If skipping tests, state the risk explicitly.
 
-## MCP Server Tools
+---
 
-This project has Model Context Protocol (MCP) servers configured to enhance AI assistant capabilities. These tools provide persistent memory, file system access, and other utilities for development work.
+## 2) Masterplan (Architecture & Principles)
+**Vision:** Long-horizon medieval life simulation where autonomous NPCs live multi-generational stories. First-person start with eventual multiplayer support once systems mature.
 
-### Available MCP Servers
+### 2.1 Core Pillars
+- Simulation-first ECS ticking via data, events, and scoped resources.
+- LLM-augmented NPCs: deterministic needs/schedules, with LLMs supplying rich dialogue and decision hints when state fidelity allows.
+- Data-driven knobs: expose time scaling, economy inputs, and narrative pacing via config files rather than constants.
+- Observability: lightweight metrics/logs (entity counts, tick rate, perf spans) for simulation visibility.
 
-**Filesystem Server (`@modelcontextprotocol/server-filesystem`)**
-- **Purpose:** Read, write, create, and list files and directories
-- **Scope:** Full access to project directory (`c:\Users\robert\TheGame`)
-- **Use Cases:** Code analysis, file modifications, project structure exploration
-- **Key Operations:** `read_file`, `write_file`, `create_directory`, `list_directory`, `move_file`, `search_files`
-- **Compatibility:** ✅ Claude Code (MCP-compatible)  ❌ GitHub Copilot (no MCP support)
+### 2.2 Target Module Layout
+```
+/src
+  /core        # App entry, time scaling, logging, profiling toggles
+  /world       # Terrain, environmental clocks, spatial queries
+  /npc         # Components, behaviour schedulers, spawners
+  /dialogue    # LLM client, prompt templates, rate limiting
+  /economy     # Resources, jobs, production/consumption loops
+  /save        # Serialization, migrations, persistence glue
+  /ui          # HUD, menus, chat panels
+  /weather     # Weather simulation and environmental effects
+  /mods        # Data pack loading (future)
+  /utils       # Shared helpers (math, logging, asset loaders)
+/config        # Tunables (time.toml, economy.toml, etc.)
+/assets        # Art/audio/fonts/placeholders
+/docs          # Architecture notes, diagrams, tech decisions
+```
+Keep files under ~400 lines; split modules when responsibilities grow.
 
-**Memory Server (`@modelcontextprotocol/server-memory`)**
-- **Purpose:** Persistent storage of information across conversation sessions
-- **Use Cases:** Remember project decisions, track todo items, store research findings
-- **Key Operations:** `add_memory`, `search_memories`, `list_memories`, `delete_memory`
-- **Persistence:** Data survives between sessions for continuity
-- **Compatibility:** ✅ Claude Code (MCP-compatible)  ❌ GitHub Copilot (no MCP support)
+### 2.3 Plugin Dependencies
+- **Core plugins:** `CorePlugin`, `WorldPlugin`, `NpcPlugin`, `EconomyPlugin`, `SavePlugin`.
+- **Optional plugins:** `DialoguePlugin`, `UiPlugin`, `WeatherPlugin`, `ModsPlugin`.
+- Prefer events for cross-plugin signalling and read-only shared resources. Avoid direct mutable access into external components.
 
-**Serena MCP Server**
-- **Purpose:** Enhanced conversational AI assistance and intelligent task coordination
-- **Use Cases:** Advanced reasoning, workflow optimization, context-aware assistance
-- **Key Operations:** Intelligent task planning, reasoning support, enhanced dialogue capabilities
-- **Integration:** Works alongside other MCP servers to provide sophisticated AI assistance
-- **Compatibility:** ✅ Claude Code (MCP-compatible)  ❌ GitHub Copilot (no MCP support)
+### 2.4 Data Strategy
+- Persistence: introduce a `DbResource` abstraction (SQLite-backed) once save/load arrives. Store migrations in `/migrations` with version manifest.
+- Configs: load TOML at startup, design for hot-reload compatibility.
+- LLM Memory: maintain per-NPC summaries and rolling interaction logs with bounded token usage via summarisation and TTL windows.
 
-### MCP Usage Guidelines
+### 2.5 Tech-Debt Guardrails
+- Document trade-offs immediately.
+- Track experiments in `ai_memory.short_term[].experiments`.
+- Record issues/fixes in postmortems to prevent regression loops.
 
-**When to Use Filesystem Server:**
-- Reading configuration files (`config/time.toml`, `Cargo.toml`)
-- Analyzing code structure and dependencies
-- Making targeted edits to source files
-- Creating new modules or documentation files
-- Searching for specific patterns across the codebase
+---
 
-**When to Use Memory Server:**
-- Storing architectural decisions for future reference
-- Remembering user preferences and project patterns
-- Tracking long-term development goals and milestones
-- Maintaining context between coding sessions
-- Documenting lessons learned from debugging sessions
+## 3) Roadmap (Plan 2)
+| Milestone | Focus | Key Deliverables | Dependencies |
+|-----------|-------|------------------|--------------|
+| **M0** | Bootstrap & Core | Project skeleton, `CorePlugin` (time scaling, debug toggles), baseline docs | None |
+| **M1** | World Slice | Ground plane, lighting, adjustable day/night cycle, player camera | M0 |
+| **M2** | Persistence Layer | SQLite wrapper, migrations, save/load of world tick and NPC snapshot | M0 |
+| **M3** | NPC Foundations | Identity/traits components, needs & schedule ticks, population spawner | M2 |
+| **M4** | Dialogue | LLM client, prompt templates, chat UI, token budgeter | M3 |
+| **M5** | Economy | Resource definitions, job outputs, market balancing hooks | M3 |
+| **M6** | Weather & Seasons | Weather states affecting schedules and yields | M1, M5 |
+| **M7** | Threats & Combat | Aggro models, damage loop, physics integration if required | M1, M3 |
+| **M8** | Lineage | Genetics, family trees, trait inheritance | M3 |
+| **M9** | Modding Hooks | External data packs, validation tooling, plugin discovery | M5, M8 |
+| **M10** | Multiplayer Prototype | Headless server tick, client sync path, rollback exploration | M2-M5 |
 
-**Best Practices:**
-- Use filesystem server for immediate project work and analysis
-- Use memory server to maintain continuity and avoid repeating research
-- Store important project insights in memory for future AI assistants
-- Document significant decisions in both memory and project files
-- Use specific, searchable keys when storing memories
+**Recurring chores:** refresh docs/diagrams, audit dependencies, update `ai_memory`, capture postmortems, remove dead code each milestone.
 
-**MCP Compatibility Note:**
-MCP is an open protocol, but tool support varies:
-- **Claude interfaces:** ✅ Full MCP support (Claude Code, Claude.ai web, API clients)
-- **GitHub Copilot/Codex:** ❌ No MCP support (uses different architecture)
-- **Future AI tools:** ✅ Any tool implementing MCP protocol can access these servers
+---
 
-### Integration with Development Workflow
+## 4) Active Steps (Plan 3)
+- **Current Focus – S1.3: Dialogue Broker Prototype**
+  - OpenAI stub guards prompt/context validation, emits structured errors, and logs dialogue responses/failures.
+  - `DialogueRequestQueue` executes with documented cooldown constants and logs rate-limited retries.
+  - Event consumers bridge `TradeCompleted` events into dialogue prompts; docs synced with warning cleanup.
+- **Recently completed:** S1.2 dialogue scaffolding research (2025-10-10) and S1.6 profession crates + locomotion, so NPCs now walk to work spots before trading.
+- **Next in queue:** Replace the stub with a real OpenAI client, persist dialogue telemetry for UI hooks, expose locomotion telemetry in UI, build the profession/resource dependency matrix for Step 7, then spike the dopamine-driven motivation system so wellbeing can influence behaviour tuning.
 
-The MCP servers complement the existing VS Code tasks and Rust toolchain:
-- **File Operations:** Use MCP filesystem tools for analysis, VS Code tasks for builds/tests
-- **Project Memory:** Store development context in MCP memory, technical details in project docs
-- **Code Quality:** MCP can help maintain consistency with project patterns documented in memory
-- **Documentation:** Update both project files and MCP memories when making architectural changes
+---
 
-## Common Commands
+## 5) MCP Server Tools
+- **filesystem** – Navigate/modify project files (`npx @modelcontextprotocol/server-filesystem c:\\Users\\robert\\TheGame`).
+- **memory** – Persistent knowledge graph for NPC relationships/world state (`npx @modelcontextprotocol/server-memory`).
+- **serena** – Enhanced conversational AI/task coordination server.
 
-### Development Workflow
-```powershell
+**Usage guidelines**
+- Use filesystem server for file operations instead of manual editing.
+- Shape NPC memory schema around entities, relations, and observations.
+- `DialogueBroker` should consult the memory server for context.
+- Save/load systems must sync with the memory server.
+- World events should create memory entities/relations.
+
+---
+
+## 6) Tooling & Automation
+- VS Code tasks in `.vscode/tasks.json` cover run, check, clippy, fmt, test, docs, watch.
+- Before merging, run `cargo fmt`, `cargo clippy -D warnings`, and `cargo check --all-targets` at minimum.
+- For live-edit loops, prefer `cargo watch -x "check --all-targets"` or `-x run` (requires `cargo-watch`).
+- Record custom scripts in `/scripts` and link them from `README.md`.
+
+---
+
+## 7) Trusted References
+- Bevy Book + examples for the tracked minor version.
+- Official Bevy migration guides.
+- `bevy_rapier` documentation for physics, `bevy_ecs` deep dives for ECS patterns, `leafwing_input_manager` (or similar) for input abstractions.
+- SQLite + Rust docs (`sqlx`, `rusqlite`).
+- Add better sources (talks, devlogs, whitepapers) as they surface.
+
+---
+
+## Common Commands & Workflows
+```bash
 # Run the application
 cargo run
 
-# Run with debug features (per-second simulation tick logging)
+# Run with debug features
 cargo run --features core_debug
 
-# Format, lint, and check before commits (REQUIRED)
+# Format, lint, and type-check (REQUIRED before commits)
 cargo fmt
 cargo clippy -- -D warnings
 cargo check --all-targets
@@ -99,604 +148,41 @@ cargo check --all-targets
 # Run tests
 cargo test
 
-# Live reload during development (requires cargo-watch)
+# Live reload (requires cargo-watch)
 cargo watch -x "check --all-targets"
-cargo watch -x "run --features core_debug"
 ```
 
-### VS Code Tasks
-Pre-configured tasks accessible via `Ctrl+Shift+P` → *Run Task*:
-- `S0.1a - Format / Clippy / Check / Baseline Run` - Full validation pipeline
-- `S0.1c - Run with core_debug` - Launch with debug logging
-- `General - Test (cargo test)` - Run test suite
-- `General - Watch (check --all-targets)` - Continuous type-checking
-
-## Architecture Deep Dive
-
-### Plugin Dependency Graph
-
-**CRITICAL: Plugin registration order is mandatory and enforced:**
-
-```
-CorePlugin (Foundation)
-    └── provides: SimulationClock
-        │
-        ├── WorldPlugin (Environment)
-        │   ├── depends on: SimulationClock
-        │   └── provides: WorldClock, WorldTimeSettings, PrimarySun
-        │       │
-        │       └── NpcPlugin (Entities)
-        │           ├── depends on: WorldClock (via schedule updates)
-        │           └── provides: Identity, NpcIdGenerator, DailySchedule
-```
-
-**Registration in [src/main.rs:11-16](src/main.rs#L11-L16):**
-```rust
-App::new()
-    .add_plugins((
-        DefaultPlugins,
-        CorePlugin::default(),  // MUST be first - provides SimulationClock
-        WorldPlugin,            // Depends on CorePlugin
-        NpcPlugin,              // Depends on WorldPlugin
-    ))
-```
-
-**Violation Consequences:** Panic on resource access or system ordering failure. Always verify plugin order before adding new plugins.
-
-### Time Scaling Architecture (Critical System)
-
-The codebase implements a **three-layer time abstraction** that is the foundation of all simulation:
-
-#### Layer 1: Bevy's `Time` (Real Time)
-- Raw frame deltas from the engine
-- **Never use this directly in simulation code**
-
-#### Layer 2: `SimulationClock` (Scaled Time)
-- Location: [src/core/plugin.rs:75-80](src/core/plugin.rs#L75-L80)
-- Multiplies real time by `time_scale` (default: 1.0, min: 0.001)
-- Updated every frame by `update_simulation_clock` system
-- **This is what ALL simulation systems should read**
-
-```rust
-pub fn tick(&mut self, real_delta: Duration) {
-    self.last_real_delta = real_delta;
-    self.last_scaled_delta = real_delta.mul_f32(self.time_scale);
-    self.elapsed += self.last_scaled_delta;
-}
-```
-
-#### Layer 3: `WorldClock` (Game Time)
-- Location: [src/world/time.rs:165-172](src/world/time.rs#L165-L172)
-- Day/night cycle derived from scaled time
-- `time_of_day` is a fraction (0.0 = midnight, 0.5 = noon)
-- Drives lighting, NPC schedules, and future weather systems
-
-**Data Flow:**
-```
-Real Frame Delta (Bevy Time)
-    ↓ [update_simulation_clock system]
-SimulationClock.last_scaled_delta = real_delta * time_scale
-    ↓ [advance_world_clock system]
-WorldClock.time_of_day += scaled_delta / seconds_per_day
-    ↓ [apply_world_lighting system]
-Sun rotation & ambient light updated
-    ↓ [update_schedule_state system]
-NPC activities updated based on time of day
-```
-
-### System Ordering (Critical Path)
-
-**WorldPlugin Systems** [src/world/plugin.rs:26-37](src/world/plugin.rs#L26-L37):
-```rust
-.add_systems(Update, (
-    advance_world_clock,
-    (
-        update_cursor_grab,
-        fly_camera_mouse_look.after(update_cursor_grab),
-        fly_camera_translate,
-    ),
-    apply_world_lighting.after(advance_world_clock),
-))
-```
-
-**NpcPlugin Systems** [src/npc/plugin.rs:17-18](src/npc/plugin.rs#L17-L18):
-```rust
-.add_systems(Startup, spawn_debug_npcs.after(spawn_world_environment))
-.add_systems(Update, update_schedule_state.after(advance_world_clock))
-```
-
-**Critical Ordering Rules:**
-1. `advance_world_clock` MUST run before `apply_world_lighting` (lighting reads `time_of_day`)
-2. `update_cursor_grab` MUST run before `fly_camera_mouse_look` (cursor state affects input)
-3. `spawn_debug_npcs` MUST run after `spawn_world_environment` (NPCs need ground plane)
-4. `update_schedule_state` MUST run after `advance_world_clock` (schedules read `time_of_day`)
-
-**Parallelization:** Systems without `.after()` / `.before()` constraints can run in parallel (Bevy handles this automatically).
-
-### Configuration Pattern (Two-Phase Validation)
-
-All configuration loading follows a defensive pattern to prevent crashes from invalid user input:
-
-**Pattern:** [src/world/time.rs:74-95](src/world/time.rs#L74-L95)
-1. **Load:** Read TOML file
-2. **Parse:** Deserialize to private `RawTimeConfig` structs
-3. **Validate:** Convert to public structs via `From` trait with clamping/normalization
-4. **Fallback:** Use defaults on any error (with `warn!` logging)
-
-**Example Validation Logic** [src/world/time.rs:103-110](src/world/time.rs#L103-L110):
-```rust
-let seconds_per_day = (clock.day_length_minutes.max(0.1)) * 60.0;  // Min 6 seconds/day
-let sunrise = clock.sunrise_fraction.clamp(0.0, 1.0);               // Force [0, 1]
-let sunset = clock.sunset_fraction.clamp(0.0, 1.0);
-let (sunrise, sunset) = if sunrise == sunset {
-    (sunrise, (sunrise + 0.5) % 1.0)  // Force separation if equal
-} else {
-    (sunrise.min(sunset), sunrise.max(sunset))  // Ensure sunrise < sunset
-};
-```
-
-**Config File Location:** `config/time.toml` (relative to executable working directory, **no hot reload**)
-
-**When Adding New Config:**
-- Create `RawXxxConfig` (private) with `#[derive(Deserialize)]`
-- Create `XxxSettings` (public) with validation in `impl From<RawXxxConfig>`
-- Use `load_or_default()` pattern in plugin `build()`
-- Always log loaded values for user verification
-
-### Component Design Patterns
-
-#### Pattern 1: Stateful Marker Components
-[src/world/components.rs:5-22](src/world/components.rs#L5-L22)
-```rust
-#[derive(Component)]
-pub struct FlyCamera {
-    pub yaw: f32,
-    pub pitch: f32,
-    pub move_speed: f32,
-    pub look_sensitivity: f32,
-}
-```
-- Public fields for direct access (ECS philosophy)
-- Constructor with sensible defaults
-- Used as query filter + data storage
-
-#### Pattern 2: Zero-Sized Markers
-[src/world/components.rs:25-26](src/world/components.rs#L25-L26)
-```rust
-#[derive(Component, Default)]
-pub struct PrimarySun;
-```
-- No data storage, pure query filter
-- Derives `Default` for ergonomic spawning
-- Used to identify specific entities (e.g., main directional light)
-
-#### Pattern 3: Newtype Wrappers with Display
-[src/npc/components.rs:7-19](src/npc/components.rs#L7-L19)
-```rust
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component)]
-pub struct NpcId(u64);
-
-impl fmt::Display for NpcId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "NPC-{:04}", self.0)  // Outputs "NPC-0001" format
-    }
-}
-```
-- Strong typing for semantic IDs (prevents mixing up different ID types)
-- Custom Display for better logging
-- Supports hashing for HashMap keys
-
-### Query Patterns
-
-#### Pattern 1: Single Mutable Query (Bevy 0.17)
-[src/world/systems.rs:56](src/world/systems.rs#L56)
-```rust
-mut cursor_options: Single<&mut CursorOptions>
-```
-- `Single<T>` ensures exactly one entity matches
-- Panics if 0 or >1 matches (intentional for unique resources)
-
-#### Pattern 2: Optional Single Query
-[src/world/systems.rs:87](src/world/systems.rs#L87)
-```rust
-if let Ok((fly_cam, mut transform)) = query.single_mut() {
-    // Safe handling if entity doesn't exist
-}
-```
-
-#### Pattern 3: Marker-Based Query
-[src/world/time.rs:179](src/world/time.rs#L179)
-```rust
-mut sun_query: Query<(&PrimarySun, &mut Transform, &mut DirectionalLight)>
-```
-- `&PrimarySun` filters to tagged entity
-- Avoids querying all lights in scene (performance)
-
-### Mathematical Calculations (Key Insights)
-
-#### Sun Rotation [src/world/time.rs:182-185](src/world/time.rs#L182-L185)
-```rust
-let sun_angle = (day_fraction - 0.25) * TAU;  // Subtract 0.25 so noon (0.5) is vertical
-let declination = settings.sun_declination;    // Tilt for dawn/dusk bias
-let rotation = Quat::from_euler(EulerRot::ZYX, 0.0, declination, sun_angle).normalize();
-```
-- `TAU` (2π) for full rotation
-- `-0.25` offset makes 0.0 = 6am, 0.5 = noon (sun overhead)
-
-#### Daylight Factor (Smooth Transitions) [src/world/time.rs:187-200](src/world/time.rs#L187-L200)
-```rust
-let daylight_span = settings.sunset_fraction - settings.sunrise_fraction;
-let mut t = day_fraction;
-if t < settings.sunrise_fraction {
-    t += 1.0;  // Handle midnight wrap (crucial for continuous cycles)
-}
-let offset = (t - settings.sunrise_fraction) % 1.0;
-let normalized = (offset / daylight_span).clamp(0.0, 1.0);
-normalized.sin().max(0.0)  // Sine curve for smooth dawn/dusk
-```
-- Midnight wrapping prevents discontinuities
-- Sine curve creates natural-looking transitions
-
-#### Light Intensity (Power Curve) [src/world/time.rs:202-203](src/world/time.rs#L202-L203)
-```rust
-let intensity = settings.night_lux +
-    (settings.noon_lux - settings.night_lux) * daylight_factor.powf(1.5);
-```
-- Power 1.5 exponent creates sharper twilight drop-off (more realistic)
-- Lerps between 5.0 lux (moonlight) and 50,000.0 lux (sunlight)
-
-## Coding Style and Conventions
-
-### Naming Conventions
-
-**Systems:**
-- Verb phrases: `update_simulation_clock`, `spawn_debug_npcs`, `apply_world_lighting`
-- No `_system` suffix (Bevy 0.17 convention)
-
-**Components:**
-- Noun phrases: `FlyCamera`, `Identity`, `PrimarySun`
-- Adjective + Noun for markers: `PrimarySun` (not just `Sun`)
-
-**Resources:**
-- Noun phrases with context: `SimulationClock`, `WorldTimeSettings`
-- Generator suffix for factories: `NpcIdGenerator`
-
-**Constants:**
-- SCREAMING_SNAKE_CASE: `DEFAULT_TIME_SCALE`, `MIN_TIME_SCALE`, `CONFIG_PATH`
-- Include units in name: `day_length_minutes`, `sun_declination_radians`
-
-### Resource vs Component Usage
-
-**Resources (Global Singletons):**
-- `SimulationClock` - Application-wide time scaling
-- `WorldClock` - Shared day/night cycle
-- `WorldTimeSettings` - Configuration data
-- `NpcIdGenerator` - Monotonic ID issuer
-- `AmbientLight` - Scene-wide lighting (Bevy built-in)
-
-**Components (Per-Entity State):**
-- `FlyCamera` - Camera-specific orientation
-- `Identity` - NPC-specific data
-- `DailySchedule` - Per-NPC schedule
-- `ScheduleState` - Per-NPC activity tracking
-
-**Rule of Thumb:** Use Resources for singleton state or shared configuration; Components for per-entity data.
-
-### Error Handling Philosophy
-
-**Configuration Errors:**
-- Fail gracefully with `warn!` logging + default fallback
-- **NEVER panic on invalid user input**
-- Example: [src/world/time.rs:80-92](src/world/time.rs#L80-L92)
-
-**Validation Strategy:**
-- Clamp numeric inputs to safe ranges (`min`, `max`, `clamp`)
-- Normalize invalid combinations (e.g., `sunrise == sunset`)
-- Log assumptions made during validation
-- Use `saturating_add` for overflow protection
-
-**No `unwrap()` in Production Code:**
-- Use `unwrap_or()`, `unwrap_or_default()`, or match expressions
-- Exception: Tests can use `unwrap()` freely
-
-## Critical Pitfalls to Avoid
-
-### Pitfall 1: Plugin Order Violations
-**Risk:** Adding plugin before its dependencies
-**Symptom:** Panic on resource access (e.g., `SimulationClock` not found)
-**Prevention:** Always check plugin order in [src/main.rs](src/main.rs) before adding new plugins
-
-### Pitfall 2: Using Bevy's Time Instead of SimulationClock
-**Risk:** Systems reading `Res<Time>` instead of `Res<SimulationClock>`
-**Symptom:** Behavior doesn't respect time scale (runs at real-time speed)
-**Prevention:** Lint rule or comment in module READMEs
-
-**❌ BAD:**
-```rust
-fn bad_system(time: Res<Time>) {
-    let delta = time.delta_secs();  // NOT SCALED!
-}
-```
-
-**✅ GOOD:**
-```rust
-fn good_system(sim_clock: Res<SimulationClock>) {
-    let delta = sim_clock.last_scaled_delta().as_secs_f32();
-}
-```
-
-### Pitfall 3: Configuration Path Assumptions
-**Risk:** Config paths relative to executable, not source
-**Symptom:** Works in `cargo run`, fails in packaged build
-**Prevention:** Document working directory requirements; consider embedded defaults via `include_str!`
-
-### Pitfall 4: Unvalidated TOML
-**Risk:** Adding new config fields without validation
-**Symptom:** Invalid values crash simulation
-**Prevention:** Always use two-phase pattern (Raw structs + `From` trait validation)
-
-### Pitfall 5: Ignoring System Ordering
-**Risk:** Forgetting `.after()` / `.before()` constraints
-**Symptom:** Race conditions, flickering, incorrect state
-**Prevention:** Document dependencies in comments; add integration tests
-
-## Feature Flags
-
-**Current Flags** [Cargo.toml:6-8](Cargo.toml#L6-L8):
-```toml
-[features]
-default = []
-core_debug = []
-```
-
-**Usage Pattern:**
-- Conditional compilation: `#[cfg(feature = "core_debug")]`
-- Dead code suppression: `#[cfg_attr(not(feature), allow(dead_code))]`
-- Zero runtime cost when disabled (compiled out entirely)
-
-**Debug Output** [src/core/plugin.rs:136-143](src/core/plugin.rs#L136-L143):
-```
-Sim elapsed: 42.15s | scale: 1.000 | real dt: 0.0167s | scaled dt: 0.0167s
-```
-- Logs every simulated second (not every frame)
-- Shows time scale multiplier and both delta values
-
-**When Adding New Debug Features:**
-- Gate behind feature flag or config toggle
-- Use `info!(target: "feature_name", "...")` for filterable logs
-- Document in module README and CLAUDE.md
-
-## Important Default Values
-
-| Constant | Value | Location | Rationale |
-|----------|-------|----------|-----------|
-| `DEFAULT_TIME_SCALE` | 1.0 | [src/core/plugin.rs:7](src/core/plugin.rs#L7) | Real-time default for development |
-| `MIN_TIME_SCALE` | 0.001 | [src/core/plugin.rs:8](src/core/plugin.rs#L8) | Prevents zero/negative time |
-| `GROUND_SCALE` | 100.0 | [src/world/systems.rs:12](src/world/systems.rs#L12) | Large walkable area |
-| `CAMERA_START_POS` | (-12, 8, 16) | [src/world/systems.rs:13](src/world/systems.rs#L13) | Angled overview of origin |
-| `day_length_minutes` | 10.0 | [config/time.toml:4](config/time.toml#L4) | Fast cycles for testing |
-| `sunrise_fraction` | 0.22 | [config/time.toml:6](config/time.toml#L6) | ~5:16 AM in 24h day |
-| `sunset_fraction` | 0.78 | [config/time.toml:8](config/time.toml#L8) | ~6:43 PM in 24h day |
-| `noon_lux` | 50,000.0 | [config/time.toml:14](config/time.toml#L14) | Realistic outdoor sunlight |
-| `night_lux` | 5.0 | [config/time.toml:16](config/time.toml#L16) | Moonlit visibility |
-
-## Development Guidelines
-
-### Code Style Requirements
-- Follow Rust 2021 edition conventions
-- **PascalCase** for types/traits/enums, **snake_case** for modules/files
-- Keep files under **400 lines**; split when new responsibilities emerge
-- All commits must pass `cargo fmt` and `cargo clippy -D warnings`
-- Public fields for Components (ECS philosophy), private fields for Resources
-
-### Documentation Requirements
-When making behavior changes, update:
-1. `CHANGELOG.md` - Step-level history
-2. `docs/tech_notes.md` - Technical decisions
-3. Relevant `src/**/README.md` - Module documentation
-4. `.agent/tasks.yaml` - Task tracking
-5. `.agent/ai_memory.V.N.yaml` - Decisions and open questions
-
-**Note:** The project follows an AI-driven development workflow coordinated through `.agent/` files. Review `AGENT.md` for the masterplan and active steps before making significant changes.
-
-### Module READMEs
-Each plugin module includes a README describing:
-- Plugin responsibilities and components
-- Integration notes and usage examples
-- Follow-up tasks and design decisions
-
-**Always read module READMEs before modifying unfamiliar code.**
-
-### Test Coverage
-**Current Status:** ~3% (2 tests in `src/core/plugin.rs`)
-
-**Coverage by Module:**
-- Core: 2 tests ✓ (time scaling math, clamping validation)
-- World: 0 tests ✗
-- NPC: 0 tests ✗
-
-**Priority Test Gaps:**
-1. `WorldClock::tick()` day wrapping at midnight
-2. `apply_world_lighting()` calculation edge cases
-3. NPC schedule transitions at midnight
-4. Config validation edge cases (sunrise == sunset, etc.)
-
-**When Adding Tests:**
-- Unit tests in same file as implementation (`#[cfg(test)] mod tests`)
-- Integration tests in `tests/` directory
-- Use descriptive test names: `test_clock_scales_delta_with_multiplier`
-
-## Extension Points for Future Development
-
-### Plugin System
-New plugins can hook into existing schedules (Startup, Update):
-```rust
-impl Plugin for DialoguePlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(LlmClient::new())
-            .add_systems(Update, (
-                process_llm_queue,
-                update_dialogue_ui.after(process_llm_queue),
-            ));
-    }
-}
-
-// In main.rs:
-.add_plugins((
-    CorePlugin::default(),
-    WorldPlugin,
-    NpcPlugin,
-    DialoguePlugin::default(),  // Can read Identity, WorldClock
-))
-```
-
-### Planned Architecture (from AGENT.md)
-Future modules that will be added:
-- `/dialogue` - LLM client, prompt templates, chat UI (Milestone M4)
-- `/economy` - Resources, jobs, production loops (Milestone M5)
-- `/save` - SQLite persistence, migrations (Milestone M2)
-- `/ui` - HUD, menus, panels (Milestone M4)
-- `/weather` - Weather simulation and environmental effects (Milestone M6)
-- `/mods` - Data pack loading (Milestone M9)
-
-### Recommended Patterns for Future Systems
-
-#### Pattern 1: Event-Driven Architecture
-```rust
-#[derive(Event)]
-pub struct NpcActivityChanged {
-    pub npc_id: NpcId,
-    pub old_activity: String,
-    pub new_activity: String,
-}
-
-// In update_schedule_state:
-if state.current_activity != current_activity {
-    events.send(NpcActivityChanged { /* ... */ });
-}
-```
-
-#### Pattern 2: Change Detection (Performance)
-```rust
-fn update_lighting(
-    clock: Res<WorldClock>,
-    settings: Res<WorldTimeSettings>,
-) {
-    if !clock.is_changed() {
-        return;  // Skip expensive calculations
-    }
-    // ...
-}
-```
-
-#### Pattern 3: Tick-Rate Independence
-```rust
-#[derive(Resource)]
-pub struct TickAccumulator {
-    elapsed: Duration,
-    tick_interval: Duration,
-}
-
-fn schedule_updates(
-    mut accumulator: ResMut<TickAccumulator>,
-    clock: Res<SimulationClock>,
-) {
-    accumulator.elapsed += clock.last_scaled_delta();
-    while accumulator.elapsed >= accumulator.tick_interval {
-        accumulator.elapsed -= accumulator.tick_interval;
-        // Run schedule update
-    }
-}
-```
-
-## Debug Features
-
-### Camera Controls
-- **Mouse Look:** Hold right-click + drag
-- **Movement:** WASD (horizontal), Space (up), LShift (down)
-- **Sprint:** Hold LCtrl (2.5x speed multiplier: [src/world/systems.rs:115](src/world/systems.rs#L115))
-- **Cursor Lock:** Automatic during right-click
-
-### NPC Visualization
-- Debug capsule meshes (0.3 radius, 1.0 height)
-- Color-coded: Alric (red), Bryn (blue), Cedric (green)
-- Positions: [src/npc/systems.rs:18-52](src/npc/systems.rs#L18-L52)
-
-### Logging Levels
-- `info!()` - Configuration, major state changes, NPC activities
-- `warn!()` - Configuration fallbacks, validation issues
-- `debug!()` - Not used (prefer feature-gated `info!` with targets)
-
-## Build Profiles
-
-**Development Profile** [Cargo.toml:16-21](Cargo.toml#L16-L21):
-```toml
-[profile.dev]
-opt-level = 1  # Light optimization for our code
-
-[profile.dev.package."*"]
-opt-level = 3  # Full optimization for dependencies (Bevy)
-```
-- **Rationale:** Fast iteration on game code, performant Bevy rendering
-
-**Release Profile** [Cargo.toml:24-27](Cargo.toml#L24-L27):
-```toml
-[profile.release]
-opt-level = 3
-lto = "thin"
-codegen-units = 1
-```
-- Aggressive optimization with link-time optimization (LTO)
-
-## Important Notes
-
-- **Bevy version:** 0.17 (pre-release track). Verify crate compatibility before adding dependencies.
-- **Target platform:** Windows desktop first; Linux should work opportunistically.
-- **Physics:** Deferred until needed. When required, prefer `bevy_rapier3d` with compatibility audit.
-- **Current milestone:** M0 (Core scaffolding). Active step tracked in `AGENT.md` Section 4.
-- **Working directory:** Config files expect to run from repository root (where `Cargo.toml` lives)
-
-## Maintenance Checklist
-
-**Before Each Commit:**
+### Maintenance Checklist
 - [ ] Run `cargo fmt`
-- [ ] Run `cargo clippy -- -D warnings` (MUST pass)
-- [ ] Run `cargo test` (all tests pass)
-- [ ] Test both `cargo run` and `cargo run --features core_debug`
+- [ ] Run `cargo clippy -- -D warnings`
+- [ ] Run `cargo test`
+- [ ] Exercise `cargo run` and `cargo run --features core_debug`
 
-**Before Adding Dependencies:**
-- [ ] Verify Bevy 0.17 compatibility
-- [ ] Check license compatibility
-- [ ] Document rationale in `AGENT.md` Section 6
+### Dependency Guardrails
+- Verify Bevy 0.17 compatibility and licensing before adding dependencies.
+- Document rationale for new tooling in Section 6.
+
+---
 
 ## Quick Reference
+- **Entry Point:** `src/main.rs`
+- **Time Scaling:** `src/core/plugin.rs`
+- **Day/Night Cycle:** `src/world/time.rs`
+- **Camera Controls:** `src/world/systems.rs`
+- **NPC Systems:** `src/npc/systems.rs`
+- **Configuration:** `config/time.toml`
 
-| Task | Command |
-|------|---------|
-| Run application | `cargo run` |
-| Run with debug logs | `cargo run --features core_debug` |
-| Format code | `cargo fmt` |
-| Lint (strict) | `cargo clippy -- -D warnings` |
-| Type check | `cargo check --all-targets` |
-| Run tests | `cargo test` |
-| Build docs | `cargo doc --no-deps` |
-| Live reload | `cargo watch -x "check --all-targets"` |
+---
 
-## Key File Locations
+## Observability & Debugging
+- Camera controls: right-click + drag (mouse look), WASD/Space/LShift for movement, LCtrl for sprint (2.5x).
+- NPC debug meshes: capsule visualisation with colour-coded actors.
+- Logging levels: `info!` for configuration/state changes, `warn!` for fallbacks/validation issues; prefer feature-gated logging over `debug!`.
 
-- **Entry Point:** [src/main.rs](src/main.rs)
-- **Time Scaling:** [src/core/plugin.rs](src/core/plugin.rs)
-- **Day/Night Cycle:** [src/world/time.rs](src/world/time.rs)
-- **Camera Controls:** [src/world/systems.rs](src/world/systems.rs)
-- **NPC System:** [src/npc/systems.rs](src/npc/systems.rs)
-- **Configuration:** [config/time.toml](config/time.toml)
+---
 
-## For Comprehensive Analysis
-
-See [COMPREHENSIVE_CODEBASE_ANALYSIS.md](COMPREHENSIVE_CODEBASE_ANALYSIS.md) for:
-- Complete architectural analysis with line-by-line explanations
-- All mathematical calculations with rationale
-- Code quality metrics and dependency graphs
-- Performance considerations and optimization strategies
-- Detailed extension points and scaling patterns
+## Motivation & Economy Outlook
+- The profession/resource dependency matrix arrives with S1.7 to describe production/consumption relationships and shared upkeep needs.
+- A dopamine-inspired wellbeing system will be prototyped immediately after the matrix: NPCs earn dopamine from task completion and socialisation, can temporarily boost via alcohol, suffer quality penalties while intoxicated, and experience post-binge crashes that risk depressive states if dopamine stays low.
+- Keep the model extensible so morale/stress alternatives can replace or augment dopamine if playtests demand.
 

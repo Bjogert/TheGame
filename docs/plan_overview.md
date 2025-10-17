@@ -12,7 +12,8 @@ We are steering the game toward a living medieval settlement that runs even when
 4. **Deepen NPC behavior.** Expand villager schedules, needs, and identities so their daily routines feel intentional rather than random.
 5. **Open the door for dialogue.** Wire up the dialogue broker so characters can exchange lines that reference their current situation.
 6. **Prove a micro trade loop.** Before a full economy milestone, stand up a farmer → miller → blacksmith exchange so dialogue can react to real trades.
-7. **Lay economy groundwork.** Define basic resources and jobs so villagers have reasons to move, gather, craft, and trade.
+7. **Lay economy groundwork.** Define basic resources and jobs so villagers have reasons to move, gather, craft, and trade. Capture a resource dependency matrix that shows which professions rely on (and supply) each input so balancing stays readable as new characters arrive.
+8. **Model villager motivation.** Prototype a dopamine-style wellbeing bar that rewards productive or social moments, decays over time, reacts to coping tools like alcohol, and feeds mood changes back into behaviour, dialogue, and production quality.
 
 ## What finishing this plan looks like
 We will consider this phase complete once a small cast of villagers can go through a day: the sun rises and sets, routines adjust accordingly, conversations reflect what characters are doing, and the simulation survives a save-and-load cycle. At that point we will have the confidence to scale outward—adding weather, more complex economies, and eventually multiplayer—because the basic loop is already proving itself in a believable slice of life.
@@ -20,4 +21,5 @@ We will consider this phase complete once a small cast of villagers can go throu
 ### Current status
 - Step 5 (dialogue broker prototype) is implemented with a queued broker and rate limiting.
 - Step 6 (micro trade loop checkpoint) remains stable: the farmer, miller, and blacksmith trade crates each day and broadcast events to dialogue.
-- Step 7 (economy foundations) now has a published blueprint in `docs/economy_blueprint.md`, detailing config-driven professions, work orders, and expanded events.
+- Step 7 (economy foundations) now has a published blueprint in `docs/economy_blueprint.md`, detailing config-driven professions, work orders, expanded events, and the upcoming resource dependency matrix.
+- Step 8 (motivation spike) is queued behind the telemetry/UI work so wellbeing data can influence behaviour once surfaced.

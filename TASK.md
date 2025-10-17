@@ -139,7 +139,7 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 - [x] Survey the current economy, dialogue, and NPC integrations to identify extension points.
 - [x] Define resources (EconomyRegistry, WorkOrderQueue), config approach, and event taxonomy for Step 7.
 - [x] Record risks, mitigations, and open questions plus next actions leading into implementation.
-- **Outcome:** `docs/economy_blueprint.md` documents the data-driven economy plan, informing Step 7 backlog items.
+- **Outcome:** `docs/economy_blueprint.md` documents the data-driven economy plan, informing Step 7 backlog items and calling for a profession/resource dependency matrix to keep balancing readable.
 - **Exit criteria:** Blueprint published, supporting docs updated, and planning artifacts reflect the new direction.
 
 ---
@@ -156,8 +156,20 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 
 ---
 
+## Step S1.7 - NPC Motivation & Wellbeing Spike
+**Goal:** Prototype a dopamine-style motivation meter that reacts to work, socialising, and coping mechanisms so behaviour and product quality feel grounded.
+
+- [ ] Add a per-NPC dopamine resource with configurable caps, baseline decay, and gains tied to completed tasks, social interactions, and leisure events.
+- [ ] Map dopamine thresholds to mood states (content, tired, depressed) that influence schedule modifiers, dialogue tone, and production efficiency.
+- [ ] Model alcohol as a temporary dopamine boost with intoxication penalties (reduced product quality) and a hangover crash that dips below the starting point.
+- [ ] Connect the motivation data to the economy dependency matrix so resource access (food, tools, housing) can influence long-term wellbeing.
+- [ ] Update planning docs, tech notes, and telemetry plans to cover the new resource and its tuning knobs.
+- **Exit criteria:** Motivation metrics surface in telemetry/docs, mood thresholds and alcohol side effects are documented, and follow-up tasks for full integration are queued.
+
+---
+
 ## What Comes Next
-Use the S1.5 blueprint to draft implementation tasks for Step 7: load profession/recipe configs, add work-order queues, and expand economy events.
+Use the S1.5 blueprint to draft implementation tasks for Step 7: load profession/recipe configs, add work-order queues, expand economy events, and generate the resource dependency matrix. Follow that by spiking the S1.7 motivation system so wellbeing can feed back into schedules and product quality.
 
 
 
