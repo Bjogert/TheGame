@@ -39,12 +39,22 @@ reviewing the existing systems.
      shortages.
    - Add developer cheats (feature flagged) to inspect or tweak economy values
      at runtime.
+6. **Readable dependency mapping**
+   - Maintain a profession/resource matrix (likely in TOML alongside configs)
+     that lists each job's inputs, outputs, upkeep requirements, and shared
+     needs (food, tools, housing).
+   - Expose the matrix through debug UI or logging hooks so designers can tune
+     relationships without reverse-engineering code as new professions arrive.
 
 ## 3. Architectural Decisions
 - **Economy Registry Resource**: Introduce an `EconomyRegistry` resource that
   holds collections of `ProfessionDefinition`, `Recipe`, and `TradeGood` data.
   This registry loads from TOML in `/config/economy/`. Each definition includes
   identifiers, labels, inputs/outputs, and optional seasonal modifiers.
+- **Dependency Matrix View**: Represent the profession/resource matrix as a
+  structured table (e.g., `DependencyRow` entries) derived from the TOML
+  definitions so both runtime systems and documentation share a single source
+  of truth.
 - **Work Order Queue**: Create a `WorkOrder` struct referencing a recipe,
   assigned profession(s), location hints, and deadlines. Store these in a
   `WorkOrderQueue` resource processed each day tick.
@@ -97,6 +107,8 @@ reviewing the existing systems.
 
 ## 7. Next Actions
 - Draft TOML schemas and example configs for professions and recipes.
+- Prototype the dependency matrix extraction so it can emit both runtime data
+  and a human-readable table for balancing sessions.
 - Prototype the `EconomyRegistry` and `WorkOrderQueue` resources behind feature
   flags before replacing the micro loop.
 - Coordinate with the NPC team to align on how schedules will claim and report

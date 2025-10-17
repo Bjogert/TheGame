@@ -68,3 +68,8 @@ All notable changes to this project will be documented in this file.
 - Spawned crate entities for farmer, miller, and blacksmith professions and recorded them in a `ProfessionCrateRegistry`.
 - Added an `NpcLocomotion` component/system pair that steers villagers toward crate destinations using scaled simulation time.
 - Updated the micro trade loop to halt until each profession reaches its crate, producing visible travel before exchanges fire and logging movement telemetry for future UI hooks.
+
+## 2025-10-14 - Planning: Dependency Matrix & Motivation Spike
+- Expanded planning docs (README, TASK.md, BigPicturePlan.md, docs/plan_overview.md, docs/tech_notes.md) to cover the upcoming profession/resource dependency matrix and dopamine-driven motivation system.
+- Added S1.7 to the task queue, documenting dopamine decay/gain rules, mood thresholds, and alcohol trade-offs that will influence product quality.
+- Updated economy blueprint goals and .agent memory with the dependency matrix requirement so economy configs remain the single source of truth.

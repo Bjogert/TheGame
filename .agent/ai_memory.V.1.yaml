@@ -1,7 +1,7 @@
 ﻿# ai_memory.V.1.yaml
 version: 1
 project: "medieval_sim"
-updated_utc: "2025-10-13T00:00:00Z"
+updated_utc: "2025-10-14T00:00:00Z"
 
 # Short-term notes are tied to the active step. Promote durable lessons to long_term.
 short_term:
@@ -120,6 +120,7 @@ short_term:
       - "Economy foundations will revolve around an EconomyRegistry loading profession/recipe data from TOML configs."
       - "WorkOrderQueue becomes the bridge between economy production plans and NPC schedule claims."
       - "Economy events will be split into production/transfer/shortage variants to better feed dialogue and UI layers."
+      - "Resource dependency matrix will accompany the configs so profession relationships stay inspectable without code dives."
     risks:
       - "Config sprawl could make tuning difficult; plan to split files per profession and add validation tests."
       - "Work order integration with NPC schedules may introduce ordering contention; prototype with explicit claim/confirm steps."
@@ -128,6 +129,20 @@ short_term:
       - "Do we model logistics (routes, travel time) before a proper pathfinding system lands?"
       - "Which economy data must persist across saves versus regenerate on load?"
       - "Should shortages automatically spawn new work orders or rely on manual planning initially?"
+  - step: "S1.7"
+    decisions:
+      - "NPC motivation will use a bounded dopamine meter with configurable gains from work, socialising, and leisure plus natural decay."
+      - "Mood thresholds derived from dopamine levels will influence schedules, dialogue tone, and production quality."
+      - "Alcohol provides a short-lived dopamine bump with concurrent quality penalties and a hangover crash that dips below baseline."
+      - "Motivation inputs will reference the economy dependency matrix so access to food, tools, and housing can affect wellbeing."
+    risks:
+      - "Overly punitive decay or hangover curves could produce negative feedback loops; telemetry must surface early warning signs."
+      - "Tying mood to production might destabilise the micro economy if tuning knobs aren't exposed for quick iteration."
+    experiments:
+      - "Prototype dopamine curves (linear vs. sigmoid) to find a readable decay/reward pattern before wiring to live systems."
+    open_questions:
+      - "Which telemetry surface (UI overlay vs. debug panel) should show dopamine trends first?"
+      - "Do we allow NPCs to seek alcohol autonomously or gate it behind scripted events in the first pass?"
 
 # Accumulates durable lessons and conventions.
 long_term:

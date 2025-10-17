@@ -202,6 +202,7 @@
   notes:
     - "Blueprint outlines EconomyRegistry, WorkOrderQueue, and expanded events feeding dialogue/UI."
     - "Risks called out for config sprawl and schedule integration; mitigations drafted."
+    - "Upcoming work includes a profession/resource dependency matrix so trade relationships stay readable as new jobs arrive."
 
 - id: S1.6
   title: "NPC locomotion & profession crates"
@@ -221,3 +222,22 @@
   notes:
     - "Trade loop now pauses until all professions reach their crates, providing visible build-up to exchanges."
     - "Locomotion entries capture destination labels for future UI surfacing."
+
+- id: S1.7
+  title: "NPC motivation & wellbeing spike"
+  state: backlog
+  deps: [S1.6]
+  deliverables:
+    - "Dopamine-style motivation resource per NPC with decay and reward hooks"
+    - "Mood thresholds mapped to behaviour, dialogue, and production modifiers"
+    - "Alcohol coping effect modelled with quality penalties and post-binge crashes"
+    - "Motivation inputs linked to the economy dependency matrix"
+  docs_update:
+    - "docs/tech_notes.md"
+    - "BigPicturePlan.md"
+    - "docs/plan_overview.md"
+    - "TASK.md"
+    - "README.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Spike focuses on data shapes, telemetry, and tuning knobs; full behaviour integration will follow once metrics prove useful."

@@ -42,6 +42,12 @@
 - The micro trade loop waits until the farmer, miller, and blacksmith reach their crates before processing daily exchanges, giving trades a visible lead-in.
 - Movement destinations currently rely on straight-line travel; pathfinding and avoidance remain future work once richer level geometry exists.
 
+## NPC Motivation & Wellbeing Spike (S1.7)
+- Motivation will be represented by a bounded dopamine meter tracked per NPC, with configurable gains from task completion, social interaction, leisure, or other satisfying beats.
+- Natural decay and situational penalties (missed work, isolation) drain dopamine; thresholds map to mood states (content, tired, depressed) that influence schedules, dialogue tone, and productivity.
+- Alcohol and similar coping tools provide a temporary dopamine boost but flag a hangover crash that dips the meter below baseline and applies output-quality penalties while intoxicated.
+- The motivation system integrates with the economy dependency matrix so wellbeing modifiers can reference resource access (food, tools) when determining long-term happiness.
+
 ## Tooling - Docker Environment (2025-10-11)
 - Multi-stage Dockerfile provides `dev`, `build`, and `runtime` targets. Use `docker build --target runtime` for slim release images.
 - Base stage now installs Vulkan headers (`libvulkan-dev`) and Mesa Vulkan drivers so Linux hosts can initialise wgpu inside the container without extra host setup beyond the kernel driver.
