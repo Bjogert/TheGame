@@ -14,10 +14,10 @@ use crate::{
 };
 
 use super::{
-    components::{Inventory, Profession, ProfessionCrate, TradeGood},
+    components::{Inventory, Profession, ProfessionCrate, TradeGood, TradeGoodPlaceholder},
     dependency::EconomyDependencyMatrix,
     events::{ProfessionDependencyUpdateEvent, TradeCompletedEvent, TradeReason},
-    resources::{MicroTradeLoopState, ProfessionCrateRegistry},
+    resources::{MicroTradeLoopState, ProfessionCrateRegistry, TradeGoodPlaceholderRegistry},
 };
 
 const FARMER_NAME: &str = "Alric";
@@ -28,6 +28,7 @@ const TRADE_PROMPT_VERB: &str = "discusses exchanging a";
 const SCHEDULE_PROMPT_ACTION: &str = "reviews the day's schedule";
 const SCHEDULE_SUMMARY_PREFIX: &str = "Daily plan:";
 const SENTENCE_SUFFIX: &str = ".";
+const GOOD_PLACEHOLDER_SIZE: f32 = 0.32;
 
 /// Spawns placeholder crate entities representing profession work spots.
 pub fn spawn_profession_crates(
@@ -124,12 +125,16 @@ pub fn assign_placeholder_professions(
 
 /// Runs once per in-game day to simulate a simple trade loop between professions.
 pub fn process_micro_trade_loop(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     world_clock: Res<WorldClock>,
     mut state: ResMut<MicroTradeLoopState>,
     identity_query: Query<(Entity, &Identity, &Profession)>,
     mut locomotion_query: Query<(&GlobalTransform, &mut NpcLocomotion)>,
     crate_transforms: Query<&GlobalTransform, With<ProfessionCrate>>,
     registry: Res<ProfessionCrateRegistry>,
+    mut placeholders: ResMut<TradeGoodPlaceholderRegistry>,
     dependency_matrix: Res<EconomyDependencyMatrix>,
     mut inventories: Query<&mut Inventory>,
     mut trade_writer: MessageWriter<TradeCompletedEvent>,
@@ -219,7 +224,19 @@ pub fn process_micro_trade_loop(
     };
 
     // Farmer produces grain for the day.
+    let farmer_grain_before = farmer_inv.quantity_of(TradeGood::Grain);
     farmer_inv.add_good(TradeGood::Grain, DAILY_UNIT_QUANTITY);
+    if farmer_grain_before == 0 {
+        spawn_trade_good_placeholder(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut placeholders,
+            &registry,
+            Profession::Farmer,
+            TradeGood::Grain,
+        );
+    }
     trade_writer.write(TradeCompletedEvent {
         day,
         from: None,
@@ -231,8 +248,30 @@ pub fn process_micro_trade_loop(
     info!("{} harvests a grain crate", farmer_name);
 
     // Farmer delivers grain to the miller.
+    let farmer_grain_before_trade = farmer_inv.quantity_of(TradeGood::Grain);
     if farmer_inv.remove_good(TradeGood::Grain, DAILY_UNIT_QUANTITY) {
+        if farmer_inv.quantity_of(TradeGood::Grain) == 0 && farmer_grain_before_trade > 0 {
+            despawn_trade_good_placeholder(
+                &mut commands,
+                &mut placeholders,
+                Profession::Farmer,
+                TradeGood::Grain,
+            );
+        }
+
+        let miller_grain_before = miller_inv.quantity_of(TradeGood::Grain);
         miller_inv.add_good(TradeGood::Grain, DAILY_UNIT_QUANTITY);
+        if miller_grain_before == 0 {
+            spawn_trade_good_placeholder(
+                &mut commands,
+                &mut meshes,
+                &mut materials,
+                &mut placeholders,
+                &registry,
+                Profession::Miller,
+                TradeGood::Grain,
+            );
+        }
         send_trade_and_dialogue(
             &mut trade_writer,
             &mut dialogue_queue,
@@ -252,8 +291,30 @@ pub fn process_micro_trade_loop(
     }
 
     // Miller processes grain into flour.
+    let miller_grain_before_process = miller_inv.quantity_of(TradeGood::Grain);
     if miller_inv.remove_good(TradeGood::Grain, DAILY_UNIT_QUANTITY) {
+        if miller_inv.quantity_of(TradeGood::Grain) == 0 && miller_grain_before_process > 0 {
+            despawn_trade_good_placeholder(
+                &mut commands,
+                &mut placeholders,
+                Profession::Miller,
+                TradeGood::Grain,
+            );
+        }
+
+        let miller_flour_before = miller_inv.quantity_of(TradeGood::Flour);
         miller_inv.add_good(TradeGood::Flour, DAILY_UNIT_QUANTITY);
+        if miller_flour_before == 0 {
+            spawn_trade_good_placeholder(
+                &mut commands,
+                &mut meshes,
+                &mut materials,
+                &mut placeholders,
+                &registry,
+                Profession::Miller,
+                TradeGood::Flour,
+            );
+        }
         trade_writer.write(TradeCompletedEvent {
             day,
             from: Some(miller_id),
@@ -268,8 +329,30 @@ pub fn process_micro_trade_loop(
     }
 
     // Miller delivers flour to the blacksmith.
+    let miller_flour_before_trade = miller_inv.quantity_of(TradeGood::Flour);
     if miller_inv.remove_good(TradeGood::Flour, DAILY_UNIT_QUANTITY) {
+        if miller_inv.quantity_of(TradeGood::Flour) == 0 && miller_flour_before_trade > 0 {
+            despawn_trade_good_placeholder(
+                &mut commands,
+                &mut placeholders,
+                Profession::Miller,
+                TradeGood::Flour,
+            );
+        }
+
+        let smith_flour_before = smith_inv.quantity_of(TradeGood::Flour);
         smith_inv.add_good(TradeGood::Flour, DAILY_UNIT_QUANTITY);
+        if smith_flour_before == 0 {
+            spawn_trade_good_placeholder(
+                &mut commands,
+                &mut meshes,
+                &mut materials,
+                &mut placeholders,
+                &registry,
+                Profession::Blacksmith,
+                TradeGood::Flour,
+            );
+        }
         send_trade_and_dialogue(
             &mut trade_writer,
             &mut dialogue_queue,
@@ -289,8 +372,30 @@ pub fn process_micro_trade_loop(
     }
 
     // Blacksmith processes flour into tool crate (placeholder transformation).
+    let smith_flour_before_process = smith_inv.quantity_of(TradeGood::Flour);
     if smith_inv.remove_good(TradeGood::Flour, DAILY_UNIT_QUANTITY) {
+        if smith_inv.quantity_of(TradeGood::Flour) == 0 && smith_flour_before_process > 0 {
+            despawn_trade_good_placeholder(
+                &mut commands,
+                &mut placeholders,
+                Profession::Blacksmith,
+                TradeGood::Flour,
+            );
+        }
+
+        let smith_tools_before = smith_inv.quantity_of(TradeGood::Tools);
         smith_inv.add_good(TradeGood::Tools, DAILY_UNIT_QUANTITY);
+        if smith_tools_before == 0 {
+            spawn_trade_good_placeholder(
+                &mut commands,
+                &mut meshes,
+                &mut materials,
+                &mut placeholders,
+                &registry,
+                Profession::Blacksmith,
+                TradeGood::Tools,
+            );
+        }
         trade_writer.write(TradeCompletedEvent {
             day,
             from: Some(smith_id),
@@ -305,8 +410,30 @@ pub fn process_micro_trade_loop(
     }
 
     // Blacksmith returns tools to the farmer.
+    let smith_tools_before_trade = smith_inv.quantity_of(TradeGood::Tools);
     if smith_inv.remove_good(TradeGood::Tools, DAILY_UNIT_QUANTITY) {
+        if smith_inv.quantity_of(TradeGood::Tools) == 0 && smith_tools_before_trade > 0 {
+            despawn_trade_good_placeholder(
+                &mut commands,
+                &mut placeholders,
+                Profession::Blacksmith,
+                TradeGood::Tools,
+            );
+        }
+
+        let farmer_tools_before = farmer_inv.quantity_of(TradeGood::Tools);
         farmer_inv.add_good(TradeGood::Tools, DAILY_UNIT_QUANTITY);
+        if farmer_tools_before == 0 {
+            spawn_trade_good_placeholder(
+                &mut commands,
+                &mut meshes,
+                &mut materials,
+                &mut placeholders,
+                &registry,
+                Profession::Farmer,
+                TradeGood::Tools,
+            );
+        }
         send_trade_and_dialogue(
             &mut trade_writer,
             &mut dialogue_queue,
@@ -459,6 +586,77 @@ fn ensure_profession_workers_ready(
     }
 
     all_ready
+}
+
+fn spawn_trade_good_placeholder(
+    commands: &mut Commands,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<StandardMaterial>,
+    placeholders: &mut TradeGoodPlaceholderRegistry,
+    crate_registry: &ProfessionCrateRegistry,
+    profession: Profession,
+    good: TradeGood,
+) {
+    if placeholders.contains(profession, good) {
+        return;
+    }
+
+    let Some(crate_entity) = crate_registry.get(profession) else {
+        warn!(
+            "Skipping placeholder spawn: no crate registered for {}",
+            profession.label()
+        );
+        return;
+    };
+
+    let entity = commands
+        .spawn((
+            Mesh3d(meshes.add(Mesh::from(Cuboid::new(
+                GOOD_PLACEHOLDER_SIZE,
+                GOOD_PLACEHOLDER_SIZE,
+                GOOD_PLACEHOLDER_SIZE,
+            )))),
+            MeshMaterial3d(materials.add(StandardMaterial {
+                base_color: trade_good_color(good),
+                perceptual_roughness: 0.45,
+                metallic: 0.05,
+                ..default()
+            })),
+            Transform::from_translation(trade_good_offset(good)),
+            TradeGoodPlaceholder { profession, good },
+            Name::new(format!("{} {}", profession.label(), good.label())),
+        ))
+        .id();
+
+    commands.entity(crate_entity).add_child(entity);
+    placeholders.insert(profession, good, entity);
+}
+
+fn despawn_trade_good_placeholder(
+    commands: &mut Commands,
+    placeholders: &mut TradeGoodPlaceholderRegistry,
+    profession: Profession,
+    good: TradeGood,
+) {
+    if let Some(entity) = placeholders.take(profession, good) {
+        commands.entity(entity).despawn();
+    }
+}
+
+fn trade_good_color(good: TradeGood) -> Color {
+    match good {
+        TradeGood::Grain => Color::srgb_u8(214, 181, 102),
+        TradeGood::Flour => Color::srgb_u8(236, 235, 230),
+        TradeGood::Tools => Color::srgb_u8(110, 118, 132),
+    }
+}
+
+fn trade_good_offset(good: TradeGood) -> Vec3 {
+    match good {
+        TradeGood::Grain => Vec3::new(0.35, 0.55, 0.0),
+        TradeGood::Flour => Vec3::new(-0.35, 0.55, 0.0),
+        TradeGood::Tools => Vec3::new(0.0, 0.6, 0.35),
+    }
 }
 
 fn queue_schedule_brief(

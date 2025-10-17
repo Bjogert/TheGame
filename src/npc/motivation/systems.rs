@@ -67,9 +67,7 @@ pub fn reward_from_leisure(
                 if let Some(fraction) = adjustment.last_time_of_day {
                     info!(
                         "{} enjoys downtime near day fraction {:.2} and feels {}",
-                        identity.display_name,
-                        fraction,
-                        mood_label
+                        identity.display_name, fraction, mood_label
                     );
                 } else {
                     info!(
@@ -85,9 +83,7 @@ pub fn reward_from_leisure(
                 if let Some(fraction) = adjustment.last_time_of_day {
                     info!(
                         "{} indulges in a drink near day fraction {:.2} and now feels {}",
-                        identity.display_name,
-                        fraction,
-                        mood_label
+                        identity.display_name, fraction, mood_label
                     );
                 } else {
                     info!(

@@ -34,6 +34,7 @@
 - Economy module assigns farmer, miller, and blacksmith professions, each with simple inventories.
 - A daily loop produces grain, flour, and tool crates, emitting `TradeCompletedEvent` records for each exchange.
 - Trade events enqueue dialogue requests with matching context, proving the dialogue hook can react to simulation activity.
+- Inventory changes now spawn tiny placeholder boxes beside the relevant profession crate. The boxes are purely visual—they follow the crate, appear when a stack becomes non-zero, and disappear when the final matching item leaves the inventory.
 
 ## Economy Planning Blueprint (S1.5)
 - Reviewed the placeholder micro loop and documented the path to a data-driven economy in `docs/economy_blueprint.md`.

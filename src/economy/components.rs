@@ -43,6 +43,13 @@ pub struct ProfessionCrate {
     pub profession: Profession,
 }
 
+/// Marker for a spawned placeholder representing a trade good near a profession crate.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TradeGoodPlaceholder {
+    pub profession: Profession,
+    pub good: TradeGood,
+}
+
 /// Inventory storing simple stacks of goods.
 #[derive(Component, Debug, Clone, Default)]
 pub struct Inventory {

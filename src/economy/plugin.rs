@@ -9,7 +9,7 @@ use crate::{
 use super::{
     dependency::EconomyDependencyMatrix,
     events::{ProfessionDependencyUpdateEvent, TradeCompletedEvent},
-    resources::{MicroTradeLoopState, ProfessionCrateRegistry},
+    resources::{MicroTradeLoopState, ProfessionCrateRegistry, TradeGoodPlaceholderRegistry},
     systems::{assign_placeholder_professions, process_micro_trade_loop, spawn_profession_crates},
 };
 
@@ -21,6 +21,7 @@ impl Plugin for EconomyPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MicroTradeLoopState>()
             .init_resource::<ProfessionCrateRegistry>()
+            .init_resource::<TradeGoodPlaceholderRegistry>()
             .init_resource::<EconomyDependencyMatrix>()
             .add_message::<TradeCompletedEvent>()
             .add_message::<ProfessionDependencyUpdateEvent>()
