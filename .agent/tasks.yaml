@@ -179,6 +179,7 @@
     - ".agent/ai_memory.V.1.yaml"
     - "EconomyPlugin schedules trades after the world clock ticks, logging production/processing/exchange steps."
     - "Trade exchanges enqueue dialogue prompts so NPC chatter reflects the daily loop."
+    - "Delivery tasks require both the courier and recipient to be at their crates before completing, keeping exchanges visible."
 
 - id: S1.5
   title: "Economy foundation blueprint"

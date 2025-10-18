@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+- Restored delivery completion checks so both the sender and recipient must be at their crates before goods transfer, preventing premature task completion during the economy loop.
+
 ## 2025-10-17 - S1.4: Config-Driven Economy Planner Spike
 - Added `config/economy.toml` plus `EconomyRegistry`/planner modules so daily trade plans load from data instead of hard-coded loops.
 - Replaced the micro trade loop with `prepare_economy_day`/`advance_actor_tasks`, enabling villagers to wait at crates, manufacture goods, and deliver them via queued `ActorTask`s.

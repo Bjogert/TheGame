@@ -422,11 +422,22 @@ fn execute_deliver(
         return TaskResult::Completed;
     };
 
+    if !ensure_actor_at_location(
+        target,
+        target,
+        target_actor,
+        crate_registry,
+        crate_transforms,
+        locomotion_query,
+    ) {
+        return TaskResult::InProgress;
+    }
+
     {
         let mut inventories = inventory_queries.p0();
         let Ok(mut inventory) = inventories.get_mut(actor.entity) else {
             warn!(
-                "{} is missing an inventory; delivery cancelled",
+                "{} is missing an inventory; cannot deliver goods",
                 actor.display_name
             );
             return TaskResult::Completed;
