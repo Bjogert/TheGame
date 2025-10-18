@@ -146,9 +146,7 @@ pub struct DailyDependencyTracker {
 
 impl DailyDependencyTracker {
     pub fn prepare_day(&mut self, day: u64) {
-        self.satisfied_by_day
-            .entry(day)
-            .or_insert_with(HashMap::new);
+        self.satisfied_by_day.entry(day).or_default();
     }
 
     pub fn record(&mut self, day: u64, npc: NpcId, category: DependencyCategory) {

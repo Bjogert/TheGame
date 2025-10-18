@@ -1,4 +1,4 @@
-use bevy::prelude::MessageWriter;
+use bevy::prelude::{debug, MessageWriter};
 
 use crate::dialogue::{
     queue::DialogueRequestQueue,

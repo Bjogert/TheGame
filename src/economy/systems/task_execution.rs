@@ -23,7 +23,7 @@ use super::{
         tasks::{ActorTask, ActorTaskQueues, EconomyDayState},
     },
     dialogue::{queue_schedule_brief, send_trade_and_dialogue, TradeDialogueInput},
-    spawning::{BLACKSMITH_NAME, FARMER_NAME, MILLER_NAME},
+    spawning::{BLACKSMITH_NAME, MILLER_NAME},
 };
 
 const ALL_TRADE_GOODS: [TradeGood; 3] = [TradeGood::Grain, TradeGood::Flour, TradeGood::Tools];
@@ -534,8 +534,8 @@ fn ensure_actor_at_location(
         return true;
     };
 
-    let current: Vec3 = actor_transform.translation().into();
-    let mut target: Vec3 = crate_transform.translation().into();
+    let current = actor_transform.translation();
+    let mut target = crate_transform.translation();
     target.y = current.y;
 
     let displacement = Vec2::new(target.x - current.x, target.z - current.z);

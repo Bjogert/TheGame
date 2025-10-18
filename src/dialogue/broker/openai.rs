@@ -6,16 +6,14 @@ use reqwest::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::dialogue::types::{
-    DialogueContextEvent, DialogueRequest, DialogueRequestId, DialogueResponse, DialogueTopicHint,
-    TradeContextReason,
-};
-use crate::npc::components::NpcId;
-
 use super::super::errors::{DialogueContextSource, DialogueError, DialogueErrorKind};
 use super::{
     config::{OpenAiConfig, OpenAiConfigError},
     DialogueBroker, DialogueProviderKind,
+};
+use crate::dialogue::types::{
+    DialogueContextEvent, DialogueRequest, DialogueRequestId, DialogueResponse, DialogueTopicHint,
+    TradeContextReason,
 };
 
 const EMPTY_PROMPT_ERROR: &str = "prompt cannot be empty";
@@ -272,18 +270,16 @@ fn parse_retry_after(headers: &HeaderMap) -> Option<f32> {
 }
 
 fn build_messages(request: &DialogueRequest) -> Vec<ChatMessage> {
-    let mut messages = Vec::new();
-    messages.push(ChatMessage {
-        role: "system",
-        content: SYSTEM_PROMPT.to_string(),
-    });
-
-    messages.push(ChatMessage {
-        role: "user",
-        content: build_user_message(request),
-    });
-
-    messages
+    vec![
+        ChatMessage {
+            role: "system",
+            content: SYSTEM_PROMPT.to_string(),
+        },
+        ChatMessage {
+            role: "user",
+            content: build_user_message(request),
+        },
+    ]
 }
 
 fn build_user_message(request: &DialogueRequest) -> String {
@@ -466,6 +462,7 @@ mod tests {
     use crate::dialogue::types::{
         DialogueContext, DialogueTopicHint, TradeContext, TradeDescriptor,
     };
+    use crate::npc::components::NpcId;
 
     #[test]
     fn fallback_response_includes_context() {
