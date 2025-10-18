@@ -22,7 +22,7 @@ const MANUAL_RETRY_PROMPT: &str = "retry later";
 const MANUAL_RETRY_BACKOFF_SECONDS: f32 = 3.0;
 const FALLBACK_TARGET_LABEL: &str = "player";
 const SUMMARY_PREFIX: &str = "Summary:";
-const SCHEDULE_NOTE_PREFIX: &str = "Schedule note:";
+const SCHEDULE_UPDATE_PREFIX: &str = "Schedule update:";
 const CONTEXT_FALLBACK_MESSAGE: &str = "No notable context available.";
 const SENTENCE_SUFFIX: &str = ".";
 
@@ -460,7 +460,7 @@ fn build_user_message(request: &DialogueRequest) -> String {
             }
             DialogueContextEvent::ScheduleUpdate { description } => {
                 if !description.trim().is_empty() {
-                    sections.push(format!("{SCHEDULE_NOTE_PREFIX} {}", description.trim()));
+                    sections.push(format!("{SCHEDULE_UPDATE_PREFIX} {}", description.trim()));
                 }
             }
         }
@@ -515,7 +515,7 @@ fn compose_context_segments(request: &DialogueRequest) -> String {
             }
             DialogueContextEvent::ScheduleUpdate { description } => {
                 segments.push(format!(
-                    "{SCHEDULE_NOTE_PREFIX} {}{SENTENCE_SUFFIX}",
+                    "{SCHEDULE_UPDATE_PREFIX} {}{SENTENCE_SUFFIX}",
                     description
                 ));
             }
