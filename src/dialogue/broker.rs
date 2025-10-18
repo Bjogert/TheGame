@@ -32,6 +32,21 @@ const DEFAULT_TEMPERATURE: f32 = 0.7;
 const DEFAULT_MAX_OUTPUT_TOKENS: u16 = 220;
 const DEFAULT_TIMEOUT_SECS: u64 = 15;
 const DEFAULT_RATE_LIMIT_BACKOFF: f32 = 10.0;
+const USER_MESSAGE_SPEAKER_PREFIX: &str = "Speaker: ";
+const USER_MESSAGE_TARGET_PREFIX: &str = "Target: ";
+const USER_MESSAGE_TOPIC_PREFIX: &str = "Topic: ";
+const USER_MESSAGE_PROMPT_PREFIX: &str = "Prompt: ";
+const USER_MESSAGE_CONTEXT_SUMMARY_PREFIX: &str = "Context summary: ";
+const USER_MESSAGE_RESPONSE_INSTRUCTION: &str =
+    "Respond as the speaker, addressing the target naturally.";
+const USER_MESSAGE_TRADE_EVENT_PREFIX: &str = "Trade event: Day ";
+const USER_MESSAGE_TRADE_FROM_PREFIX: &str = " (from ";
+const USER_MESSAGE_TRADE_TO_PREFIX: &str = " (to ";
+const USER_MESSAGE_WITH_SUFFIX: &str = " with ";
+const USER_MESSAGE_FROM_SUFFIX: &str = " after receiving it from ";
+const USER_MESSAGE_TRADE_SUFFIX: &str = ")";
+const TRADE_DETAIL_DAY_PREFIX: &str = "On day ";
+const TRADE_DETAIL_THEY_PREFIX: &str = " they ";
 
 /// Dialogue provider flavours we can route to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -392,18 +407,27 @@ const SYSTEM_PROMPT: &str = "You are a medieval villager in a life-simulation ga
 
 fn build_user_message(request: &DialogueRequest) -> String {
     let mut sections = Vec::new();
-    sections.push(format!("Speaker: {}", request.speaker));
+    sections.push(format!("{USER_MESSAGE_SPEAKER_PREFIX}{}", request.speaker));
     let target = request
         .target
         .map(|id| id.to_string())
         .unwrap_or_else(|| FALLBACK_TARGET_LABEL.to_string());
-    sections.push(format!("Target: {}", target));
-    sections.push(format!("Topic: {}", topic_label(request.topic_hint)));
-    sections.push(format!("Prompt: {}", request.prompt.trim()));
+    sections.push(format!("{USER_MESSAGE_TARGET_PREFIX}{}", target));
+    sections.push(format!(
+        "{USER_MESSAGE_TOPIC_PREFIX}{}",
+        topic_label(request.topic_hint)
+    ));
+    sections.push(format!(
+        "{USER_MESSAGE_PROMPT_PREFIX}{}",
+        request.prompt.trim()
+    ));
 
     if let Some(summary) = &request.context.summary {
         if !summary.trim().is_empty() {
-            sections.push(format!("Context summary: {}", summary.trim()));
+            sections.push(format!(
+                "{USER_MESSAGE_CONTEXT_SUMMARY_PREFIX}{}",
+                summary.trim()
+            ));
         }
     }
 
@@ -416,20 +440,26 @@ fn build_user_message(request: &DialogueRequest) -> String {
                     TradeContextReason::Exchange => "exchanged",
                 };
                 let mut detail = format!(
-                    "Trade event: Day {} {} {} {}",
+                    "{USER_MESSAGE_TRADE_EVENT_PREFIX}{} {} {} {}",
                     trade.day, action, trade.descriptor.quantity, trade.descriptor.label
                 );
                 if let Some(from) = trade.from {
-                    detail.push_str(&format!(" (from {})", from));
+                    detail.push_str(&format!(
+                        "{USER_MESSAGE_TRADE_FROM_PREFIX}{}{USER_MESSAGE_TRADE_SUFFIX}",
+                        from
+                    ));
                 }
                 if let Some(to) = trade.to {
-                    detail.push_str(&format!(" (to {})", to));
+                    detail.push_str(&format!(
+                        "{USER_MESSAGE_TRADE_TO_PREFIX}{}{USER_MESSAGE_TRADE_SUFFIX}",
+                        to
+                    ));
                 }
                 sections.push(detail);
             }
             DialogueContextEvent::ScheduleUpdate { description } => {
                 if !description.trim().is_empty() {
-                    sections.push(format!("Schedule update: {}", description.trim()));
+                    sections.push(format!("{SCHEDULE_NOTE_PREFIX} {}", description.trim()));
                 }
             }
         }
@@ -439,7 +469,7 @@ fn build_user_message(request: &DialogueRequest) -> String {
         sections.push(CONTEXT_FALLBACK_MESSAGE.to_string());
     }
 
-    sections.push("Respond as the speaker, addressing the target naturally.".to_string());
+    sections.push(USER_MESSAGE_RESPONSE_INSTRUCTION.to_string());
     sections.join("\n")
 }
 
@@ -457,7 +487,7 @@ fn compose_context_segments(request: &DialogueRequest) -> String {
         .target
         .map(|id| id.to_string())
         .unwrap_or_else(|| FALLBACK_TARGET_LABEL.to_string());
-    segments.push(format!("Target: {}", target_label));
+    segments.push(format!("{USER_MESSAGE_TARGET_PREFIX}{}", target_label));
 
     for event in &request.context.events {
         match event {
@@ -470,20 +500,23 @@ fn compose_context_segments(request: &DialogueRequest) -> String {
                     TradeContextReason::Exchange => "exchanged",
                 };
                 let mut detail = format!(
-                    "On day {} they {} {} {}",
+                    "{TRADE_DETAIL_DAY_PREFIX}{}{TRADE_DETAIL_THEY_PREFIX}{} {} {}",
                     trade.day, action, quantity, label
                 );
                 if let Some(target) = trade.to {
-                    detail.push_str(&format!(" with {}", target));
+                    detail.push_str(&format!("{USER_MESSAGE_WITH_SUFFIX}{}", target));
                 }
                 if let Some(source) = trade.from {
-                    detail.push_str(&format!(" after receiving it from {}", source));
+                    detail.push_str(&format!("{USER_MESSAGE_FROM_SUFFIX}{}", source));
                 }
-                detail.push('.');
+                detail.push_str(SENTENCE_SUFFIX);
                 segments.push(detail);
             }
             DialogueContextEvent::ScheduleUpdate { description } => {
-                segments.push(format!("{} {}.", SCHEDULE_NOTE_PREFIX, description));
+                segments.push(format!(
+                    "{SCHEDULE_NOTE_PREFIX} {}{SENTENCE_SUFFIX}",
+                    description
+                ));
             }
         }
     }
