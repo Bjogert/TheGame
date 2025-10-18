@@ -66,5 +66,9 @@
   that environment even though the configuration works on a standard developer
   workstation.
 
+## Tooling - Wayland pkg-config Gap (2025-10-16)
+- `cargo clippy -- -D warnings` and `cargo check --all-targets` currently fail inside the hosted container because the `wayland-client` system package is missing. The `wayland-sys` crate calls out the absent `wayland-client.pc` via pkg-config.
+- Installing the Wayland development libraries (e.g., `libwayland-dev` on Debian/Ubuntu) or exposing the correct `PKG_CONFIG_PATH` should unblock the build. Until then, treat the failure as an environment limitation rather than a code regression.
+
 
 

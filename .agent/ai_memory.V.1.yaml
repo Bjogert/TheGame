@@ -111,6 +111,7 @@ short_term:
     risks:
       - "Placeholder goods and static participants will need replacement before scaling to larger populations."
       - "Inventory logic is minimal; concurrency issues may arise once multiple systems mutate stock."
+      - "Hosted container lacks wayland-client development libs, so cargo clippy/check fail until pkg-config can locate the system headers."
     experiments: []
     open_questions:
       - "Should trade history be summarised per NPC for later prompt compression?"
