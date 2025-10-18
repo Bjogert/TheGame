@@ -38,7 +38,40 @@ const TRADE_PROMPT_VERB: &str = "discusses exchanging a";
 const SCHEDULE_PROMPT_ACTION: &str = "reviews the day's schedule";
 const SCHEDULE_SUMMARY_PREFIX: &str = "Daily plan:";
 const SENTENCE_SUFFIX: &str = ".";
+const CRATE_MESH_DIMENSIONS: (f32, f32, f32) = (0.9, 0.6, 0.9);
+const CRATE_PERCEPTUAL_ROUGHNESS: f32 = 0.6;
+const CRATE_METALLIC: f32 = 0.1;
+const CRATE_HEIGHT: f32 = 0.25;
 const ALL_TRADE_GOODS: [TradeGood; 3] = [TradeGood::Grain, TradeGood::Flour, TradeGood::Tools];
+
+#[derive(Clone, Copy)]
+struct ProfessionCrateSpec {
+    profession: Profession,
+    translation: Vec3,
+    color: (u8, u8, u8),
+}
+
+const PROFESSION_CRATE_SPECS: [ProfessionCrateSpec; 3] = [
+    ProfessionCrateSpec {
+        profession: Profession::Farmer,
+        translation: Vec3::new(8.0, CRATE_HEIGHT, 3.0),
+        color: (190, 150, 80),
+    },
+    ProfessionCrateSpec {
+        profession: Profession::Miller,
+        translation: Vec3::new(0.0, CRATE_HEIGHT, -6.5),
+        color: (140, 170, 215),
+    },
+    ProfessionCrateSpec {
+        profession: Profession::Blacksmith,
+        translation: Vec3::new(-6.0, CRATE_HEIGHT, 1.5),
+        color: (110, 110, 130),
+    },
+];
+
+const GRAIN_PLACEHOLDER_OFFSET: Vec3 = Vec3::new(0.35, 0.55, 0.0);
+const FLOUR_PLACEHOLDER_OFFSET: Vec3 = Vec3::new(-0.35, 0.55, 0.0);
+const TOOLS_PLACEHOLDER_OFFSET: Vec3 = Vec3::new(0.0, 0.6, 0.35);
 
 /// Spawns placeholder crate entities representing profession work spots.
 pub fn spawn_profession_crates(
@@ -47,51 +80,40 @@ pub fn spawn_profession_crates(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut registry: ResMut<ProfessionCrateRegistry>,
 ) {
-    let crate_specs = [
-        (
-            Profession::Farmer,
-            Vec3::new(8.0, 0.25, 3.0),
-            Color::srgb_u8(190, 150, 80),
-        ),
-        (
-            Profession::Miller,
-            Vec3::new(0.0, 0.25, -6.5),
-            Color::srgb_u8(140, 170, 215),
-        ),
-        (
-            Profession::Blacksmith,
-            Vec3::new(-6.0, 0.25, 1.5),
-            Color::srgb_u8(110, 110, 130),
-        ),
-    ];
-
-    for (profession, translation, color) in crate_specs {
-        if registry.get(profession).is_some() {
+    for spec in PROFESSION_CRATE_SPECS {
+        if registry.get(spec.profession).is_some() {
             continue;
         }
 
+        let color = Color::srgb_u8(spec.color.0, spec.color.1, spec.color.2);
         let entity = commands
             .spawn((
-                Mesh3d(meshes.add(Mesh::from(Cuboid::new(0.9, 0.6, 0.9)))),
+                Mesh3d(meshes.add(Mesh::from(Cuboid::new(
+                    CRATE_MESH_DIMENSIONS.0,
+                    CRATE_MESH_DIMENSIONS.1,
+                    CRATE_MESH_DIMENSIONS.2,
+                )))),
                 MeshMaterial3d(materials.add(StandardMaterial {
                     base_color: color,
-                    perceptual_roughness: 0.6,
-                    metallic: 0.1,
+                    perceptual_roughness: CRATE_PERCEPTUAL_ROUGHNESS,
+                    metallic: CRATE_METALLIC,
                     ..default()
                 })),
-                Transform::from_translation(translation),
-                ProfessionCrate { profession },
-                Name::new(format!("{} crate", profession.label())),
+                Transform::from_translation(spec.translation),
+                ProfessionCrate {
+                    profession: spec.profession,
+                },
+                Name::new(format!("{} crate", spec.profession.label())),
             ))
             .id();
 
-        registry.insert(profession, entity);
+        registry.insert(spec.profession, entity);
         info!(
             "Spawned {} crate at ({:.1}, {:.1}, {:.1})",
-            profession.label(),
-            translation.x,
-            translation.y,
-            translation.z
+            spec.profession.label(),
+            spec.translation.x,
+            spec.translation.y,
+            spec.translation.z
         );
     }
 }
@@ -869,8 +891,8 @@ fn despawn_trade_good_placeholder(
 
 fn trade_good_offset(good: TradeGood) -> Vec3 {
     match good {
-        TradeGood::Grain => Vec3::new(0.35, 0.55, 0.0),
-        TradeGood::Flour => Vec3::new(-0.35, 0.55, 0.0),
-        TradeGood::Tools => Vec3::new(0.0, 0.6, 0.35),
+        TradeGood::Grain => GRAIN_PLACEHOLDER_OFFSET,
+        TradeGood::Flour => FLOUR_PLACEHOLDER_OFFSET,
+        TradeGood::Tools => TOOLS_PLACEHOLDER_OFFSET,
     }
 }
