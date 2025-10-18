@@ -63,6 +63,8 @@ Guidelines:
 - Npc: `Identity` component and `NpcIdGenerator` resource supply unique ids for debug NPCs (expand to registry later).
 - Npc Motivation: `MotivationConfig` loads from `config/motivation.toml`, `NpcMotivation` components track dopamine/mood, and `DailyDependencyTracker` consumes economy snapshots to reward or penalise wellbeing.
 - Future: `NpcRegistry` for active entities, `DbResource` (Save) for SQLite state, `LlmJobQueue` (Dialogue) for prompt scheduling.
+- Economy systems now live under `systems::{spawning, day_prep, task_execution, dialogue}`, keeping crate spawning, daily planning, task execution, and dialogue hooks isolated while re-exporting public APIs from `mod.rs`.
+- Dialogue broker wiring splits across `broker/{mod, config, openai}` so HTTP configuration, trait definitions, and provider logic evolve independently.
 
 Record concrete resource/component names in the nearest module README once implemented.
 

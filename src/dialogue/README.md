@@ -10,6 +10,12 @@ The dialogue module exposes the broker abstraction, queued request runner, and p
 
 The module intentionally keeps cooldown values conservative; tune them once real APIs clarify their throttling requirements.
 
+## Module Layout
+- `broker/mod.rs` exposes the `DialogueBroker` trait, provider enum, and helper types for queue integration.
+- `broker/config.rs` parses environment variables and holds the shared OpenAI defaults (`DEFAULT_MODEL`, `DEFAULT_TIMEOUT_SECS`, etc.).
+- `broker/openai.rs` implements the primary provider, relying on config defaults while falling back to local fabrication when credentials are absent.
+- Constants for prompts, retry timing, and trade context strings are grouped at the top of `broker/openai.rs` to avoid scatter across call sites.
+
 ## Configuration
 - Set `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`, `OPENAI_BASE_URL`, `OPENAI_TEMPERATURE`, `OPENAI_MAX_OUTPUT_TOKENS`, `OPENAI_TIMEOUT_SECS`) via environment variables. A sample `secrets.env` file lives at the repository root for local development. Dialogue telemetry persists to `logs/dialogue_history.jsonl`; delete the file if you want to reset history between runs.
 - Without an API key the broker returns fallback responses so the simulation continues to run during offline work or test execution.

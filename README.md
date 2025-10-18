@@ -41,20 +41,16 @@ An experimental Bevy-based project exploring long-form medieval life simulation 
 
 ---
 
-- Upcoming work will add an EconomyRegistry, WorkOrderQueue, expanded event taxonomy, and a profession/resource dependency matrix so new trades stay readable.
-- **Milestone S1 (current focus):** NPC scaffolding, dialogue groundwork, locomotion polish, and economy planning.
-- **Active queue:** Expose locomotion/trade status in the UI and publish the expanded dependency matrix for Step 7 now that dialogue telemetry persists to disk.
-- Dialogue telemetry now streams to `logs/dialogue_history.jsonl` as JSON lines for offline analysis or external tooling.
-- Dialogue integration is currently in the research phase. See docs/dialogue_research.md for provider comparisons and rate-limiting notes captured during Step S1.2.
-- The active broker queues requests with global/per-NPC cooldowns while we prepare to swap in real providers.
+- Recent cleanup (Steps S1.9–S1.12) re-validated the toolchain, centralised dialogue/economy literals into named constants, split oversized systems into focused modules, and removed dead code highlighted by clippy.
+- Dialogue telemetry streams to `logs/dialogue_history.jsonl` for offline analysis; the broker still falls back to the local stub whenever `OPENAI_API_KEY` is absent.
+- **Active queue:** Surface locomotion, motivation, and planner telemetry in UI overlays, harden the OpenAI client path, and promote the work-order/dependency data outlined for Step 7.
 
 ## NPC Motivation & Wellbeing
 - Villager motivation now tracks a dopamine-style meter via `NpcMotivation`, rewarding productive tasks, dialogue responses, and leisure activities while decaying over time.
 - Alcohol triggers a configurable boost from `config/motivation.toml`, followed by a hangover crash that amplifies decay and reduces work rewards until the penalty clears.
 - Daily wellbeing is tied to the economy dependency matrix: matching goods delivered by professions mark needs as satisfied once the next day begins, while shortages apply penalties that visibly shift mood states.
 - Tune dopamine caps, gains, thresholds, and alcohol behaviour by editing `config/motivation.toml`; changes require a restart today.
-- **Milestone S1 (current focus):** NPC scaffolding, dialogue groundwork, locomotion, economy planning, and the newly landed motivation slice.
-- **Active queue:** Surface locomotion/trade telemetry in the UI and expand the profession dependency matrix for Step 7.
+- **Active queue:** Prepare UI overlays that show locomotion, motivation, and trade status while expanding the profession dependency matrix for Step 7.
 Check .agent/tasks.yaml for the authoritative backlog. Upcoming steps focus on UI telemetry surfacing and promoting the dependency matrix into Step 7's config-driven data. Keep documentation (README, AGENT, TASK.md, tasks, memory) in sync as each slice lands.
 3. **Format and lint**
    `powershell
@@ -63,9 +59,8 @@ Check .agent/tasks.yaml for the authoritative backlog. Upcoming steps focus on U
 
 ## Economy Blueprint
 - Step S1.5 produced docs/economy_blueprint.md outlining how the placeholder micro trade loop evolves into a config-driven economy slice.
-- Upcoming work will add an EconomyRegistry, WorkOrderQueue, and expanded event taxonomy feeding dialogue and UI systems.
-- **Milestone S1 (current focus):** NPC scaffolding, dialogue groundwork, and economy planning.
-- **Active Step:** S1.5 (economy foundation blueprint) completed; Step 7 implementation tasks are now being drafted in the planning artifacts.
+- Recent cleanup centralised the economy constants introduced by S1.5 and reorganised systems into focused modules ahead of Step 7 implementation.
+- **Active queue:** Promote work-order data structures and dependency-matrix validation so Step 7 can build on the cleaned module layout.
 │  ├─ dialogue_research.md# Dialogue provider and prompt considerations
 │  └─ economy_blueprint.md# Step S1.5 economy design plan
 
@@ -74,8 +69,7 @@ Check .agent/tasks.yaml for the authoritative backlog. Upcoming steps focus on U
 ## VS Code Tasks
 .vscode/tasks.json wires common commands into VS Code's task runner:
 
-- **Milestone S1 (current focus):** NPC scaffolding, dialogue groundwork, trade loop, locomotion polish, and motivation systems.
-- **Active focus:** Preparing to integrate the production OpenAI client, surface telemetry in the UI, and promote the dependency matrix into Step 7's config-driven data.
+- **Active focus:** Instrument UI overlays for locomotion/motivation/trade telemetry and harden the OpenAI client configuration now that constants and modules are consolidated.
 - S0.1a - Format / Clippy / Check / Baseline Run validates the scaffold quickly.
 - S0.1c - Run with core_debug and S0.1c - Watch (core_debug) launch with the debug feature once needed (requires cargo-watch).
 - General utilities (Run, Test, Doc, Watch (check --all-targets)) support later milestones.
@@ -98,9 +92,9 @@ Run any task via Ctrl+Shift+P → *Run Task*.
 ## Project Direction
 High-level intent and operating rules live in AGENT.md. Quick summary:
 
-- **Milestone S1 (current focus):** NPC scaffolding and dialogue research.
+- **Milestone S1 (current focus):** NPC scaffolding, dialogue, economy planning, locomotion, and the recent cleanup pass that unlocked UI telemetry work.
 - **Roadmap:** M1 introduces a simple world slice; M2 adds persistence; M3+ expands NPC behaviour, dialogue, economy, weather, and beyond.
-- **Active Step:** S1.2 (dialogue scaffolding research) as described in AGENT.md, TASK.md, and .agent/tasks.yaml.
+- **Active Step:** S1.13 (telemetry & dependency surfacing) as described in AGENT.md, TASK.md, and `.agent/tasks.yaml`.
 
 Refer to .agent/ai_memory.V.1.yaml for decisions, risks, and open questions captured after each step.
 

@@ -24,3 +24,6 @@ We will consider this phase complete once a small cast of villagers can go throu
 - Step 7 (economy foundations) now has a published blueprint in `docs/economy_blueprint.md`, detailing config-driven professions, work orders, expanded events, and the upcoming resource dependency matrix.
 - Step 8 (motivation spike) landed: dopamine meters, mood thresholds, alcohol boosts/hangovers, and dependency-driven rewards now drive villager wellbeing after each in-game day rolls over.
 - Step 9 (dialogue telemetry persistence) landed: dialogue responses and failures now stream to `logs/dialogue_history.jsonl` for offline review alongside the in-memory telemetry buffer.
+- Step 10 (economy & dialogue literal audit) finished: OpenAI defaults, trade placeholder offsets, and locomotion tolerances live in shared constants/config instead of scattered literals.
+- Step 11 (systems modularisation) finished: the economy systems now live under `systems::{spawning, day_prep, task_execution, dialogue}` and the dialogue broker under `broker/{mod,config,openai}`.
+- Step 12 (dead code sweep) finished: redundant helpers/imports removed after enabling `clippy -D dead_code`, keeping the reorganised modules clean for upcoming UI telemetry work.

@@ -23,13 +23,18 @@ We are building a medieval life simulation anchored on a deterministic ECS core,
 - **S1.5 - Economy foundation blueprint:** Long-form economy design (resources, work orders, event taxonomy) captured for future implementation.
 - **S1.6 - NPC locomotion & profession crates:** Profession crates spawned, locomotion systems move NPCs to crates, and movement telemetry is logged.
 - **S1.7 - NPC motivation & wellbeing spike:** Dopamine meters, mood thresholds, alcohol boosts/hangovers, and dependency-driven rewards now influence villager wellbeing once each world day advances.
+- **S1.8 - Dialogue telemetry persistence:** Dialogue responses and failures stream to `logs/dialogue_history.jsonl`, keeping offline analysis aligned with in-memory telemetry.
+- **S1.9 - Baseline verification & responsibility map:** Toolchain checks re-confirmed the build, and a refreshed responsibility map documents how plugins interact post-refactor.
+- **S1.10 - Economy & dialogue literal audit:** OpenAI defaults, trade placeholder offsets, and locomotion tolerances now live in named constants/config files instead of scattered literals.
+- **S1.11 - Systems modularisation:** Economy systems split into `spawning`, `day_prep`, `task_execution`, and `dialogue` modules while the dialogue broker moved into `broker/{mod,config,openai}`.
+- **S1.12 - Dead code sweep:** Redundant helpers and unused exports removed with `clippy -D dead_code`, keeping the reorganised modules lint-clean.
 
 ## Current Position
-The economy slice now plans daily work from configuration: villagers wait at their crates, manufacture goods via queued tasks, and deliver them when partners are present. Dialogue telemetry continues to persist to `logs/dialogue_history.jsonl`; the dialogue broker stub still fronts real providers; locomotion/economy telemetry has not yet surfaced in UI, and the dependency matrix remains to be generalised for Step 7.
+The economy slice now plans daily work from configuration: villagers wait at their crates, manufacture goods via queued tasks, and deliver them when partners are present. Dialogue telemetry persists to `logs/dialogue_history.jsonl`, and both economy and dialogue modules have been split into focused submodules with shared constants replacing prior magic numbers. Locomotion/economy telemetry has not yet surfaced in UI, and the dependency matrix remains to be generalised for Step 7.
 
 ## Upcoming Work (Near-Term)
-1. **Dialogue broker integration:** Replace the local dialogue stub with the production OpenAI client, including configuration, authentication, and error handling.
-2. **UI status surfacing:** Feed locomotion, motivation, and planner telemetry into HUD elements or debug overlays, making villager activity legible in real time.
+1. **UI status surfacing:** Feed locomotion, motivation, and planner telemetry into HUD elements or debug overlays, making villager activity legible in real time.
+2. **Dialogue broker integration:** Harden the OpenAI path, unify telemetry for UI consumption, and expose configuration validation for the new constants.
 3. **Work-order formalisation:** Promote the ad-hoc task queues into Step 7's planned work-order data structures and align the dependency matrix with the config-driven economy tables.
 
 ## Roadmap Outlook (Mid to Long Term)

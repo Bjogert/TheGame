@@ -180,6 +180,50 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 
 ---
 
+## Step S1.9 - Baseline Verification & Responsibility Map
+**Goal:** Confirm the refactored project compiles cleanly and document current module responsibilities before further cleanup.
+
+- [x] Run `cargo fmt`, `cargo clippy -D warnings`, and `cargo check --all-targets` on the refreshed toolchain to re-establish the baseline.
+- [x] Capture a module responsibility snapshot (core, world, npc, dialogue, economy) in the planning docs for future reference.
+- [x] Record environment caveats (Wayland pkg-config gap) alongside the baseline to explain current CI/tooling limitations.
+- **Outcome:** Toolchain checks pass locally, the current behaviour map is documented, and future refactors have a dependable reference point.
+- **Exit criteria:** Baseline commands succeed and the planning docs describe how major plugins interact today.
+
+---
+
+## Step S1.10 - Economy & Dialogue Literal Audit
+**Goal:** Replace scattered magic numbers with named constants or config entries.
+
+- [x] Promote OpenAI defaults (model, timeout, token caps, temperature) into `dialogue::broker::config` so environment overrides share one source of truth.
+- [x] Centralise trade placeholder offsets, crate labels, and locomotion tolerances as `const` declarations inside the relevant modules.
+- [x] Document newly exposed tuning knobs in README/TASK.md to guide future adjustments.
+- **Outcome:** Dialogue and economy systems reference descriptive constants/configs instead of ad-hoc literals, reducing duplication and easing tuning.
+- **Exit criteria:** No hard-coded literals remain in the touched modules without an accompanying constant or config rationale.
+
+---
+
+## Step S1.11 - Systems Modularisation
+**Goal:** Split oversized files so each responsibility stays focused and maintainable.
+
+- [x] Break `economy/systems.rs` into `systems::{spawning, day_prep, task_execution, dialogue}` with a `mod.rs` that re-exports public items.
+- [x] Extract the dialogue broker into `broker/mod.rs`, `broker/config.rs`, and `broker/openai.rs` while preserving external APIs.
+- [x] Update module documentation to reflect the new layout and ensure compile errors surface unused exports.
+- **Outcome:** Economy and dialogue code now live in smaller, purpose-driven files that align with the <400 line guideline.
+- **Exit criteria:** Project builds without path changes for external callers and each new module owns a cohesive responsibility.
+
+---
+
+## Step S1.12 - Dead Code Sweep
+**Goal:** Remove unused helpers revealed after the modularisation pass.
+
+- [x] Run `cargo clippy -D warnings -- -D dead_code` to surface unused functions, imports, and types.
+- [x] Eliminate obsolete helpers and redundant re-exports while keeping telemetry/event wiring intact.
+- [x] Update docs and planning artifacts with the cleanup summary and remaining risks.
+- **Outcome:** The codebase compiles without dead code allowances, and planning docs explain the remaining follow-ups (UI telemetry, work-order promotion).
+- **Exit criteria:** Clippy reports no dead code warnings and documentation reflects the leaner module set.
+
+---
+
 ## What Comes Next
 Use the S1.5 blueprint to draft implementation tasks for Step 7: load profession/recipe configs, add work-order queues, expand economy events, and generate the resource dependency matrix. Follow that by spiking the S1.7 motivation system so wellbeing can feed back into schedules and product quality.
 
