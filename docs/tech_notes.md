@@ -34,6 +34,7 @@
 - `EconomyRegistry` reads recipes and daily requests from `config/economy.toml`, replacing the hard-coded farmer → miller → blacksmith loop.
 - `prepare_economy_day` converts unmet needs into per-profession `ActorTask` queues (`WaitForGood`, `Manufacture`, `Deliver`) so villagers only act when inputs are present.
 - `advance_actor_tasks` waits for NPCs to reach their crates, performs manufacture/delivery steps, emits `TradeCompletedEvent`/dialogue prompts, and keeps crate-side placeholders synced with inventory counts.
+- Deliveries now confirm both the sender and recipient are stationed at their respective crates before completing, so exchanges remain visible and avoid phantom transfers.
 - Task execution leaves goods visible beside crates until they are consumed or traded away, giving a quick read on local stock levels.
 
 ## Economy Planning Blueprint (S1.5)

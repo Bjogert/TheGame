@@ -108,6 +108,7 @@ short_term:
     decisions:
       - "Daily trade loop runs after the world clock tick to keep exchanges aligned with simulation days."
       - "Trade events immediately enqueue dialogue requests so conversation timing mirrors economic activity."
+      - "Deliveries verify both courier and recipient reach their crates before completing so inventory transfers stay grounded in the scene."
     risks:
       - "Placeholder goods and static participants will need replacement before scaling to larger populations."
       - "Inventory logic is minimal; concurrency issues may arise once multiple systems mutate stock."

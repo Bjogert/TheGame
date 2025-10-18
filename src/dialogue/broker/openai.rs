@@ -1,6 +1,3 @@
-//! Dialogue broker trait and OpenAI-backed implementation.
-use std::{env, fmt, time::Duration};
-
 use bevy::log::warn;
 use reqwest::{
     blocking::Client,
@@ -9,12 +6,16 @@ use reqwest::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::dialogue::types::{
+    DialogueContextEvent, DialogueRequest, DialogueRequestId, DialogueResponse, DialogueTopicHint,
+    TradeContextReason,
+};
+use crate::npc::components::NpcId;
+
+use super::super::errors::{DialogueContextSource, DialogueError, DialogueErrorKind};
 use super::{
-    errors::{DialogueContextSource, DialogueError, DialogueErrorKind},
-    types::{
-        DialogueContextEvent, DialogueRequest, DialogueRequestId, DialogueResponse,
-        DialogueTopicHint, TradeContextReason,
-    },
+    config::{OpenAiConfig, OpenAiConfigError},
+    DialogueBroker, DialogueProviderKind,
 };
 
 const EMPTY_PROMPT_ERROR: &str = "prompt cannot be empty";
@@ -25,13 +26,6 @@ const SUMMARY_PREFIX: &str = "Summary:";
 const SCHEDULE_UPDATE_PREFIX: &str = "Schedule update:";
 const CONTEXT_FALLBACK_MESSAGE: &str = "No notable context available.";
 const SENTENCE_SUFFIX: &str = ".";
-
-const DEFAULT_BASE_URL: &str = "https://api.openai.com";
-const DEFAULT_CHAT_PATH: &str = "/v1/chat/completions";
-const DEFAULT_MODEL: &str = "gpt-4o-mini";
-const DEFAULT_TEMPERATURE: f32 = 0.7;
-const DEFAULT_MAX_OUTPUT_TOKENS: u16 = 220;
-const DEFAULT_TIMEOUT_SECS: u64 = 15;
 const DEFAULT_RATE_LIMIT_BACKOFF: f32 = 10.0;
 const USER_MESSAGE_SPEAKER_PREFIX: &str = "Speaker: ";
 const USER_MESSAGE_TARGET_PREFIX: &str = "Target: ";
@@ -48,119 +42,7 @@ const USER_MESSAGE_FROM_SUFFIX: &str = " after receiving it from ";
 const USER_MESSAGE_TRADE_SUFFIX: &str = ")";
 const TRADE_DETAIL_DAY_PREFIX: &str = "On day ";
 const TRADE_DETAIL_THEY_PREFIX: &str = " they ";
-
-/// Dialogue provider flavours we can route to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum DialogueProviderKind {
-    OpenAi,
-}
-
-impl fmt::Display for DialogueProviderKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let label = match self {
-            Self::OpenAi => "openai",
-        };
-        write!(f, "{}", label)
-    }
-}
-
-/// Contract every dialogue backend must satisfy.
-pub trait DialogueBroker: Send + Sync {
-    fn provider_kind(&self) -> DialogueProviderKind;
-
-    fn process(
-        &self,
-        request_id: DialogueRequestId,
-        request: &DialogueRequest,
-    ) -> Result<DialogueResponse, DialogueError>;
-}
-
-/// OpenAI chat configuration sourced from the environment.
-#[derive(Debug, Clone)]
-struct OpenAiConfig {
-    api_key: String,
-    base_url: String,
-    model: String,
-    max_output_tokens: u16,
-    temperature: f32,
-    timeout: Duration,
-}
-
-impl OpenAiConfig {
-    fn from_env() -> Result<Self, OpenAiConfigError> {
-        let api_key = env::var("OPENAI_API_KEY")
-            .map_err(|_| OpenAiConfigError::MissingApiKey)
-            .and_then(|value| {
-                let trimmed = value.trim();
-                if trimmed.is_empty() {
-                    Err(OpenAiConfigError::MissingApiKey)
-                } else {
-                    Ok(trimmed.to_string())
-                }
-            })?;
-
-        let base_url = env::var("OPENAI_BASE_URL")
-            .map(|value| value.trim().to_string())
-            .unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
-
-        let model = env::var("OPENAI_MODEL")
-            .map(|value| value.trim().to_string())
-            .unwrap_or_else(|_| DEFAULT_MODEL.to_string());
-
-        let timeout = env::var("OPENAI_TIMEOUT_SECS")
-            .ok()
-            .and_then(|value| value.parse::<u64>().ok())
-            .filter(|value| *value > 0)
-            .map(Duration::from_secs)
-            .unwrap_or_else(|| Duration::from_secs(DEFAULT_TIMEOUT_SECS));
-
-        let max_output_tokens = env::var("OPENAI_MAX_OUTPUT_TOKENS")
-            .ok()
-            .and_then(|value| value.parse::<u16>().ok())
-            .filter(|value| *value > 0)
-            .unwrap_or(DEFAULT_MAX_OUTPUT_TOKENS);
-
-        let temperature = env::var("OPENAI_TEMPERATURE")
-            .ok()
-            .and_then(|value| value.parse::<f32>().ok())
-            .filter(|value| *value >= 0.0)
-            .unwrap_or(DEFAULT_TEMPERATURE);
-
-        Ok(Self {
-            api_key,
-            base_url,
-            model,
-            max_output_tokens,
-            temperature,
-            timeout,
-        })
-    }
-
-    fn chat_url(&self) -> String {
-        format!(
-            "{}{}",
-            self.base_url.trim_end_matches('/'),
-            DEFAULT_CHAT_PATH
-        )
-    }
-}
-
-#[derive(Debug)]
-enum OpenAiConfigError {
-    MissingApiKey,
-    ClientBuild(String),
-}
-
-impl fmt::Display for OpenAiConfigError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::MissingApiKey => write!(f, "missing OPENAI_API_KEY"),
-            Self::ClientBuild(message) => write!(f, "client build failure: {}", message),
-        }
-    }
-}
-
-impl std::error::Error for OpenAiConfigError {}
+const SYSTEM_PROMPT: &str = "You are a medieval villager in a life-simulation game. Respond briefly (1-3 sentences), stay in character, and reference only the supplied context. If information is missing, acknowledge the gap.";
 
 /// Primary OpenAI dialogue broker.
 pub struct OpenAiDialogueBroker {
@@ -404,8 +286,6 @@ fn build_messages(request: &DialogueRequest) -> Vec<ChatMessage> {
     messages
 }
 
-const SYSTEM_PROMPT: &str = "You are a medieval villager in a life-simulation game. Respond briefly (1-3 sentences), stay in character, and reference only the supplied context. If information is missing, acknowledge the gap.";
-
 fn build_user_message(request: &DialogueRequest) -> String {
     let mut sections = Vec::new();
     sections.push(format!("{USER_MESSAGE_SPEAKER_PREFIX}{}", request.speaker));
@@ -583,7 +463,9 @@ struct OpenAiErrorDetail {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::npc::components::NpcId;
+    use crate::dialogue::types::{
+        DialogueContext, DialogueTopicHint, TradeContext, TradeDescriptor,
+    };
 
     #[test]
     fn fallback_response_includes_context() {
@@ -591,11 +473,11 @@ mod tests {
             mode: BrokerMode::Fallback,
         };
 
-        let trade_context = DialogueContextEvent::Trade(super::super::types::TradeContext {
+        let trade_context = DialogueContextEvent::Trade(TradeContext {
             day: 3,
             from: Some(NpcId::new(1)),
             to: Some(NpcId::new(2)),
-            descriptor: super::super::types::TradeDescriptor::new("grain crate", 2),
+            descriptor: TradeDescriptor::new("grain crate", 2),
             reason: TradeContextReason::Exchange,
         });
 
@@ -604,7 +486,7 @@ mod tests {
             Some(NpcId::new(2)),
             "Discuss the latest trade",
             DialogueTopicHint::Trade,
-            super::super::types::DialogueContext {
+            DialogueContext {
                 summary: Some("Short summary".to_string()),
                 events: vec![trade_context],
             },
@@ -629,7 +511,7 @@ mod tests {
             None,
             MANUAL_RETRY_PROMPT,
             DialogueTopicHint::Status,
-            super::super::types::DialogueContext::default(),
+            DialogueContext::default(),
         );
 
         let error = broker
