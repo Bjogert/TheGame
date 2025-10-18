@@ -1,180 +1,35 @@
-//! Systems powering the config-driven economy planner.
 use std::collections::HashMap;
 
 use bevy::{
     ecs::system::{ParamSet, SystemParam},
-    math::primitives::Cuboid,
     prelude::*,
 };
 
 use crate::{
-    dialogue::{
-        queue::DialogueRequestQueue,
-        types::{
-            DialogueContext, DialogueContextEvent, DialogueRequest, DialogueTopicHint,
-            TradeContext, TradeContextReason, TradeDescriptor,
-        },
-    },
+    dialogue::queue::DialogueRequestQueue,
     npc::components::{Identity, LocomotionState, MovementTarget, NpcId, NpcLocomotion},
     world::time::WorldClock,
 };
 
 use super::{
-    components::{Inventory, Profession, ProfessionCrate, TradeGood, TradeGoodPlaceholder},
-    data::EconomyRegistry,
-    dependency::EconomyDependencyMatrix,
-    events::{ProfessionDependencyUpdateEvent, TradeCompletedEvent, TradeReason},
-    planning::schedule_daily_requests,
-    resources::{
-        ProfessionCrateRegistry, TradeGoodPlaceholderRegistry, TradeGoodPlaceholderVisuals,
+    super::{
+        components::{Inventory, Profession, ProfessionCrate, TradeGood, TradeGoodPlaceholder},
+        data::EconomyRegistry,
+        dependency::EconomyDependencyMatrix,
+        events::{ProfessionDependencyUpdateEvent, TradeCompletedEvent, TradeReason},
+        resources::{
+            ProfessionCrateRegistry, TradeGoodPlaceholderRegistry, TradeGoodPlaceholderVisuals,
+        },
+        tasks::{ActorTask, ActorTaskQueues, EconomyDayState},
     },
-    tasks::{ActorTask, ActorTaskQueues, EconomyDayState},
+    dialogue::{queue_schedule_brief, send_trade_and_dialogue, TradeDialogueInput},
+    spawning::{BLACKSMITH_NAME, FARMER_NAME, MILLER_NAME},
 };
 
-const FARMER_NAME: &str = "Alric";
-const MILLER_NAME: &str = "Bryn";
-const BLACKSMITH_NAME: &str = "Cedric";
-const TRADE_PROMPT_VERB: &str = "discusses exchanging a";
-const SCHEDULE_PROMPT_ACTION: &str = "reviews the day's schedule";
-const SCHEDULE_SUMMARY_PREFIX: &str = "Daily plan:";
-const SENTENCE_SUFFIX: &str = ".";
-const CRATE_MESH_DIMENSIONS: (f32, f32, f32) = (0.9, 0.6, 0.9);
-const CRATE_PERCEPTUAL_ROUGHNESS: f32 = 0.6;
-const CRATE_METALLIC: f32 = 0.1;
-const CRATE_HEIGHT: f32 = 0.25;
 const ALL_TRADE_GOODS: [TradeGood; 3] = [TradeGood::Grain, TradeGood::Flour, TradeGood::Tools];
-
-#[derive(Clone, Copy)]
-struct ProfessionCrateSpec {
-    profession: Profession,
-    translation: Vec3,
-    color: (u8, u8, u8),
-}
-
-const PROFESSION_CRATE_SPECS: [ProfessionCrateSpec; 3] = [
-    ProfessionCrateSpec {
-        profession: Profession::Farmer,
-        translation: Vec3::new(8.0, CRATE_HEIGHT, 3.0),
-        color: (190, 150, 80),
-    },
-    ProfessionCrateSpec {
-        profession: Profession::Miller,
-        translation: Vec3::new(0.0, CRATE_HEIGHT, -6.5),
-        color: (140, 170, 215),
-    },
-    ProfessionCrateSpec {
-        profession: Profession::Blacksmith,
-        translation: Vec3::new(-6.0, CRATE_HEIGHT, 1.5),
-        color: (110, 110, 130),
-    },
-];
-
 const GRAIN_PLACEHOLDER_OFFSET: Vec3 = Vec3::new(0.35, 0.55, 0.0);
 const FLOUR_PLACEHOLDER_OFFSET: Vec3 = Vec3::new(-0.35, 0.55, 0.0);
 const TOOLS_PLACEHOLDER_OFFSET: Vec3 = Vec3::new(0.0, 0.6, 0.35);
-
-/// Spawns placeholder crate entities representing profession work spots.
-pub fn spawn_profession_crates(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut registry: ResMut<ProfessionCrateRegistry>,
-) {
-    for spec in PROFESSION_CRATE_SPECS {
-        if registry.get(spec.profession).is_some() {
-            continue;
-        }
-
-        let color = Color::srgb_u8(spec.color.0, spec.color.1, spec.color.2);
-        let entity = commands
-            .spawn((
-                Mesh3d(meshes.add(Mesh::from(Cuboid::new(
-                    CRATE_MESH_DIMENSIONS.0,
-                    CRATE_MESH_DIMENSIONS.1,
-                    CRATE_MESH_DIMENSIONS.2,
-                )))),
-                MeshMaterial3d(materials.add(StandardMaterial {
-                    base_color: color,
-                    perceptual_roughness: CRATE_PERCEPTUAL_ROUGHNESS,
-                    metallic: CRATE_METALLIC,
-                    ..default()
-                })),
-                Transform::from_translation(spec.translation),
-                ProfessionCrate {
-                    profession: spec.profession,
-                },
-                Name::new(format!("{} crate", spec.profession.label())),
-            ))
-            .id();
-
-        registry.insert(spec.profession, entity);
-        info!(
-            "Spawned {} crate at ({:.1}, {:.1}, {:.1})",
-            spec.profession.label(),
-            spec.translation.x,
-            spec.translation.y,
-            spec.translation.z
-        );
-    }
-}
-
-/// Assigns placeholder professions and empty inventories to debug NPCs.
-pub fn assign_placeholder_professions(
-    mut commands: Commands,
-    query: Query<(Entity, &Identity), Without<Profession>>,
-) {
-    for (entity, identity) in query.iter() {
-        let profession = match identity.display_name.as_str() {
-            FARMER_NAME => Some(Profession::Farmer),
-            MILLER_NAME => Some(Profession::Miller),
-            BLACKSMITH_NAME => Some(Profession::Blacksmith),
-            _ => None,
-        };
-
-        if let Some(profession) = profession {
-            info!(
-                "Assigning {} (age {:.1}) as {}",
-                identity.display_name,
-                identity.age_years,
-                profession.label()
-            );
-            commands
-                .entity(entity)
-                .insert((profession, Inventory::default()));
-        }
-    }
-}
-
-/// Prepares the list of tasks each economy actor should complete for the current day.
-pub fn prepare_economy_day(
-    world_clock: Res<WorldClock>,
-    registry: Res<EconomyRegistry>,
-    mut day_state: ResMut<EconomyDayState>,
-    mut task_queues: ResMut<ActorTaskQueues>,
-) {
-    let day = world_clock.day_count();
-    if day_state.last_planned_day == Some(day) {
-        return;
-    }
-
-    task_queues.clear();
-
-    if let Err(error) = schedule_daily_requests(&registry, &mut task_queues) {
-        warn!("Unable to schedule economy tasks for day {day}: {error}");
-        return;
-    }
-
-    day_state.last_planned_day = Some(day);
-    day_state.last_dependency_evaluation_day = None;
-
-    for profession in task_queues.professions() {
-        debug!(
-            "Planned {} tasks for {}",
-            task_queues.remaining_tasks(profession),
-            profession.label()
-        );
-    }
-}
 
 /// Runs the queued tasks for each profession, driving production and trade.
 #[allow(clippy::too_many_arguments)]
@@ -537,7 +392,7 @@ fn execute_deliver(
     visuals: &TradeGoodPlaceholderVisuals,
     profession: Profession,
     actor: &ActorData,
-    target_profession: Profession,
+    target: Profession,
     good: TradeGood,
     quantity: u32,
     day: u64,
@@ -549,7 +404,7 @@ fn execute_deliver(
 ) -> TaskResult {
     if !ensure_actor_at_location(
         profession,
-        target_profession,
+        target,
         actor,
         crate_registry,
         crate_transforms,
@@ -558,47 +413,31 @@ fn execute_deliver(
         return TaskResult::InProgress;
     }
 
-    let Some(target_actor) = actor_map.get(&target_profession) else {
+    let Some(target_actor) = actor_map.get(&target) else {
         warn!(
-            "{} cannot deliver {}: target profession {} missing",
+            "{} attempted delivery to missing {}",
             actor.display_name,
-            good.label(),
-            target_profession.label()
+            target.label()
         );
         return TaskResult::Completed;
     };
 
-    if !ensure_actor_at_location(
-        target_profession,
-        target_profession,
-        target_actor,
-        crate_registry,
-        crate_transforms,
-        locomotion_query,
-    ) {
-        return TaskResult::InProgress;
-    }
-
     {
         let mut inventories = inventory_queries.p0();
-        let Ok(mut inventory) = inventories.get_mut(actor.entity) else {
+        if let Ok(mut inventory) = inventories.get_mut(actor.entity) {
+            if inventory.remove_good(good, quantity) {
+                if inventory.quantity_of(good) == 0 {
+                    despawn_trade_good_placeholder(commands, placeholders, profession, good);
+                }
+            } else {
+                return TaskResult::InProgress;
+            }
+        } else {
             warn!(
-                "{} is missing an inventory; cannot deliver goods",
+                "{} is missing an inventory; delivery cancelled",
                 actor.display_name
             );
             return TaskResult::Completed;
-        };
-
-        if inventory.quantity_of(good) < quantity {
-            return TaskResult::InProgress;
-        }
-
-        if !inventory.remove_good(good, quantity) {
-            return TaskResult::InProgress;
-        }
-
-        if inventory.quantity_of(good) == 0 {
-            despawn_trade_good_placeholder(commands, placeholders, profession, good);
         }
     }
 
@@ -613,7 +452,7 @@ fn execute_deliver(
                     placeholders,
                     crate_registry,
                     visuals,
-                    target_profession,
+                    target,
                     good,
                 );
             }
@@ -638,7 +477,7 @@ fn execute_deliver(
         },
     );
 
-    if target_profession == Profession::Farmer && good == TradeGood::Tools {
+    if target == Profession::Farmer && good == TradeGood::Tools {
         queue_schedule_brief(
             dialogue_queue,
             day,
@@ -748,100 +587,6 @@ fn emit_dependency_updates(
             missing_categories: missing,
         });
     }
-}
-
-#[derive(Clone, Copy)]
-struct TradeDialogueInput {
-    day: u64,
-    from: Option<NpcId>,
-    to: Option<NpcId>,
-    good: TradeGood,
-    quantity: u32,
-    reason: TradeReason,
-}
-
-fn queue_schedule_brief(
-    queue: &mut DialogueRequestQueue,
-    day: u64,
-    speaker: NpcId,
-    description: String,
-) {
-    let mut context =
-        DialogueContext::with_events(vec![DialogueContextEvent::ScheduleUpdate { description }]);
-    context.summary = Some(format!("{SCHEDULE_SUMMARY_PREFIX} Day {day}"));
-
-    let prompt = format!(
-        "{speaker} {action}{suffix}",
-        speaker = speaker,
-        action = SCHEDULE_PROMPT_ACTION,
-        suffix = SENTENCE_SUFFIX
-    );
-
-    let request = DialogueRequest::new(speaker, None, prompt, DialogueTopicHint::Schedule, context);
-    let id = queue.enqueue(request);
-    debug!(
-        "Queued schedule update dialogue {} for speaker {} on day {}",
-        id.value(),
-        speaker,
-        day
-    );
-}
-
-fn send_trade_and_dialogue(
-    trade_writer: &mut MessageWriter<TradeCompletedEvent>,
-    queue: &mut DialogueRequestQueue,
-    input: TradeDialogueInput,
-) {
-    trade_writer.write(TradeCompletedEvent {
-        day: input.day,
-        from: input.from,
-        to: input.to,
-        good: input.good,
-        quantity: input.quantity,
-        reason: input.reason,
-    });
-
-    if let (Some(speaker), Some(target)) = (input.from, input.to) {
-        let descriptor = TradeDescriptor::new(input.good.label(), input.quantity);
-        let context =
-            DialogueContext::with_events(vec![DialogueContextEvent::Trade(TradeContext {
-                day: input.day,
-                from: input.from,
-                to: input.to,
-                descriptor,
-                reason: input.reason.into(),
-            })]);
-        let prompt = build_trade_prompt(speaker, input.good.label());
-        let request = DialogueRequest::new(
-            speaker,
-            Some(target),
-            prompt,
-            DialogueTopicHint::Trade,
-            context,
-        );
-        let id = queue.enqueue(request);
-        debug!("Queued dialogue request {} for trade", id.value());
-    }
-}
-
-impl From<TradeReason> for TradeContextReason {
-    fn from(value: TradeReason) -> Self {
-        match value {
-            TradeReason::Production => TradeContextReason::Production,
-            TradeReason::Processing => TradeContextReason::Processing,
-            TradeReason::Exchange => TradeContextReason::Exchange,
-        }
-    }
-}
-
-fn build_trade_prompt(speaker: NpcId, good_label: &str) -> String {
-    format!(
-        "{speaker} {verb} {good}{suffix}",
-        speaker = speaker,
-        verb = TRADE_PROMPT_VERB,
-        good = good_label,
-        suffix = SENTENCE_SUFFIX
-    )
 }
 
 fn spawn_trade_good_placeholder(
