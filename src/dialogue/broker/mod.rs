@@ -8,7 +8,7 @@ pub use openai::OpenAiDialogueBroker;
 use std::fmt;
 
 use super::{
-    errors::{DialogueError, DialogueErrorKind},
+    errors::DialogueError,
     types::{DialogueRequest, DialogueRequestId, DialogueResponse},
 };
 

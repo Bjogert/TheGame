@@ -199,7 +199,7 @@ pub fn evaluate_dependency_impacts(
         let flags = satisfied_map.get(&identity.id);
         let mut missing = 0;
         for category in requirements {
-            let met = flags.map_or(false, |entry| entry.contains(*category));
+            let met = flags.is_some_and(|entry| entry.contains(*category));
             if met {
                 continue;
             }

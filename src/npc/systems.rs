@@ -157,7 +157,7 @@ pub fn drive_npc_locomotion(
         let target_position = match target {
             MovementTarget::Entity(entity) => match world_transforms.get(entity) {
                 Ok(global) => {
-                    let mut pos: Vec3 = global.translation().into();
+                    let mut pos = global.translation();
                     pos.y = transform.translation.y;
                     pos
                 }
