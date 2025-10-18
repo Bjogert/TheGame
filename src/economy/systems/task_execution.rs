@@ -424,20 +424,24 @@ fn execute_deliver(
 
     {
         let mut inventories = inventory_queries.p0();
-        if let Ok(mut inventory) = inventories.get_mut(actor.entity) {
-            if inventory.remove_good(good, quantity) {
-                if inventory.quantity_of(good) == 0 {
-                    despawn_trade_good_placeholder(commands, placeholders, profession, good);
-                }
-            } else {
-                return TaskResult::InProgress;
-            }
-        } else {
+        let Ok(mut inventory) = inventories.get_mut(actor.entity) else {
             warn!(
                 "{} is missing an inventory; delivery cancelled",
                 actor.display_name
             );
             return TaskResult::Completed;
+        };
+
+        if inventory.quantity_of(good) < quantity {
+            return TaskResult::InProgress;
+        }
+
+        if !inventory.remove_good(good, quantity) {
+            return TaskResult::InProgress;
+        }
+
+        if inventory.quantity_of(good) == 0 {
+            despawn_trade_good_placeholder(commands, placeholders, profession, good);
         }
     }
 
