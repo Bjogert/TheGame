@@ -158,6 +158,52 @@ short_term:
     open_questions:
       - "Should we provide a config toggle to disable persistence for privacy-sensitive sessions?"
       - "Would summarising the log periodically help bound disk usage without losing conversational context?"
+  - step: "S1.9"
+    decisions:
+      - "Revalidated cargo fmt/clippy/check on the current toolchain before starting the cleanup series."
+      - "Documented module responsibilities (core, world, npc, dialogue, economy) to anchor future refactors."
+      - "Logged the missing Wayland development headers so hosted environments explain clippy failures."
+    risks:
+      - "Baseline still depends on local tooling; automated runs will keep failing until libwayland-dev is provisioned."
+      - "Responsibility map can drift quickly if not revisited after major feature work."
+    experiments: []
+    open_questions:
+      - "Should we script the responsibility snapshot so future refactors can regenerate it automatically?"
+  - step: "S1.10"
+    decisions:
+      - "Centralised OpenAI defaults (model, timeout, tokens, temperature) inside broker/config to keep overrides consistent."
+      - "Captured trade placeholder offsets and locomotion tolerances as constants instead of inline literals."
+      - "Surfaced dopamine thresholds and other tunables in README/TASK.md for easier tuning by designers."
+    risks:
+      - "Constants may diverge from config values if future contributors bypass the documented knobs."
+      - "Large const blocks can become unwieldy; consider moving to dedicated config files when more professions arrive."
+    experiments:
+      - "Compared placeholder offsets in-scene after centralisation to ensure visuals did not shift unexpectedly."
+    open_questions:
+      - "Do we migrate more of the dialogue prompts into external templates alongside these constants?"
+  - step: "S1.11"
+    decisions:
+      - "Split economy systems into spawning/day_prep/task_execution/dialogue modules with a re-exporting mod.rs."
+      - "Broke the dialogue broker into mod/config/openai so HTTP wiring is isolated from the trait surface."
+      - "Left public APIs unchanged by re-exporting previous symbols to avoid churn downstream."
+    risks:
+      - "More modules increases maintenance overhead if ownership boundaries blur; keep READMEs current."
+      - "Refactor could hide subtle ordering assumptions; continue to review system scheduling when adding features."
+    experiments:
+      - "Checked compile times before/after split to ensure module granularity did not regress builds."
+    open_questions:
+      - "Should spawning/day_prep/task_execution eventually live under their own namespace (e.g., planning::systems)?"
+  - step: "S1.12"
+    decisions:
+      - "Enabled `-D dead_code` during clippy to catch leftovers immediately after modularisation."
+      - "Removed unused helpers and legacy imports across economy/dialogue while verifying telemetry pathways."
+      - "Kept explicit tests/logs for motivation and trade pipelines to guard against silent regressions."
+    risks:
+      - "Future feature flags might reintroduce conditional dead code; ensure new stubs are feature-gated instead of left unused."
+      - "Reduced scaffolding leaves less buffer for experiments; document any new prototyping hooks promptly."
+    experiments: []
+    open_questions:
+      - "Can we automate dead code checks in CI once the Wayland dependency issue is fixed?"
 
 # Accumulates durable lessons and conventions.
 long_term:

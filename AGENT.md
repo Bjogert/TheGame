@@ -94,14 +94,14 @@ Keep files smaller than ~400 lines. Split modules when new responsibilities appe
 ## 4) Active Steps (Plan 3)
 > Update this section whenever the top backlog item changes. Keep scope small (0.5-2 focused days).
 
-### Current Focus - S1.4: Config-Driven Economy Planner Spike
-- `EconomyRegistry` now loads recipes and daily requests from `config/economy.toml`, replacing the hard-coded farmer -> miller -> blacksmith loop.
-- The planner converts needs into queued `ActorTask`s (`WaitForGood`, `Manufacture`, `Deliver`) so professions act when inputs are present and exchanges feel natural.
-- `advance_actor_tasks` keeps villagers at their crates while producing, hands off goods with telemetry, and maintains placeholder meshes tied to inventory counts.
+### Current Focus - S1.13: Telemetry & Dependency Surfacing
+- Instrument locomotion, motivation, and planner outputs for on-screen overlays so daily loops are legible without tailing logs.
+- Expose dependency-matrix summaries in debug UI to verify wellbeing bonuses and penalties alongside trade completions.
+- Prepare broker telemetry for UI consumption so dialogue, trade, and motivation streams can share the same presentation layer.
 
-**Recently completed:** S1.3 (dialogue broker prototype) established the request queue and telemetry. S1.6 added profession crates/locomotion, and S1.7 delivered the motivation spike that consumes dependency updates.
+**Recently completed:** S1.9 (baseline verification & responsibility map), S1.10 (economy/dialogue literal audit), S1.11 (systems modularisation), and S1.12 (dead code sweep) cleared the deck for UI-facing work.
 
-**Next in queue:** Formalise work-order data for Step 7, surface economy/motivation telemetry in UI overlays, and integrate the production dialogue client once the planner and dependency matrix stabilise.
+**Next in queue:** Promote work-order data toward Step 7, expand configuration validation for the new constants, and connect the cleaned dialogue/economy modules to forthcoming UI panels.
 
 ---
 

@@ -10,3 +10,10 @@ The economy prototype now builds daily work plans from configuration rather than
 - `EconomyDependencyMatrix` still maps wellbeing categories to goods. After tasks complete, daily snapshots emit `ProfessionDependencyUpdateEvent` so motivation systems can react to shortages or satisfied needs.
 
 The configuration-driven approach keeps behaviour extensible while we iterate on more professions and goods. Design notes for broader expansion live in docs/economy_blueprint.md.
+
+## Module Layout
+- `systems/spawning.rs` creates crate entities and registers placeholder visuals.
+- `systems/day_prep.rs` rebuilds daily task queues once per world day, clearing the previous plan when requests change.
+- `systems/task_execution.rs` advances queued tasks, manipulates inventories, and emits dependency updates.
+- `systems/dialogue.rs` converts trade progress into dialogue requests so the broker sees planner output.
+- Shared constants (placeholder offsets, profession labels) live at the top of the relevant modules to avoid ad-hoc literals.

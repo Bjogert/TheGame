@@ -260,3 +260,78 @@
   notes:
     - "Telemetry persistence runs immediately after queue processing so the JSONL log matches UI-visible history."
     - "logs/ is ignored from version control to prevent accidental commits of local dialogue history."
+
+- id: S1.9
+  title: "Baseline verification & responsibility map"
+  state: done
+  deps: [S1.8]
+  deliverables:
+    - "`cargo fmt`, `cargo clippy -D warnings`, and `cargo check --all-targets` executed on the refreshed codebase"
+    - "Responsibility summary for core, world, npc, dialogue, and economy modules captured in planning docs"
+    - "Environment caveats (Wayland pkg-config gap) logged alongside baseline results"
+  docs_update:
+    - "AGENT.md"
+    - "TASK.md"
+    - "docs/tech_notes.md"
+    - "BigPicturePlan.md"
+    - "docs/plan_overview.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Hosted containers still lack `libwayland-dev`; document the limitation so failed linting is not misattributed to code."
+    - "Responsibility map covers plugin ordering, shared resources, and dialogue/economy touch points post-refactor."
+
+- id: S1.10
+  title: "Economy & dialogue literal audit"
+  state: done
+  deps: [S1.9]
+  deliverables:
+    - "OpenAI defaults centralised in `dialogue::broker::config`"
+    - "Trade placeholder offsets, crate labels, and locomotion tolerances expressed as module constants"
+    - "Documentation updated to mention new constants/config entries"
+  docs_update:
+    - "README.md"
+    - "TASK.md"
+    - "docs/tech_notes.md"
+    - "src/dialogue/README.md"
+    - "src/economy/README.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Removed the last ad-hoc offsets from task execution; placeholders now reference shared constants."
+    - "Dialogue broker defaults clearly document how to override environment variables."
+
+- id: S1.11
+  title: "Systems modularisation"
+  state: done
+  deps: [S1.10]
+  deliverables:
+    - "Economy systems split into `spawning`, `day_prep`, `task_execution`, and `dialogue` submodules"
+    - "Dialogue broker extracted into `broker/mod.rs`, `broker/config.rs`, and `broker/openai.rs`"
+    - "Module docs refreshed to describe the new layout"
+  docs_update:
+    - "TASK.md"
+    - "CHANGELOG.md"
+    - "BigPicturePlan.md"
+    - "docs/tech_notes.md"
+    - "README.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Each file now sits below the 400-line guideline called out in AGENT.md."
+    - "`mod.rs` files re-export previous symbols to avoid churn in dependants."
+
+- id: S1.12
+  title: "Dead code sweep"
+  state: done
+  deps: [S1.11]
+  deliverables:
+    - "`cargo clippy -D warnings -- -D dead_code` run to surface unused definitions"
+    - "Redundant helpers/imports removed across dialogue and economy modules"
+    - "Docs updated with the cleanup summary and remaining follow-ups"
+  docs_update:
+    - "CHANGELOG.md"
+    - "docs/tech_notes.md"
+    - "TASK.md"
+    - "AGENT.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Telemetry and event hooks verified after removals to ensure NPC motivation and trade pipelines still fire."
+    - "Cleanup unblocked upcoming UI telemetry work by reducing noise in the modules."

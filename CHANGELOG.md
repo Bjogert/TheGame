@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 - Restored delivery completion checks so both the sender and recipient must be at their crates before goods transfer, preventing premature task completion during the economy loop.
 
+## 2025-10-18 - S1.9-S1.12: Codebase Cleanup & Refactor Support
+- Re-ran the standard toolchain (fmt, clippy, check) and captured a fresh responsibility map so economy, dialogue, and NPC modules have a documented baseline before further changes.
+- Centralised dialogue and economy literals into named constants/config toggles, promoting shared defaults for OpenAI requests, trade placeholders, and motivation thresholds.
+- Split the monolithic economy system into `systems::{spawning, day_prep, task_execution, dialogue}` and broke the dialogue broker into `broker::{mod, config, openai}` to keep each file under 400 lines.
+- Removed unused helper functions, redundant imports, and dead types surfaced by `cargo clippy -D warnings -- -D dead_code`, keeping the reorganised modules lint-clean.
+
 ## 2025-10-17 - S1.4: Config-Driven Economy Planner Spike
 - Added `config/economy.toml` plus `EconomyRegistry`/planner modules so daily trade plans load from data instead of hard-coded loops.
 - Replaced the micro trade loop with `prepare_economy_day`/`advance_actor_tasks`, enabling villagers to wait at crates, manufacture goods, and deliver them via queued `ActorTask`s.

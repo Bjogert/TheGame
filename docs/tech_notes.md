@@ -30,6 +30,26 @@
 - The log directory is created on demand; each entry stores provider, speaker/target labels, request ids, and error metadata so UI tooling or offline analysis can replay recent conversations.
 - Persistence runs immediately after the request queue processes an entry, keeping the JSONL file aligned with the records exposed to UI systems.
 
+## Baseline Verification & Responsibility Map (S1.9)
+- Re-ran `cargo fmt`, `cargo clippy -D warnings`, and `cargo check --all-targets` to confirm the refactored modules compile cleanly on the documented toolchain before starting the cleanup pass.
+- Captured an updated responsibility map for core, world, NPC, dialogue, and economy modules in the planning docs so future refactors have a reliable reference.
+- Recorded environment caveats (Wayland pkg-config requirement) alongside the baseline to explain why hosted containers still block the linting toolchain.
+
+## Economy & Dialogue Literal Audit (S1.10)
+- Consolidated OpenAI defaults (`DEFAULT_MODEL`, `DEFAULT_TIMEOUT_SECS`, `DEFAULT_TEMPERATURE`, etc.) into `broker/config.rs`, keeping environment overrides consistent.
+- Moved trade placeholder offsets and profession labels (`BLACKSMITH_NAME`, `MILLER_NAME`) into module-level `const` blocks so systems reuse a single source of truth.
+- Surfaced locomotion tolerances, dopamine thresholds, and other tuning knobs in configs/consts called out in README/TASK.md to discourage future magic numbers.
+
+## Systems Modularisation (S1.11)
+- Split the 800+ line `economy/systems.rs` into focused modules: `spawning` handles crate/entity setup, `day_prep` plans the day, `task_execution` advances queues, and `dialogue` bridges planner output into the broker.
+- Extracted the dialogue broker into `broker/mod.rs`, `broker/config.rs`, and `broker/openai.rs`, isolating HTTP/client wiring from trait definitions and making room for alternate providers.
+- Updated `mod.rs` re-exports so external call sites keep their previous import paths while benefiting from smaller files.
+
+## Dead Code Cleanup (S1.12)
+- Enabled `cargo clippy -D warnings -- -D dead_code` during the sweep; removed unused helper functions, redundant imports, and stale type aliases highlighted by the lint run.
+- Cleared lingering `allow(dead_code)` markers that were originally protecting future config hooks now backed by real constants/config entries.
+- Verified telemetry/event wiring after removals to ensure NPC motivation, trade completion, and dialogue pipelines still emit the same signals.
+
 ## Config-Driven Micro Trade Planner (S1.4)
 - `EconomyRegistry` reads recipes and daily requests from `config/economy.toml`, replacing the hard-coded farmer → miller → blacksmith loop.
 - `prepare_economy_day` converts unmet needs into per-profession `ActorTask` queues (`WaitForGood`, `Manufacture`, `Deliver`) so villagers only act when inputs are present.
