@@ -24,6 +24,7 @@ const FALLBACK_TARGET_LABEL: &str = "player";
 const SUMMARY_PREFIX: &str = "Summary:";
 const SCHEDULE_NOTE_PREFIX: &str = "Schedule note:";
 const CONTEXT_FALLBACK_MESSAGE: &str = "No notable context available.";
+const SENTENCE_SUFFIX: &str = ".";
 
 const DEFAULT_BASE_URL: &str = "https://api.openai.com";
 const DEFAULT_CHAT_PATH: &str = "/v1/chat/completions";
