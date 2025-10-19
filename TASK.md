@@ -224,6 +224,54 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 
 ---
 
+## Step S1.13 - Dialogue Broker Verification & Instrumentation
+**Goal:** Prove the OpenAI integration works end-to-end and surface its status in logs/telemetry.
+
+- [ ] Emit a clear startup log/telemetry flag indicating live vs. fallback broker mode and expose that state for UI/debug overlays.
+- [ ] Add a hotkey/console command or debug system that enqueues a sample conversation through the existing `DialogueRequestQueue` to smoke-test API wiring on demand.
+- [ ] Extend the telemetry log (`logs/dialogue_history.jsonl`) and in-game logging so provider errors, rate limits, and fallbacks are easy to diagnose.
+- [ ] Refresh docs/planning artifacts (`src/dialogue/README.md`, `docs/tech_notes.md`, `CHANGELOG.md`, `.agent/ai_memory.V.1.yaml`, `.agent/tasks.yaml`, `TASK.md`) with the new verification workflow.
+- **Outcome:** Developers can immediately tell whether real OpenAI responses are flowing and can trigger a quick diagnostic exchange without code changes.
+- **Exit criteria:** Running the debug trigger records a response (or failure) with clear provider status, and documentation explains how to confirm live mode.
+
+---
+
+## Step S1.14 - Conversational Triggers & Prompt Revamp
+**Goal:** Broaden NPC conversation hooks and enrich prompt context so dialogue feels grounded.
+
+- [ ] Introduce systems that watch schedule transitions, proximity checks, and trade states to enqueue greetings, banter, and haggling lines while respecting existing rate limits.
+- [ ] Expand `DialogueContext` builders to include mood (`NpcMotivation`), recent activities, trade metadata, and relationship hints for richer prompts.
+- [ ] Refactor prompt templates/topic hints so responses reference shared world state (e.g., morning greetings, crate-side negotiations, day-end recaps).
+- [ ] Update affected docs (`src/dialogue/README.md`, `src/economy/README.md`, `src/npc/README.md`, `docs/tech_notes.md`, planning files) with trigger coverage, tuning knobs, and risks.
+- **Outcome:** NPCs initiate varied conversations tied to what they are doing, producing text that references the current day, mood, and trading partners.
+- **Exit criteria:** Observing a full day shows multiple trigger types firing with context-rich responses, and documentation outlines configuration/cooldown rules.
+
+---
+
+## Step S1.15 - NPC Needs & Self-Directed Decisions
+**Goal:** Let villagers evaluate personal needs and influence their schedules/activities organically.
+
+- [ ] Add an `NpcNeeds` component with hunger, thirst, rest, and social meters driven by configurable decay/recovery curves.
+- [ ] Build a decision scoring system that weighs needs, `NpcMotivation`, and schedule commitments to select the next action or dialogue topic.
+- [ ] Integrate economy task assignment so villagers can defer work, seek resources, or request help when critical needs fall below thresholds.
+- [ ] Expose telemetry/debug overlays for current need levels and chosen actions; document behaviour in module READMEs, tech notes, plan files, and changelog.
+- **Outcome:** NPCs occasionally reprioritise tasks or conversations based on their state instead of blindly following scripted loops.
+- **Exit criteria:** Simulations demonstrate needs influencing activity choices without deadlocks, and docs explain tuning plus safe defaults.
+
+---
+
+## Step S1.16 - In-World Dialogue Bubbles
+**Goal:** Surface NPC speech in the world so conversations are visible during play.
+
+- [ ] Implement a billboard speech-bubble component (quad or text mesh) parented to speaking NPCs that shows the latest dialogue line.
+- [ ] Drive bubble lifecycle from `DialogueResponseEvent`, including per-NPC dedupe, short lifetimes, and distance-based culling to avoid clutter.
+- [ ] Provide a debug toggle/overlay to review recent lines alongside the 3D bubbles while keeping logging/telemetry in sync.
+- [ ] Update documentation (`src/dialogue/README.md`, `src/npc/README.md`, `docs/tech_notes.md`, planning files) with implementation details and toggles.
+- **Outcome:** Nearby villagers display their dialogue lines in-world, fading naturally with distance/time while sharing infrastructure with telemetry/logs.
+- **Exit criteria:** Running the game shows speech bubbles for active conversations, the debug toggle works, and associated docs describe usage and limitations.
+
+---
+
 ## What Comes Next
 Use the S1.5 blueprint to draft implementation tasks for Step 7: load profession/recipe configs, add work-order queues, expand economy events, and generate the resource dependency matrix. Follow that by spiking the S1.7 motivation system so wellbeing can feed back into schedules and product quality.
 

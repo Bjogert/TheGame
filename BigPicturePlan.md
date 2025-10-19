@@ -33,9 +33,10 @@ We are building a medieval life simulation anchored on a deterministic ECS core,
 The economy slice now plans daily work from configuration: villagers wait at their crates, manufacture goods via queued tasks, and deliver them when partners are present. Dialogue telemetry persists to `logs/dialogue_history.jsonl`, and both economy and dialogue modules have been split into focused submodules with shared constants replacing prior magic numbers. Locomotion/economy telemetry has not yet surfaced in UI, and the dependency matrix remains to be generalised for Step 7.
 
 ## Upcoming Work (Near-Term)
-1. **UI status surfacing:** Feed locomotion, motivation, and planner telemetry into HUD elements or debug overlays, making villager activity legible in real time.
-2. **Dialogue broker integration:** Harden the OpenAI path, unify telemetry for UI consumption, and expose configuration validation for the new constants.
-3. **Work-order formalisation:** Promote the ad-hoc task queues into Step 7's planned work-order data structures and align the dependency matrix with the config-driven economy tables.
+1. **Dialogue verification & instrumentation (S1.13):** Make it obvious when OpenAI live mode is active, surface broker errors/rate limits, and provide a repeatable smoke-test trigger.
+2. **Conversational triggers & prompt revamp (S1.14):** Fire greetings, haggling, and schedule chatter from real simulation cues while enriching prompt context with mood and activity data.
+3. **Needs-driven decisions (S1.15):** Track hunger/thirst/rest/social needs, let villagers weigh them against motivation and schedules, and feed the results into task selection.
+4. **World-space speech bubbles (S1.16):** Render billboard text above chatting NPCs so nearby conversations are readable without relying on external logs.
 
 ## Roadmap Outlook (Mid to Long Term)
 - **M2 - Persistence Layer:** Introduce SQLite-backed save/load, with migrations and world snapshotting so sessions can resume reliably.

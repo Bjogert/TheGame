@@ -27,3 +27,4 @@ We will consider this phase complete once a small cast of villagers can go throu
 - Step 10 (economy & dialogue literal audit) finished: OpenAI defaults, trade placeholder offsets, and locomotion tolerances live in shared constants/config instead of scattered literals.
 - Step 11 (systems modularisation) finished: the economy systems now live under `systems::{spawning, day_prep, task_execution, dialogue}` and the dialogue broker under `broker/{mod,config,openai}`.
 - Step 12 (dead code sweep) finished: redundant helpers/imports removed after enabling `clippy -D dead_code`, keeping the reorganised modules clean for upcoming UI telemetry work.
+- Upcoming focus: verify OpenAI integration (S1.13), add contextual dialogue triggers (S1.14), layer needs-driven decision making (S1.15), and surface conversations with world-space speech bubbles (S1.16).

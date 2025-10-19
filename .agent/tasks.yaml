@@ -335,3 +335,77 @@
   notes:
     - "Telemetry and event hooks verified after removals to ensure NPC motivation and trade pipelines still fire."
     - "Cleanup unblocked upcoming UI telemetry work by reducing noise in the modules."
+
+- id: S1.13
+  title: "Dialogue broker verification & instrumentation"
+  state: backlog
+  deps: [S1.12]
+  deliverables:
+    - "Expose runtime indicator (log + telemetry) confirming when OpenAI live mode is active vs fallback"
+    - "Add a debug command/system to enqueue a sample conversation so API wiring can be smoke-tested on demand"
+    - "Capture broker errors and rate limits in logs/dialogue_history.jsonl with actionable messages"
+  docs_update:
+    - "src/dialogue/README.md"
+    - "CHANGELOG.md"
+    - "docs/tech_notes.md"
+    - "TASK.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Ensures developers immediately know whether real OpenAI responses are flowing before chasing gameplay bugs."
+    - "Sample handshake should reuse existing DialogueRequestQueue paths to avoid bespoke code paths."
+
+- id: S1.14
+  title: "Conversational triggers & prompt revamp"
+  state: backlog
+  deps: [S1.13]
+  deliverables:
+    - "Add event-driven dialogue triggers for greetings, status check-ins, and trade haggling grounded in proximity/schedule cues"
+    - "Expand DialogueContext builders with mood, recent activities, and trade metadata to enrich prompts"
+    - "Refine prompt templates and topic hints so responses reference shared world state"
+  docs_update:
+    - "src/dialogue/README.md"
+    - "src/economy/README.md"
+    - "src/npc/README.md"
+    - "docs/tech_notes.md"
+    - "TASK.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Initial trigger set should cover morning greetings, crate-side haggling, and schedule recaps to prove loop diversity."
+    - "Keep rate limits in mind by batching dialog opportunities and reusing cooldown infrastructure."
+
+- id: S1.15
+  title: "NPC needs & self-directed decisions"
+  state: backlog
+  deps: [S1.14]
+  deliverables:
+    - "Introduce an `NpcNeeds` component tracking hunger, thirst, rest, and social desire with configurable decay/recovery"
+    - "Wire a lightweight decision system that weighs needs/motivation to pick the next activity or dialogue topic"
+    - "Integrate economy tasks with need states so villagers can defer work or seek resources when thresholds dip"
+  docs_update:
+    - "src/npc/README.md"
+    - "src/economy/README.md"
+    - "docs/plan_overview.md"
+    - "docs/tech_notes.md"
+    - "TASK.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Start with deterministic scoring so behaviour remains debuggable before layering randomness."
+    - "Expose telemetry hooks so UI/debug overlays can visualise needs and resulting decisions."
+
+- id: S1.16
+  title: "In-world dialogue bubbles"
+  state: backlog
+  deps: [S1.14]
+  deliverables:
+    - "Render floating speech bubbles above active NPCs showing recent DialogueResponseEvent text"
+    - "Cull/expire bubbles based on time, distance, and dialogue rate limits to avoid clutter"
+    - "Add debug toggle or UI overlay to inspect full dialogue history alongside bubbles"
+  docs_update:
+    - "src/dialogue/README.md"
+    - "src/npc/README.md"
+    - "docs/tech_notes.md"
+    - "TASK.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Implement as billboarding 2D quads or UI nodes parented to NPC entities so text faces the camera."
+    - "Reuse dialogue telemetry/events to drive visuals without creating a secondary dialogue pipeline."
