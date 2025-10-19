@@ -4,6 +4,7 @@ pub mod errors;
 pub mod events;
 pub mod plugin;
 pub mod queue;
+pub mod status;
 pub mod telemetry;
 pub mod types;
 

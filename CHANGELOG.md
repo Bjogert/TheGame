@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 - Restored delivery completion checks so both the sender and recipient must be at their crates before goods transfer, preventing premature task completion during the economy loop.
+- Instrumented the dialogue broker with a `DialogueBrokerStatus` resource that logs live vs. fallback mode at startup and surfaces the state to UI/telemetry consumers.
+- Added a `broker_status` entry type to `logs/dialogue_history.jsonl`, recording provider mode changes alongside dialogue responses and failures for easier diagnostics.
+- Bound `F7` as a dialogue probe hotkey that enqueues a canned NPC prompt through the existing queue so developers can smoke-test OpenAI connectivity on demand.
+- Automatically load environment variables from `secrets.env` (when present) before the Bevy app starts, keeping API keys local without manual export steps.
 
 ## 2025-10-18 - S1.9-S1.12: Codebase Cleanup & Refactor Support
 - Re-ran the standard toolchain (fmt, clippy, check) and captured a fresh responsibility map so economy, dialogue, and NPC modules have a documented baseline before further changes.

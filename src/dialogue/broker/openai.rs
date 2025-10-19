@@ -11,9 +11,12 @@ use super::{
     config::{OpenAiConfig, OpenAiConfigError},
     DialogueBroker, DialogueProviderKind,
 };
-use crate::dialogue::types::{
-    DialogueContextEvent, DialogueRequest, DialogueRequestId, DialogueResponse, DialogueTopicHint,
-    TradeContextReason,
+use crate::dialogue::{
+    status::DialogueConnectionState,
+    types::{
+        DialogueContextEvent, DialogueRequest, DialogueRequestId, DialogueResponse,
+        DialogueTopicHint, TradeContextReason,
+    },
 };
 
 const EMPTY_PROMPT_ERROR: &str = "prompt cannot be empty";
@@ -154,6 +157,13 @@ impl OpenAiDialogueBroker {
 impl DialogueBroker for OpenAiDialogueBroker {
     fn provider_kind(&self) -> DialogueProviderKind {
         DialogueProviderKind::OpenAi
+    }
+
+    fn connection_state(&self) -> DialogueConnectionState {
+        match self.mode {
+            BrokerMode::Live(_) => DialogueConnectionState::Live,
+            BrokerMode::Fallback => DialogueConnectionState::Fallback,
+        }
     }
 
     fn process(

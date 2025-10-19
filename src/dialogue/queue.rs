@@ -7,7 +7,7 @@ use bevy::prelude::*;
 use crate::npc::components::NpcId;
 
 use super::{
-    broker::{DialogueBroker, DialogueProviderKind},
+    broker::DialogueBroker,
     errors::{DialogueError, DialogueErrorKind},
     events::{DialogueRequestFailedEvent, DialogueResponseEvent},
     types::{DialogueRequest, DialogueRequestId},
@@ -132,10 +132,6 @@ pub struct ActiveDialogueBroker {
 impl ActiveDialogueBroker {
     pub fn new(inner: Box<dyn DialogueBroker>) -> Self {
         Self { inner }
-    }
-
-    pub fn provider_kind(&self) -> DialogueProviderKind {
-        self.inner.provider_kind()
     }
 
     pub fn process(

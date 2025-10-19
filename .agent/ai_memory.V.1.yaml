@@ -1,7 +1,7 @@
 ﻿# ai_memory.V.1.yaml
 version: 1
 project: "medieval_sim"
-updated_utc: "2025-10-16T00:00:00Z"
+updated_utc: "2025-10-19T08:58:00Z"
 
 # Short-term notes are tied to the active step. Promote durable lessons to long_term.
 short_term:
@@ -204,6 +204,20 @@ short_term:
     experiments: []
     open_questions:
       - "Can we automate dead code checks in CI once the Wayland dependency issue is fixed?"
+  - step: "S1.13"
+    decisions:
+      - "Introduced `DialogueBrokerStatus` so the game exposes whether OpenAI is running in live or fallback mode via startup logs, telemetry, and UI resources."
+      - "Recorded broker status snapshots inside `logs/dialogue_history.jsonl`, giving offline tooling a history of mode changes alongside responses/failures."
+      - "Bound the `F7` hotkey to a dialogue probe that sends a canned prompt through the queue using the first available NPC identity for quick end-to-end smoke tests."
+      - "Automatically load secrets from `secrets.env` (when present) before launching the Bevy app so local API keys do not need to be exported manually."
+    risks:
+      - "Probe currently picks the first NPC; if no villagers spawn yet the request is skipped and may confuse new users until more robust targeting exists."
+      - "Status snapshot is captured at startup; dynamic recovery from fallback would require refreshing the resource if we add reconnection logic."
+    experiments:
+      - "Verified telemetry log entries render `broker_status` events prior to responses, confirming JSON schema updates remain backward compatible."
+    open_questions:
+      - "Should we expose a UI toggle to trigger dialogue probes without relying on a keyboard shortcut?"
+      - "Do we want automated retries that can flip the broker from fallback to live mid-session once credentials are supplied?"
 
 # Accumulates durable lessons and conventions.
 long_term:

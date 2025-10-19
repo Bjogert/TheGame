@@ -3,14 +3,15 @@
 pub mod config;
 pub mod openai;
 
-pub use openai::OpenAiDialogueBroker;
-
 use std::fmt;
 
 use super::{
     errors::DialogueError,
+    status::DialogueConnectionState,
     types::{DialogueRequest, DialogueRequestId, DialogueResponse},
 };
+
+pub use openai::OpenAiDialogueBroker;
 
 /// Dialogue provider flavours we can route to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -21,7 +22,7 @@ pub enum DialogueProviderKind {
 impl fmt::Display for DialogueProviderKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let label = match self {
-            Self::OpenAi => "openai",
+            Self::OpenAi => "OpenAi",
         };
         write!(f, "{}", label)
     }
@@ -30,6 +31,8 @@ impl fmt::Display for DialogueProviderKind {
 /// Contract every dialogue backend must satisfy.
 pub trait DialogueBroker: Send + Sync {
     fn provider_kind(&self) -> DialogueProviderKind;
+
+    fn connection_state(&self) -> DialogueConnectionState;
 
     fn process(
         &self,

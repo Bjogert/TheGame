@@ -12,6 +12,7 @@ use serde::Serialize;
 use super::{
     errors::{DialogueError, DialogueErrorKind},
     events::{DialogueRequestFailedEvent, DialogueResponseEvent},
+    status::{DialogueBrokerStatusSnapshot, DialogueConnectionState},
     types::DialogueResponse,
 };
 
@@ -71,12 +72,13 @@ pub struct DialogueTelemetryRecord {
     pub event: DialogueTelemetryEvent,
 }
 
-/// Either a response or a failure.
+/// Either a response, failure, or broker status snapshot.
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum DialogueTelemetryEvent {
     Response(DialogueResponse),
     Failure(DialogueError),
+    BrokerStatus(DialogueBrokerStatusSnapshot),
 }
 
 /// System that records dialogue telemetry for later UI display.
@@ -217,6 +219,10 @@ enum SerializableDialogueTelemetryEvent {
         provider: String,
         error: SerializableDialogueError,
     },
+    BrokerStatus {
+        provider: String,
+        connection_state: DialogueConnectionState,
+    },
 }
 
 impl From<DialogueTelemetryEvent> for SerializableDialogueTelemetryEvent {
@@ -234,6 +240,10 @@ impl From<DialogueTelemetryEvent> for SerializableDialogueTelemetryEvent {
                 provider: error.provider.to_string(),
                 error: error.kind.into(),
             },
+            DialogueTelemetryEvent::BrokerStatus(status) => Self::BrokerStatus {
+                provider: status.provider,
+                connection_state: status.connection_state,
+            },
         }
     }
 }
@@ -241,9 +251,16 @@ impl From<DialogueTelemetryEvent> for SerializableDialogueTelemetryEvent {
 #[derive(Serialize)]
 #[serde(tag = "error_kind", rename_all = "snake_case")]
 enum SerializableDialogueError {
-    RateLimited { retry_after_seconds: f32 },
-    ProviderFailure { message: String },
-    ContextMissing { missing: String },
+    RateLimited {
+        retry_after_seconds: f32,
+        message: String,
+    },
+    ProviderFailure {
+        message: String,
+    },
+    ContextMissing {
+        missing: String,
+    },
 }
 
 impl From<DialogueErrorKind> for SerializableDialogueError {
@@ -253,6 +270,10 @@ impl From<DialogueErrorKind> for SerializableDialogueError {
                 retry_after_seconds,
             } => Self::RateLimited {
                 retry_after_seconds,
+                message: format!(
+                    "Rate limited; retry after {:.2} seconds",
+                    retry_after_seconds
+                ),
             },
             DialogueErrorKind::ProviderFailure { message } => Self::ProviderFailure { message },
             DialogueErrorKind::ContextMissing { missing } => Self::ContextMissing {
@@ -326,6 +347,14 @@ mod tests {
 
         let mut log = DialogueTelemetryLog::new(&path);
 
+        let status_record = DialogueTelemetryRecord {
+            occurred_at_seconds: 11.0,
+            event: DialogueTelemetryEvent::BrokerStatus(DialogueBrokerStatusSnapshot {
+                provider: DialogueProviderKind::OpenAi.to_string(),
+                connection_state: DialogueConnectionState::Live,
+            }),
+        };
+
         let response_record = DialogueTelemetryRecord {
             occurred_at_seconds: 12.5,
             event: DialogueTelemetryEvent::Response(DialogueResponse::new(
@@ -337,16 +366,23 @@ mod tests {
             )),
         };
 
+        log.push(&status_record);
         log.push(&response_record);
         log.flush().expect("telemetry log should flush");
 
         let raw = fs::read_to_string(&path).expect("log file should exist");
         let lines: Vec<_> = raw.lines().collect();
-        assert_eq!(lines.len(), 1);
+        assert_eq!(lines.len(), 2);
 
-        let value: Value = serde_json::from_str(lines[0]).expect("json line should parse");
+        let status_value: Value =
+            serde_json::from_str(lines[0]).expect("status json line should parse");
+        assert_eq!(status_value["event"]["event_type"], "broker_status");
+        assert_eq!(status_value["event"]["provider"], "OpenAi");
+        assert_eq!(status_value["event"]["connection_state"], "live");
+
+        let value: Value = serde_json::from_str(lines[1]).expect("json line should parse");
         assert_eq!(value["event"]["event_type"], "response");
-        assert_eq!(value["event"]["provider"], "openai");
+        assert_eq!(value["event"]["provider"], "OpenAi");
         assert_eq!(value["event"]["speaker"], "NPC-0042");
         assert_eq!(value["event"]["target"], "NPC-0007");
 

@@ -30,6 +30,12 @@
 - The log directory is created on demand; each entry stores provider, speaker/target labels, request ids, and error metadata so UI tooling or offline analysis can replay recent conversations.
 - Persistence runs immediately after the request queue processes an entry, keeping the JSONL file aligned with the records exposed to UI systems.
 
+## Dialogue Broker Instrumentation (S1.13)
+- `DialogueBrokerStatus` captures the active provider and whether the OpenAI client is live or running in fallback mode. The status resource is logged on startup and mirrored into dialogue telemetry so UI/debug tooling can surface it without duplicating HTTP checks.
+- `DialogueTelemetryLog` now writes `broker_status` entries alongside responses and failures, providing an explicit history of mode changes (e.g., when credentials are missing vs. when live traffic is flowing).
+- Press `F7` in-game to enqueue a dialogue probe request; the system uses the first available NPC identity to send a canned prompt through the queue so developers can smoke-test credentials and rate limits on demand.
+- The executable automatically loads environment variables from `secrets.env` (if present) before the Bevy app starts, keeping API keys out of git while avoiding manual export steps during development.
+
 ## Baseline Verification & Responsibility Map (S1.9)
 - Re-ran `cargo fmt`, `cargo clippy -D warnings`, and `cargo check --all-targets` to confirm the refactored modules compile cleanly on the documented toolchain before starting the cleanup pass.
 - Captured an updated responsibility map for core, world, NPC, dialogue, and economy modules in the planning docs so future refactors have a reliable reference.

@@ -227,11 +227,11 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 ## Step S1.13 - Dialogue Broker Verification & Instrumentation
 **Goal:** Prove the OpenAI integration works end-to-end and surface its status in logs/telemetry.
 
-- [ ] Emit a clear startup log/telemetry flag indicating live vs. fallback broker mode and expose that state for UI/debug overlays.
-- [ ] Add a hotkey/console command or debug system that enqueues a sample conversation through the existing `DialogueRequestQueue` to smoke-test API wiring on demand.
-- [ ] Extend the telemetry log (`logs/dialogue_history.jsonl`) and in-game logging so provider errors, rate limits, and fallbacks are easy to diagnose.
-- [ ] Refresh docs/planning artifacts (`src/dialogue/README.md`, `docs/tech_notes.md`, `CHANGELOG.md`, `.agent/ai_memory.V.1.yaml`, `.agent/tasks.yaml`, `TASK.md`) with the new verification workflow.
-- **Outcome:** Developers can immediately tell whether real OpenAI responses are flowing and can trigger a quick diagnostic exchange without code changes.
+- [x] Emit a clear startup log/telemetry flag indicating live vs. fallback broker mode and expose that state for UI/debug overlays.
+- [x] Add a hotkey/console command or debug system that enqueues a sample conversation through the existing `DialogueRequestQueue` to smoke-test API wiring on demand.
+- [x] Extend the telemetry log (`logs/dialogue_history.jsonl`) and in-game logging so provider errors, rate limits, and fallbacks are easy to diagnose.
+- [x] Refresh docs/planning artifacts (`src/dialogue/README.md`, `docs/tech_notes.md`, `CHANGELOG.md`, `.agent/ai_memory.V.1.yaml`, `.agent/tasks.yaml`, `TASK.md`) with the new verification workflow.
+- **Outcome:** Startup logs and telemetry now advertise the broker's live/fallback mode, `broker_status` entries appear in the JSONL history, and pressing `F7` queues a dialogue probe so developers can confirm OpenAI connectivity without editing code.
 - **Exit criteria:** Running the debug trigger records a response (or failure) with clear provider status, and documentation explains how to confirm live mode.
 
 ---

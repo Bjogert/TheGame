@@ -338,7 +338,7 @@
 
 - id: S1.13
   title: "Dialogue broker verification & instrumentation"
-  state: backlog
+  state: done
   deps: [S1.12]
   deliverables:
     - "Expose runtime indicator (log + telemetry) confirming when OpenAI live mode is active vs fallback"

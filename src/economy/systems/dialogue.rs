@@ -71,7 +71,7 @@ pub(super) fn send_trade_and_dialogue(
 
     if let (Some(speaker), Some(target)) = (input.from, input.to) {
         let descriptor = TradeDescriptor::new(input.good.label(), input.quantity);
-        let context =
+        let mut context =
             DialogueContext::with_events(vec![DialogueContextEvent::Trade(TradeContext {
                 day: input.day,
                 from: input.from,
@@ -79,6 +79,7 @@ pub(super) fn send_trade_and_dialogue(
                 descriptor,
                 reason: input.reason.into(),
             })]);
+        context.summary = Some(build_trade_summary(&input));
         let prompt = build_trade_prompt(speaker, input.good.label());
         let request = DialogueRequest::new(
             speaker,
@@ -110,4 +111,33 @@ fn build_trade_prompt(speaker: NpcId, good_label: &str) -> String {
         good = good_label,
         suffix = SENTENCE_SUFFIX
     )
+}
+
+fn build_trade_summary(input: &TradeDialogueInput) -> String {
+    let reason = match input.reason {
+        TradeReason::Production => "produced",
+        TradeReason::Processing => "processed",
+        TradeReason::Exchange => "exchanged",
+    };
+
+    match (input.from, input.to) {
+        (Some(from), Some(to)) => format!(
+            "Day {}: {} {} {} for {}.",
+            input.day,
+            from,
+            reason,
+            input.good.label(),
+            to
+        ),
+        _ => format!(
+            "Day {}: {} {} {}.",
+            input.day,
+            input
+                .from
+                .map(|npc| npc.to_string())
+                .unwrap_or_else(|| "An NPC".to_string()),
+            reason,
+            input.good.label()
+        ),
+    }
 }

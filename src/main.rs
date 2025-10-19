@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use bevy::prelude::*;
 
 mod core;
@@ -12,6 +14,8 @@ use crate::{
 };
 
 fn main() {
+    load_secrets_env();
+
     App::new()
         .add_plugins((
             DefaultPlugins,
@@ -22,4 +26,17 @@ fn main() {
             NpcPlugin,
         ))
         .run();
+}
+
+fn load_secrets_env() {
+    const SECRETS_FILE: &str = "secrets.env";
+
+    let path = Path::new(SECRETS_FILE);
+    if !path.exists() {
+        return;
+    }
+
+    if let Err(err) = dotenvy::from_filename(path) {
+        eprintln!("Failed to load {}: {}", SECRETS_FILE, err);
+    }
 }
