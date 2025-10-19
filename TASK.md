@@ -260,15 +260,46 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 
 ---
 
-## Step S1.16 - In-World Dialogue Bubbles
-**Goal:** Surface NPC speech in the world so conversations are visible during play.
+## Step S1.16a - Speech Bubble MVP (Basic Text Above NPCs)
+**Goal:** Deliver minimal viable speech bubbles that display dialogue text above NPC heads.
 
-- [ ] Implement a billboard speech-bubble component (quad or text mesh) parented to speaking NPCs that shows the latest dialogue line.
-- [ ] Drive bubble lifecycle from `DialogueResponseEvent`, including per-NPC dedupe, short lifetimes, and distance-based culling to avoid clutter.
-- [ ] Provide a debug toggle/overlay to review recent lines alongside the 3D bubbles while keeping logging/telemetry in sync.
-- [ ] Update documentation (`src/dialogue/README.md`, `src/npc/README.md`, `docs/tech_notes.md`, planning files) with implementation details and toggles.
-- **Outcome:** Nearby villagers display their dialogue lines in-world, fading naturally with distance/time while sharing infrastructure with telemetry/logs.
-- **Exit criteria:** Running the game shows speech bubbles for active conversations, the debug toggle works, and associated docs describe usage and limitations.
+- [ ] Create `src/ui/speech_bubble/` module structure with components, systems, and plugin files.
+- [ ] Define `SpeechBubble` component with text, lifetime timer, and fade duration.
+- [ ] Define `SpeechBubbleTarget` component linking bubbles to NPC entities with Y-offset.
+- [ ] Implement spawn system that listens to `DialogueResponseEvent` and creates `Text2d` entities above NPCs.
+- [ ] Implement billboard rotation system that makes text always face the camera (Y-axis rotation only).
+- [ ] Implement lifetime/despawn system that removes bubbles after 10 seconds.
+- [ ] Register `UiPlugin` (or `SpeechBubblePlugin`) in `main.rs` after `DialoguePlugin`.
+- [ ] Update documentation and planning artifacts.
+- **Outcome:** Text appears above NPC heads when they speak, faces the camera, and disappears after 10 seconds.
+- **Exit criteria:** Running the game shows dialogue text floating above speaking NPCs with basic billboard behavior.
+
+---
+
+## Step S1.16b - Speech Bubble Visual Polish (Distance Culling & Fade)
+**Goal:** Add distance-based culling and smooth fade-out animations for polished appearance.
+
+- [ ] Implement distance-based visibility culling system that hides bubbles beyond `max_distance`.
+- [ ] Add fade-out animation system that lerps alpha to 0 during final 2 seconds of lifetime.
+- [ ] Fine-tune Y-offset to position bubbles nicely above NPC capsule meshes (test with camera angles).
+- [ ] Add word wrapping system to keep lines under 40 characters for readability.
+- [ ] Update documentation with distance culling parameters and fade behavior.
+- **Outcome:** Bubbles fade naturally with distance (simulating real-world speech audibility) and disappear smoothly.
+- **Exit criteria:** Distant NPCs' bubbles are hidden/culled, nearby bubbles fade out gracefully before despawning.
+
+---
+
+## Step S1.16c - Speech Bubble Personality (Volume & Mood Integration)
+**Goal:** Integrate NPC personality and mood into speech bubble appearance via font size variations.
+
+- [ ] Implement `SpeechVolume` enum (Whisper/Normal/Loud) with font size multipliers (0.6x / 1.0x / 1.5x).
+- [ ] Create volume detection system that analyzes dialogue content (CAPS ratio, whisper keywords).
+- [ ] Integrate with `NpcMotivation.mood` to adjust font size (Depressed -20%, Energised +20%).
+- [ ] Add configurable max distances per volume level (Whisper 15u, Normal 25u, Loud 40u).
+- [ ] Document volume detection keywords and mood modifiers in module README.
+- [ ] (Optional) Add per-NPC `Personality` component for persistent volume traits (Boisterous/Shy).
+- **Outcome:** NPCs have distinct "voices" through text size - shy/depressed NPCs whisper, energetic NPCs speak louder.
+- **Exit criteria:** Font sizes vary based on content and mood; distance culling respects volume levels.
 
 ---
 

@@ -123,6 +123,28 @@
             ],
             "problemMatcher": "$rustc",
             "detail": "Continuous type-checking; requires cargo-watch."
+        },
+        {
+            "label": "S1.16a - Test Speech Bubbles",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run"
+            ],
+            "problemMatcher": "$rustc",
+            "detail": "Run the app to test speech bubble MVP implementation (S1.16a)."
+        },
+        {
+            "label": "S1.16a - Watch & Run",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "watch",
+                "-x",
+                "run"
+            ],
+            "problemMatcher": "$rustc",
+            "detail": "Live reload for speech bubble development; requires cargo-watch."
         }
     ]
 }

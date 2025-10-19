@@ -392,20 +392,64 @@
     - "Start with deterministic scoring so behaviour remains debuggable before layering randomness."
     - "Expose telemetry hooks so UI/debug overlays can visualise needs and resulting decisions."
 
-- id: S1.16
-  title: "In-world dialogue bubbles"
-  state: backlog
-  deps: [S1.14]
+- id: S1.16a
+  title: "Speech bubble MVP - Basic text above NPCs"
+  state: done
+  deps: [S1.13]
   deliverables:
-    - "Render floating speech bubbles above active NPCs showing recent DialogueResponseEvent text"
-    - "Cull/expire bubbles based on time, distance, and dialogue rate limits to avoid clutter"
-    - "Add debug toggle or UI overlay to inspect full dialogue history alongside bubbles"
+    - "Create src/ui/speech_bubble/ module with components (SpeechBubble, SpeechBubbleTarget, SpeechVolume)"
+    - "Spawn Text2d entities from DialogueResponseEvent positioned above NPC heads"
+    - "Implement basic billboard rotation system (text faces camera)"
+    - "Add lifetime timer system - despawn bubbles after 10 seconds"
+    - "Register UiPlugin (or SpeechBubblePlugin) in main.rs"
   docs_update:
-    - "src/dialogue/README.md"
-    - "src/npc/README.md"
+    - "src/ui/speech_bubble/README.md"
+    - "CHANGELOG.md"
+    - "TASK.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Use Bevy's built-in Text2d component (Bevy 0.17 compatible, no external dependencies)."
+    - "Manual billboard rotation via Transform::rotation facing camera on Y-axis only (no roll)."
+    - "Subscribe to DialogueResponseEvent to spawn bubbles - no secondary dialogue pipeline."
+    - "Keep module files under 400 lines; split into components.rs, systems.rs, plugin.rs."
+
+- id: S1.16b
+  title: "Speech bubble visual polish - Distance culling & fade"
+  state: backlog
+  deps: [S1.16a]
+  deliverables:
+    - "Implement distance-based visibility culling (hide bubbles beyond max_distance)"
+    - "Add fade-out animation (alpha lerp during final 2 seconds of lifetime)"
+    - "Adjust Y-offset to position bubbles above NPC capsule meshes"
+    - "Add word wrapping system (keep lines under 40 characters)"
+  docs_update:
+    - "src/ui/speech_bubble/README.md"
     - "docs/tech_notes.md"
     - "TASK.md"
     - ".agent/ai_memory.V.1.yaml"
   notes:
-    - "Implement as billboarding 2D quads or UI nodes parented to NPC entities so text faces the camera."
-    - "Reuse dialogue telemetry/events to drive visuals without creating a secondary dialogue pipeline."
+    - "Distance culling creates natural 'harder to read far away' effect per design requirements."
+    - "Max distances: Whisper 15u, Normal 25u, Loud 40u (configurable in code for now)."
+    - "Fade-out uses Color alpha channel interpolation with smooth easing."
+
+- id: S1.16c
+  title: "Speech bubble personality - Volume & mood integration"
+  state: backlog
+  deps: [S1.16b]
+  deliverables:
+    - "Implement SpeechVolume enum (Whisper/Normal/Loud) with font size multipliers"
+    - "Auto-detect volume from dialogue content (CAPS = Loud, short/whisper keywords = Whisper)"
+    - "Integrate with NpcMotivation.mood (Depressed = quieter, Energised = louder)"
+    - "Add optional per-NPC personality traits affecting default volume"
+  docs_update:
+    - "src/ui/speech_bubble/README.md"
+    - "src/npc/README.md"
+    - "docs/tech_notes.md"
+    - "CHANGELOG.md"
+    - "TASK.md"
+    - ".agent/ai_memory.V.1.yaml"
+  notes:
+    - "Font sizes: Whisper 18pt (0.6x), Normal 24pt (1.0x), Loud 36pt (1.5x)."
+    - "Volume detection keywords: 'whisper', 'quietly', 'shout', 'yell', plus CAPS ratio."
+    - "Mood modifiers: Depressed -20% size, Energised +20% size, applied on top of base volume."
+    - "Future: add Personality component with Boisterous/Shy traits for persistent volume offsets."

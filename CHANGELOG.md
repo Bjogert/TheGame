@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 
 ## Unreleased
+
+## 2025-10-19 - S1.16a: Speech Bubble MVP
+- Created `src/ui/speech_bubble/` module with `SpeechBubble`, `SpeechBubbleTarget`, and `SpeechVolume` components for floating dialogue text above NPCs.
+- Implemented billboard text rendering using Bevy's built-in `Text2d` component (compatible with Bevy 0.17, no external dependencies).
+- Speech bubbles spawn automatically from `DialogueResponseEvent`, positioned 2.5 units above speaking NPCs.
+- Billboard rotation system ensures text always faces the camera (Y-axis rotation only, no roll/tilt).
+- Lifetime management: bubbles fade out over 1.5 seconds after 10-second lifetime, then despawn cleanly.
+- Registered `SpeechBubblePlugin` in `main.rs` after `DialoguePlugin` for event-driven spawning.
+- Added comprehensive module documentation (`src/ui/speech_bubble/README.md`) covering architecture, usage, and future enhancements.
+
+## 2025-10-18+ - S1.13: Dialogue Broker Verification & Instrumentation
 - Restored delivery completion checks so both the sender and recipient must be at their crates before goods transfer, preventing premature task completion during the economy loop.
 - Instrumented the dialogue broker with a `DialogueBrokerStatus` resource that logs live vs. fallback mode at startup and surfaces the state to UI/telemetry consumers.
 - Added a `broker_status` entry type to `logs/dialogue_history.jsonl`, recording provider mode changes alongside dialogue responses and failures for easier diagnostics.
