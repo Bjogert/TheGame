@@ -4,14 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
-## 2025-10-19 - S1.16a: Speech Bubble MVP
-- Created `src/ui/speech_bubble/` module with `SpeechBubble`, `SpeechBubbleTarget`, and `SpeechVolume` components for floating dialogue text above NPCs.
-- Implemented billboard text rendering using Bevy's built-in `Text2d` component (compatible with Bevy 0.17, no external dependencies).
-- Speech bubbles spawn automatically from `DialogueResponseEvent`, positioned 2.5 units above speaking NPCs.
-- Billboard rotation system ensures text always faces the camera (Y-axis rotation only, no roll/tilt).
-- Lifetime management: bubbles fade out over 1.5 seconds after 10-second lifetime, then despawn cleanly.
-- Registered `SpeechBubblePlugin` in `main.rs` after `DialoguePlugin` for event-driven spawning.
-- Added comprehensive module documentation (`src/ui/speech_bubble/README.md`) covering architecture, usage, and future enhancements.
+## 2025-10-19 - S1.16a: Speech Bubble MVP (UI-Based Implementation)
+- Created `src/ui/speech_bubble/` module with UI-based speech bubble system using screen-space positioning.
+- Implemented `SpeechBubble` component tracking NPC ID, speaker entity, and lifetime timer for UI NodeBundle entities.
+- Added `SpeechBubbleSettings` resource exposing configurable lifetime (10s), fade duration (2s), max distance (25u), and font size (20pt).
+- Introduced `SpeechBubbleTracker` resource ensuring each NPC has at most one bubble, preventing overlap.
+- Created full-screen transparent UI overlay (`SpeechBubbleUiRoot`) parenting all speech bubble nodes for consistent rendering.
+- Speech bubbles spawn from `DialogueResponseEvent` as UI nodes with dark semi-transparent backgrounds (Color::srgba(0.1, 0.1, 0.1, 0.85)).
+- Positioning system uses `camera.world_to_viewport()` to convert NPC 3D positions to 2D screen coordinates every frame.
+- Distance-based culling hides bubbles when NPCs are beyond max_display_distance (default 25 world units).
+- Fade-out effect interpolates alpha from 1.0 to 0.0 during final 2 seconds using `lifetime.remaining_secs()`.
+- Registered `SpeechBubblePlugin` in `main.rs` after `DialoguePlugin` with startup and update systems.
+- **Implementation Note:** Initially prototyped with Text2d world-space billboards, but switched to UI NodeBundle approach for reliable screen-space tracking without billboard rotation complexity.
 
 ## 2025-10-18+ - S1.13: Dialogue Broker Verification & Instrumentation
 - Restored delivery completion checks so both the sender and recipient must be at their crates before goods transfer, preventing premature task completion during the economy loop.

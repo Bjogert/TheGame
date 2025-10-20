@@ -263,16 +263,19 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 ## Step S1.16a - Speech Bubble MVP (Basic Text Above NPCs)
 **Goal:** Deliver minimal viable speech bubbles that display dialogue text above NPC heads.
 
-- [ ] Create `src/ui/speech_bubble/` module structure with components, systems, and plugin files.
-- [ ] Define `SpeechBubble` component with text, lifetime timer, and fade duration.
-- [ ] Define `SpeechBubbleTarget` component linking bubbles to NPC entities with Y-offset.
-- [ ] Implement spawn system that listens to `DialogueResponseEvent` and creates `Text2d` entities above NPCs.
-- [ ] Implement billboard rotation system that makes text always face the camera (Y-axis rotation only).
-- [ ] Implement lifetime/despawn system that removes bubbles after 10 seconds.
-- [ ] Register `UiPlugin` (or `SpeechBubblePlugin`) in `main.rs` after `DialoguePlugin`.
-- [ ] Update documentation and planning artifacts.
-- **Outcome:** Text appears above NPC heads when they speak, faces the camera, and disappears after 10 seconds.
-- **Exit criteria:** Running the game shows dialogue text floating above speaking NPCs with basic billboard behavior.
+- [x] Create `src/ui/speech_bubble/` module structure with components, systems, and plugin files.
+- [x] Define `SpeechBubble` component tracking NPC ID, speaker entity, and lifetime timer.
+- [x] Define `SpeechBubbleSettings` resource with configurable lifetime, fade, distance, and font size.
+- [x] Define `SpeechBubbleTracker` resource ensuring one bubble per NPC at a time.
+- [x] Define `SpeechBubbleUiRoot` resource holding the full-screen UI overlay container.
+- [x] Implement spawn system that listens to `DialogueResponseEvent` and creates UI NodeBundle entities.
+- [x] Implement update system that positions bubbles via `camera.world_to_viewport()` projection every frame.
+- [x] Implement lifetime/fade/despawn system that fades out during final 2 seconds, then despawns.
+- [x] Implement distance-based culling (hides bubbles beyond 25 world units).
+- [x] Register `SpeechBubblePlugin` in `main.rs` after `DialoguePlugin`.
+- [x] Update documentation and planning artifacts.
+- **Outcome:** UI-based speech bubbles with dark semi-transparent backgrounds appear above NPC heads, track their 3D positions in screen space, fade out smoothly, and despawn after 10 seconds. Implementation uses `camera.world_to_viewport()` instead of Text2d billboards for reliable positioning.
+- **Exit criteria:** Running the game shows dialogue bubbles floating above speaking NPCs that track their movement and fade gracefully.
 
 ---
 

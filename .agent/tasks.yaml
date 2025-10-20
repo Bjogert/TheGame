@@ -397,21 +397,25 @@
   state: done
   deps: [S1.13]
   deliverables:
-    - "Create src/ui/speech_bubble/ module with components (SpeechBubble, SpeechBubbleTarget, SpeechVolume)"
-    - "Spawn Text2d entities from DialogueResponseEvent positioned above NPC heads"
-    - "Implement basic billboard rotation system (text faces camera)"
-    - "Add lifetime timer system - despawn bubbles after 10 seconds"
-    - "Register UiPlugin (or SpeechBubblePlugin) in main.rs"
+    - "Create src/ui/speech_bubble/ module with components (SpeechBubble, SpeechBubbleSettings, SpeechBubbleTracker, SpeechBubbleUiRoot)"
+    - "Spawn UI NodeBundle entities from DialogueResponseEvent positioned via camera.world_to_viewport()"
+    - "Implement full-screen UI root overlay for bubble container"
+    - "Add lifetime timer system with fade-out during final 2 seconds, despawn after 10 seconds"
+    - "Register SpeechBubblePlugin in main.rs after DialoguePlugin"
   docs_update:
     - "src/ui/speech_bubble/README.md"
     - "CHANGELOG.md"
     - "TASK.md"
     - ".agent/ai_memory.V.1.yaml"
+    - ".agent/tasks.yaml"
   notes:
-    - "Use Bevy's built-in Text2d component (Bevy 0.17 compatible, no external dependencies)."
-    - "Manual billboard rotation via Transform::rotation facing camera on Y-axis only (no roll)."
-    - "Subscribe to DialogueResponseEvent to spawn bubbles - no secondary dialogue pipeline."
-    - "Keep module files under 400 lines; split into components.rs, systems.rs, plugin.rs."
+    - "IMPLEMENTATION CHANGED: Replaced Text2d world-space approach with UI NodeBundle screen-space positioning."
+    - "Bubbles are UI nodes with dark semi-transparent backgrounds (Color::srgba(0.1, 0.1, 0.1, 0.85))."
+    - "Positioning via camera.world_to_viewport() converts NPC 3D positions to 2D screen coordinates every frame."
+    - "SpeechBubbleTracker ensures one bubble per NPC; updating existing bubble resets timer and content."
+    - "Distance culling (25 world units default) hides bubbles when NPCs are far from camera."
+    - "Fade-out calculated from lifetime.remaining_secs() with smooth alpha interpolation."
+    - "Module files kept under 400 lines: components.rs (123), systems.rs (200), plugin.rs (45), mod.rs (19)."
 
 - id: S1.16b
   title: "Speech bubble visual polish - Distance culling & fade"

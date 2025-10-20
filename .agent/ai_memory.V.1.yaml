@@ -218,6 +218,24 @@ short_term:
     open_questions:
       - "Should we expose a UI toggle to trigger dialogue probes without relying on a keyboard shortcut?"
       - "Do we want automated retries that can flip the broker from fallback to live mid-session once credentials are supplied?"
+  - step: "S1.16a"
+    decisions:
+      - "Abandoned Text2d world-space approach in favor of UI NodeBundle entities positioned via camera.world_to_viewport() projection."
+      - "Speech bubbles are now screen-space UI nodes parented to a full-screen transparent overlay root for consistent rendering."
+      - "Each NPC has at most one bubble tracked in SpeechBubbleTracker to prevent overlap and simplify updates."
+      - "Bubble positioning runs every frame in update_speech_bubbles, converting 3D NPC positions to 2D screen coordinates with distance culling."
+      - "Settings (lifetime, fade duration, max distance, font size) exposed via SpeechBubbleSettings resource with sensible defaults."
+    risks:
+      - "Per-frame world_to_viewport() calls could impact performance with many NPCs; monitor and batch if needed."
+      - "UI positioning assumes single primary window; multi-window setups would require per-window roots."
+      - "Text wrapping is not yet implemented; long dialogue may overflow bubble max width (300px)."
+    experiments:
+      - "Tested UI approach vs Text2d: UI nodes properly track NPCs and render consistently without billboard rotation issues."
+      - "Verified fade-out effect by calculating alpha from lifetime.remaining_secs() during final 2 seconds."
+    open_questions:
+      - "Should bubbles have rounded corners or tail pointers to feel more like traditional speech bubbles?"
+      - "Do we need text wrapping now or defer to S1.16b when implementing word wrap system?"
+      - "Should bubble background color vary by NPC mood or speech volume for visual distinction?"
 
 # Accumulates durable lessons and conventions.
 long_term:
@@ -239,7 +257,22 @@ long_term:
 refactors: []
 
 # What failed and why (helps agents avoid repeats).
-postmortems: []
+postmortems:
+  - issue: "S1.16a Text2d world-space speech bubbles not rendering"
+    date: "2025-10-19"
+    what_happened: "Initial implementation used Text2d entities with Transform positioning in 3D world space, expecting them to render via the 3D camera. Text entities spawned successfully but were never visible despite billboard rotation system and proper positioning above NPCs."
+    root_cause: "Bevy 0.17 Text2d rendering architecture mismatch. A separate 2D camera overlay was added (Camera2d with order:1) but couldn't see world-positioned entities. Text2d can work in world space via the 3D camera, but the implementation lacked proper TextLayout configuration for multiline text and the renderer setup was incorrect."
+    what_we_tried:
+      - "Added TextLayout::new_with_no_wrap() to enable hard wrapping with \\n characters"
+      - "Removed the separate 2D camera overlay assuming 3D camera would render Text2d"
+      - "Researched Bevy 0.17 text rendering APIs and migration guides"
+    why_it_failed: "Fundamental approach was flawed - mixing 3D world-space positioning with 2D text rendering created architectural confusion. Even with correct TextLayout, Text2d in world space requires careful camera/rendering setup that was never fully debugged."
+    solution: "Completely rewrote using UI NodeBundle entities positioned in screen space via camera.world_to_viewport() projection. This is the recommended Bevy pattern for HUD elements tracking 3D entities."
+    lessons:
+      - "For UI elements tracking 3D positions, use screen-space UI nodes with world_to_viewport() rather than world-space text entities."
+      - "Text2d is better suited for actual in-world signage/labels, not HUD overlays."
+      - "When an approach requires multiple renderer workarounds, step back and reconsider the architecture."
+      - "The user's guidance was correct: UI NodeBundle + camera.world_to_viewport() is the proper pattern for speech bubbles."
 
 # Documentation index (update paths as modules appear).
   doc_index:
