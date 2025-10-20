@@ -6,8 +6,9 @@ use super::{
     errors::DialogueErrorKind,
     events::{DialogueRequestFailedEvent, DialogueResponseEvent},
     queue::{
-        advance_dialogue_queue_timers, run_dialogue_request_queue, ActiveDialogueBroker,
-        DialogueRateLimitConfig, DialogueRateLimitState, DialogueRequestQueue,
+        advance_dialogue_queue_timers, poll_dialogue_tasks, run_dialogue_request_queue,
+        ActiveDialogueBroker, DialogueRateLimitConfig, DialogueRateLimitState,
+        DialogueRequestQueue, PendingDialogueTasks,
     },
     status::{DialogueBrokerStatus, DialogueConnectionState},
     telemetry::{
@@ -33,6 +34,7 @@ impl Plugin for DialoguePlugin {
         app.init_resource::<DialogueRateLimitConfig>()
             .init_resource::<DialogueRateLimitState>()
             .init_resource::<DialogueRequestQueue>()
+            .init_resource::<PendingDialogueTasks>()
             .init_resource::<DialogueTelemetry>()
             .init_resource::<DialogueTelemetryLog>()
             .insert_resource(broker_status)
@@ -49,6 +51,7 @@ impl Plugin for DialoguePlugin {
                     handle_dialogue_debug_probe,
                     advance_dialogue_queue_timers,
                     run_dialogue_request_queue,
+                    poll_dialogue_tasks, // Poll background tasks for completed requests
                     record_dialogue_telemetry,
                     flush_dialogue_telemetry_log,
                     log_dialogue_events,

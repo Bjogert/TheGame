@@ -1,8 +1,12 @@
 //! Dialogue request queue and rate limiting resources.
 use std::collections::HashMap;
 use std::collections::VecDeque;
+use std::sync::Arc;
 
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    tasks::{block_on, poll_once, AsyncComputeTaskPool, Task},
+};
 
 use crate::npc::components::NpcId;
 
@@ -82,6 +86,23 @@ impl DialogueRateLimitState {
     }
 }
 
+/// Result of a dialogue task (success or failure with retry info).
+type DialogueTaskResult = (
+    DialogueRequestId,
+    DialogueRequest, // Original request for retry
+    Result<super::types::DialogueResponse, DialogueError>,
+    u8, // attempts
+);
+
+/// Resource tracking background dialogue processing tasks.
+///
+/// These tasks run blocking HTTP requests to OpenAI in a background thread pool
+/// to prevent freezing the main game thread.
+#[derive(Resource, Default)]
+pub struct PendingDialogueTasks {
+    tasks: Vec<Task<DialogueTaskResult>>,
+}
+
 /// Resource holding pending dialogue requests.
 #[derive(Resource, Default)]
 pub struct DialogueRequestQueue {
@@ -98,6 +119,22 @@ impl DialogueRequestQueue {
             request,
             attempts: 0,
             cooldown_remaining: 0.0,
+        });
+        id
+    }
+
+    pub fn enqueue_with_cooldown(
+        &mut self,
+        request: DialogueRequest,
+        cooldown_seconds: f32,
+    ) -> DialogueRequestId {
+        let id = DialogueRequestId::new(self.next_request_id);
+        self.next_request_id = self.next_request_id.wrapping_add(1);
+        self.pending.push_back(QueuedDialogueRequest {
+            id,
+            request,
+            attempts: 0,
+            cooldown_remaining: cooldown_seconds.max(0.0),
         });
         id
     }
@@ -124,14 +161,18 @@ impl DialogueRequestQueue {
 }
 
 /// Wrapper for a dynamic dialogue broker instance.
-#[derive(Resource)]
+///
+/// Uses Arc internally to allow cheap cloning for background tasks.
+#[derive(Resource, Clone)]
 pub struct ActiveDialogueBroker {
-    inner: Box<dyn DialogueBroker>,
+    inner: Arc<Box<dyn DialogueBroker>>,
 }
 
 impl ActiveDialogueBroker {
     pub fn new(inner: Box<dyn DialogueBroker>) -> Self {
-        Self { inner }
+        Self {
+            inner: Arc::new(inner),
+        }
     }
 
     pub fn process(
@@ -163,14 +204,14 @@ pub fn advance_dialogue_queue_timers(
     limits.tick(delta);
 }
 
-/// Processes a single dialogue request if rate limits allow.
+/// Spawns dialogue requests to background tasks if rate limits allow.
+///
+/// This prevents blocking the main thread during HTTP requests to OpenAI.
 pub fn run_dialogue_request_queue(
     mut queue: ResMut<DialogueRequestQueue>,
-    mut limits: ResMut<DialogueRateLimitState>,
-    config: Res<DialogueRateLimitConfig>,
+    limits: Res<DialogueRateLimitState>,
     broker: Res<ActiveDialogueBroker>,
-    mut response_writer: MessageWriter<DialogueResponseEvent>,
-    mut failure_writer: MessageWriter<DialogueRequestFailedEvent>,
+    mut pending_tasks: ResMut<PendingDialogueTasks>,
 ) {
     if queue.is_empty() {
         return;
@@ -180,7 +221,7 @@ pub fn run_dialogue_request_queue(
         return;
     }
 
-    let Some(mut queued) = queue.pending.pop_front() else {
+    let Some(queued) = queue.pending.pop_front() else {
         return;
     };
 
@@ -189,31 +230,76 @@ pub fn run_dialogue_request_queue(
         return;
     }
 
-    match broker.process(queued.id, &queued.request) {
-        Ok(response) => {
-            limits.record_success(queued.request.speaker, &config);
-            response_writer.write(DialogueResponseEvent { response });
-        }
-        Err(err) => {
-            queued.attempts = queued.attempts.saturating_add(1);
-            match err.kind {
-                DialogueErrorKind::RateLimited {
-                    retry_after_seconds,
-                } => {
-                    limits.apply_backoff(queued.request.speaker, retry_after_seconds);
-                }
-                DialogueErrorKind::ProviderFailure { .. }
-                | DialogueErrorKind::ContextMissing { .. } => {
-                    limits.apply_backoff(queued.request.speaker, config.retry_backoff_seconds);
-                }
-            }
+    // Clone data needed for the background task
+    let request_id = queued.id;
+    let request = queued.request.clone();
+    let attempts = queued.attempts;
+    let broker_clone = broker.clone();
 
-            if queued.attempts <= config.max_retries {
-                queued.cooldown_remaining = config.retry_backoff_seconds;
-                queue.pending.push_back(queued);
-            } else {
-                failure_writer.write(DialogueRequestFailedEvent { error: err });
+    // Spawn to background thread to avoid blocking the game
+    let task_pool = AsyncComputeTaskPool::get();
+    let task = task_pool.spawn(async move {
+        let result = broker_clone.process(request_id, &request);
+        (request_id, request.clone(), result, attempts)
+    });
+
+    pending_tasks.tasks.push(task);
+}
+
+/// Polls completed dialogue tasks and emits events.
+///
+/// Runs every frame to check if any background dialogue requests have finished.
+pub fn poll_dialogue_tasks(
+    mut pending_tasks: ResMut<PendingDialogueTasks>,
+    mut queue: ResMut<DialogueRequestQueue>,
+    mut limits: ResMut<DialogueRateLimitState>,
+    config: Res<DialogueRateLimitConfig>,
+    mut response_writer: MessageWriter<DialogueResponseEvent>,
+    mut failure_writer: MessageWriter<DialogueRequestFailedEvent>,
+) {
+    // Poll all tasks and collect completed ones
+    let mut i = 0;
+    while i < pending_tasks.tasks.len() {
+        if let Some((_request_id, original_request, result, mut attempts)) =
+            block_on(poll_once(&mut pending_tasks.tasks[i]))
+        {
+            // Task completed - remove and drop it
+            drop(pending_tasks.tasks.swap_remove(i));
+
+            // Handle result
+            match result {
+                Ok(response) => {
+                    limits.record_success(original_request.speaker, &config);
+                    response_writer.write(DialogueResponseEvent { response });
+                }
+                Err(err) => {
+                    attempts = attempts.saturating_add(1);
+                    match err.kind {
+                        DialogueErrorKind::RateLimited {
+                            retry_after_seconds,
+                        } => {
+                            limits.apply_backoff(original_request.speaker, retry_after_seconds);
+                        }
+                        DialogueErrorKind::ProviderFailure { .. }
+                        | DialogueErrorKind::ContextMissing { .. } => {
+                            limits.apply_backoff(
+                                original_request.speaker,
+                                config.retry_backoff_seconds,
+                            );
+                        }
+                    }
+
+                    if attempts <= config.max_retries {
+                        // Re-queue the original request with backoff
+                        queue.enqueue_with_cooldown(original_request, config.retry_backoff_seconds);
+                    } else {
+                        failure_writer.write(DialogueRequestFailedEvent { error: err });
+                    }
+                }
             }
+        } else {
+            // Task still pending
+            i += 1;
         }
     }
 }

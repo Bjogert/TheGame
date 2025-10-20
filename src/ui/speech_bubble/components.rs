@@ -107,7 +107,7 @@ impl Default for SpeechBubbleSettings {
             fade_seconds: 2.0,
             max_display_distance: 25.0,
             vertical_offset: 2.5,
-            font_size: 20.0,
+            font_size: 15.0, // 25% smaller than original 20.0
         }
     }
 }

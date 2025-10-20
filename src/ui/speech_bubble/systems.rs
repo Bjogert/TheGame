@@ -16,8 +16,8 @@ use super::components::{
 // Visual constants
 const BACKGROUND_COLOR: Color = Color::srgba(0.1, 0.1, 0.1, 0.85);
 const TEXT_COLOR: Color = Color::srgb(1.0, 1.0, 1.0);
-const MAX_WIDTH_PX: f32 = 300.0;
-const PADDING_PX: f32 = 8.0;
+const MAX_WIDTH_PX: f32 = 225.0; // 25% smaller than original 300px
+const PADDING_PX: f32 = 6.0; // 25% smaller than original 8px
 
 /// Set up the UI root node that holds all speech bubbles.
 ///
@@ -71,9 +71,11 @@ pub fn spawn_speech_bubbles(
         // If bubble already exists for this NPC, update it
         if let Some(&bubble_entity) = tracker.by_npc.get(&npc_id) {
             // Reset the bubble with new content and reset timer
-            commands
-                .entity(bubble_entity)
-                .insert(SpeechBubble::new(npc_id, speaker_entity, settings.lifetime_seconds));
+            commands.entity(bubble_entity).insert(SpeechBubble::new(
+                npc_id,
+                speaker_entity,
+                settings.lifetime_seconds,
+            ));
 
             // Update the text
             commands.entity(bubble_entity).insert(Text::new(content));
