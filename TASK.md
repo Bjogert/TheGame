@@ -267,15 +267,16 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 - [x] Define `SpeechBubble` component tracking NPC ID, speaker entity, and lifetime timer.
 - [x] Define `SpeechBubbleSettings` resource with configurable lifetime, fade, distance, and font size.
 - [x] Define `SpeechBubbleTracker` resource ensuring one bubble per NPC at a time.
-- [x] Define `SpeechBubbleUiRoot` resource holding the full-screen UI overlay container.
-- [x] Implement spawn system that listens to `DialogueResponseEvent` and creates UI NodeBundle entities.
-- [x] Implement update system that positions bubbles via `camera.world_to_viewport()` projection every frame.
+- [x] Implement spawn system that listens to `DialogueResponseEvent` and creates Text2d entities in world space.
+- [x] Implement update system that updates Transform to follow NPC positions in 3D world coordinates.
+- [x] Implement billboard rotation system (Y-axis only) to make text always face the camera.
 - [x] Implement lifetime/fade/despawn system that fades out during final 2 seconds, then despawns.
-- [x] Implement distance-based culling (hides bubbles beyond 25 world units).
+- [x] Implement distance-based culling (hides bubbles beyond 25 world units via Visibility::Hidden).
 - [x] Register `SpeechBubblePlugin` in `main.rs` after `DialoguePlugin`.
 - [x] Update documentation and planning artifacts.
-- **Outcome:** UI-based speech bubbles with dark semi-transparent backgrounds appear above NPC heads, track their 3D positions in screen space, fade out smoothly, and despawn after 10 seconds. Implementation uses `camera.world_to_viewport()` instead of Text2d billboards for reliable positioning.
-- **Exit criteria:** Running the game shows dialogue bubbles floating above speaking NPCs that track their movement and fade gracefully.
+- [x] Fix camera order ambiguity causing text flickering: Configure Camera2d with order: 1 and ClearColorConfig::None to render on top of Camera3d (order: 0) without clearing the 3D scene.
+- **Outcome:** World-space Text2d speech bubbles appear above NPC heads in 3D coordinates, use billboard rotation to face the camera, fade out smoothly, and despawn after 10 seconds. Bubbles physically follow NPCs in world space providing natural spatial relationship (you can clearly see WHO is speaking). Font size reduced to 15pt (25% smaller) per user request. Plain white text without background sprites in this MVP iteration. Camera ordering fixed (2025-10-22): Camera2d configured with explicit order: 1 and ClearColorConfig::None to eliminate ambiguity warning and flickering.
+- **Exit criteria:** Running the game shows dialogue text floating above speaking NPCs in 3D world space, billboarding to face camera, with clear spatial association between bubbles and their speakers, without flickering or camera warnings.
 
 ---
 

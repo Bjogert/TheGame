@@ -1,61 +1,34 @@
 // src/ui/speech_bubble/systems.rs
 //
-// Systems for spawning, updating, and despawning speech bubbles using UI nodes.
+// Systems for spawning, updating, and despawning speech bubbles using world-space Text2d.
 
 use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
 
 use crate::dialogue::events::DialogueResponseEvent;
 use crate::npc::components::Identity;
 use crate::world::components::FlyCamera;
 
-use super::components::{
-    SpeechBubble, SpeechBubbleSettings, SpeechBubbleTracker, SpeechBubbleUiRoot,
-};
+use super::components::{SpeechBubble, SpeechBubbleSettings, SpeechBubbleTracker};
 
 // Visual constants
-const BACKGROUND_COLOR: Color = Color::srgba(0.1, 0.1, 0.1, 0.85);
 const TEXT_COLOR: Color = Color::srgb(1.0, 1.0, 1.0);
-const MAX_WIDTH_PX: f32 = 225.0; // 25% smaller than original 300px
-const PADDING_PX: f32 = 6.0; // 25% smaller than original 8px
-
-/// Set up the UI root node that holds all speech bubbles.
-///
-/// This creates a full-screen transparent overlay that speech bubbles
-/// are parented to, ensuring they render on top of the 3D scene.
-pub fn setup_speech_bubble_root(mut commands: Commands) {
-    let root = commands
-        .spawn(Node {
-            position_type: PositionType::Absolute,
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            ..default()
-        })
-        .insert(ZIndex(100)) // Render on top of other UI
-        .insert(BackgroundColor(Color::NONE))
-        .id();
-
-    commands.insert_resource(SpeechBubbleUiRoot(root));
-    info!("Speech bubble UI root created");
-}
 
 /// Spawn or update speech bubbles when NPCs speak.
 ///
-/// Listens to `DialogueResponseEvent` and creates UI node entities
-/// positioned in screen space that track the 3D position of NPCs.
+/// Creates Text2d entities positioned in world space above NPCs.
 pub fn spawn_speech_bubbles(
     mut commands: Commands,
     mut tracker: ResMut<SpeechBubbleTracker>,
     settings: Res<SpeechBubbleSettings>,
     mut events: MessageReader<DialogueResponseEvent>,
-    npc_query: Query<(Entity, &Identity)>,
-    root: Res<SpeechBubbleUiRoot>,
+    npc_query: Query<(Entity, &Identity, &GlobalTransform)>,
 ) {
     for event in events.read() {
         let npc_id = event.response.speaker;
 
-        // Find the NPC entity
-        let Some((speaker_entity, identity)) = npc_query.iter().find(|(_, id)| id.id == npc_id)
+        // Find the NPC entity and position
+        let Some((speaker_entity, identity, npc_transform)) =
+            npc_query.iter().find(|(_, id, _)| id.id == npc_id)
         else {
             warn!("Cannot spawn speech bubble: NPC {} not found", npc_id);
             continue;
@@ -68,81 +41,74 @@ pub fn spawn_speech_bubbles(
             npc_id, identity.display_name, content
         );
 
+        // Calculate initial world position above NPC
+        let mut world_position = npc_transform.translation();
+        world_position.y += settings.vertical_offset;
+
         // If bubble already exists for this NPC, update it
         if let Some(&bubble_entity) = tracker.by_npc.get(&npc_id) {
             // Reset the bubble with new content and reset timer
-            commands.entity(bubble_entity).insert(SpeechBubble::new(
-                npc_id,
-                speaker_entity,
-                settings.lifetime_seconds,
-            ));
-
-            // Update the text
-            commands.entity(bubble_entity).insert(Text::new(content));
+            commands
+                .entity(bubble_entity)
+                .insert(SpeechBubble::new(
+                    npc_id,
+                    speaker_entity,
+                    settings.lifetime_seconds,
+                ))
+                .insert(Text2d::new(content))
+                .insert(Transform::from_translation(world_position));
             continue;
         }
 
-        // Otherwise, spawn a new UI bubble
+        // Otherwise, spawn a new world-space Text2d bubble
         let bubble_entity = commands
             .spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    max_width: Val::Px(MAX_WIDTH_PX),
-                    padding: UiRect::all(Val::Px(PADDING_PX)),
-                    display: Display::None, // Hidden initially, positioned by update system
-                    ..default()
-                },
-                BackgroundColor(BACKGROUND_COLOR),
-                ZIndex(101),
-                SpeechBubble::new(npc_id, speaker_entity, settings.lifetime_seconds),
-                Text::new(content),
+                Text2d::new(content),
                 TextFont {
                     font_size: settings.font_size,
                     ..default()
                 },
                 TextColor(TEXT_COLOR),
+                Transform::from_translation(world_position),
+                SpeechBubble::new(npc_id, speaker_entity, settings.lifetime_seconds),
+                Visibility::Visible,
             ))
             .id();
 
-        commands.entity(root.0).add_child(bubble_entity);
         tracker.by_npc.insert(npc_id, bubble_entity);
     }
 }
 
-/// Update speech bubble positions to follow NPCs in screen space.
+/// Update speech bubble positions to follow NPCs in world space.
 ///
-/// Converts each NPC's 3D world position to 2D screen coordinates and
-/// positions the UI bubble accordingly. Also handles lifetime, fade-out,
-/// and distance-based culling.
-#[allow(clippy::too_many_arguments)] // System function requires all arguments
+/// Updates Transform to track NPC 3D position, adds billboard rotation,
+/// handles lifetime, fade-out, and distance-based culling.
+#[allow(clippy::too_many_arguments)]
 pub fn update_speech_bubbles(
     mut commands: Commands,
     time: Res<Time>,
     settings: Res<SpeechBubbleSettings>,
     mut tracker: ResMut<SpeechBubbleTracker>,
-    camera_query: Query<(&Camera, &GlobalTransform), With<FlyCamera>>,
-    window_query: Query<&Window, With<PrimaryWindow>>,
+    camera_query: Query<&GlobalTransform, With<FlyCamera>>,
     speaker_transforms: Query<&GlobalTransform>,
     mut bubble_query: Query<(
         Entity,
         &mut SpeechBubble,
-        &mut Node,
-        &mut BackgroundColor,
+        &mut Transform,
         &mut TextColor,
+        &mut Visibility,
     )>,
 ) {
-    let Ok((camera, camera_transform)) = camera_query.single() else {
-        return; // No camera, can't position bubbles
+    let Ok(camera_transform) = camera_query.single() else {
+        return; // No camera, can't position or billboard bubbles
     };
 
-    let Ok(window) = window_query.single() else {
-        return; // No window, can't get screen dimensions
-    };
-
-    let window_height = window.resolution.height();
+    let camera_pos = camera_transform.translation();
     let max_distance_sq = settings.max_display_distance * settings.max_display_distance;
 
-    for (entity, mut bubble, mut style, mut background, mut text_color) in bubble_query.iter_mut() {
+    for (entity, mut bubble, mut transform, mut text_color, mut visibility) in
+        bubble_query.iter_mut()
+    {
         // Tick the lifetime timer
         bubble.tick(time.delta());
 
@@ -161,34 +127,29 @@ pub fn update_speech_bubbles(
             continue;
         };
 
-        // Calculate world position above NPC's head
+        // Update bubble position to follow NPC (above their head)
         let mut world_position = speaker_transform.translation();
         world_position.y += settings.vertical_offset;
+        transform.translation = world_position;
 
-        // Check distance to camera
-        let to_camera = camera_transform.translation() - world_position;
+        // Check distance to camera for culling
+        let to_camera = camera_pos - world_position;
         if to_camera.length_squared() > max_distance_sq {
-            style.display = Display::None;
+            *visibility = Visibility::Hidden;
             continue;
+        } else {
+            *visibility = Visibility::Visible;
         }
 
-        // Convert world position to viewport (screen) coordinates
-        let Ok(viewport_position) = camera.world_to_viewport(camera_transform, world_position)
-        else {
-            // NPC is behind camera or outside frustum
-            style.display = Display::None;
-            continue;
-        };
+        // Billboard rotation: make text face the camera (Y-axis only, no roll)
+        let to_camera_flat = Vec3::new(to_camera.x, 0.0, to_camera.z);
+        if to_camera_flat.length_squared() > 0.001 {
+            let forward = to_camera_flat.normalize();
+            transform.rotation = Quat::from_rotation_arc(Vec3::NEG_Z, forward);
+        }
 
-        // Position the UI bubble at the screen coordinates
-        // UI origin is top-left, so we need to flip Y
-        style.display = Display::Flex;
-        style.left = Val::Px(viewport_position.x);
-        style.top = Val::Px(window_height - viewport_position.y);
-
-        // Apply fade-out effect
+        // Apply fade-out effect during final seconds
         let alpha = bubble.fade_alpha(settings.fade_seconds);
         text_color.0 = TEXT_COLOR.with_alpha(alpha);
-        background.0 = BACKGROUND_COLOR.with_alpha(alpha * 0.85);
     }
 }

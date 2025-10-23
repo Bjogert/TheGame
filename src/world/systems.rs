@@ -48,6 +48,18 @@ pub fn spawn_world_environment(
         camera_transform,
         FlyCamera::new(yaw, pitch),
     ));
+
+    // Spawn a 2D camera to render Text2d entities on top of the 3D scene
+    // Text2d requires a Camera2d to render, even when positioned in 3D world space
+    // Order 1 renders after the 3D camera (order 0), ClearColorConfig::None prevents clearing
+    commands.spawn((
+        Camera2d,
+        Camera {
+            order: 1,
+            clear_color: ClearColorConfig::None,
+            ..default()
+        },
+    ));
 }
 
 /// Toggles cursor grab when engaging the fly camera look mode.

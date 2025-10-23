@@ -65,13 +65,6 @@ impl SpeechBubble {
     }
 }
 
-/// Resource holding the UI root entity for all speech bubbles.
-///
-/// All speech bubble UI nodes are children of this root to ensure
-/// they render as an overlay on top of the 3D scene.
-#[derive(Resource, Debug)]
-pub struct SpeechBubbleUiRoot(pub Entity);
-
 /// Resource tracking active speech bubbles by NPC ID.
 ///
 /// Ensures each NPC has at most one bubble at a time.

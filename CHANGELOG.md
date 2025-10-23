@@ -4,18 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
-## 2025-10-19 - S1.16a: Speech Bubble MVP (UI-Based Implementation)
-- Created `src/ui/speech_bubble/` module with UI-based speech bubble system using screen-space positioning.
-- Implemented `SpeechBubble` component tracking NPC ID, speaker entity, and lifetime timer for UI NodeBundle entities.
-- Added `SpeechBubbleSettings` resource exposing configurable lifetime (10s), fade duration (2s), max distance (25u), and font size (20pt).
+## 2025-10-22 - Dialogue Performance & Speech Bubble Refinement
+- **Fixed dialogue interaction lag:** Moved blocking OpenAI HTTP requests to background thread pool using `AsyncComputeTaskPool` and `poll_once()`, preventing main thread freezes during API calls.
+- Introduced `PendingDialogueTasks` resource tracking background tasks and `poll_dialogue_tasks` system to process completed requests.
+- Modified `ActiveDialogueBroker` to use `Arc<Box<dyn DialogueBroker>>` for cheap cloning across threads.
+- Added `DialogueRequestQueue::enqueue_with_cooldown()` for retry logic with backoff on background task failures.
+
+## 2025-10-19-22 - S1.16a: Speech Bubble MVP (World-Space Implementation)
+- Created `src/ui/speech_bubble/` module with **world-space Text2d** speech bubble system.
+- Implemented `SpeechBubble` component tracking NPC ID, speaker entity, and lifetime timer for Text2d entities.
+- Added `SpeechBubbleSettings` resource exposing configurable lifetime (10s), fade duration (2s), max distance (25u), and font size (15pt - 25% smaller than original).
 - Introduced `SpeechBubbleTracker` resource ensuring each NPC has at most one bubble, preventing overlap.
-- Created full-screen transparent UI overlay (`SpeechBubbleUiRoot`) parenting all speech bubble nodes for consistent rendering.
-- Speech bubbles spawn from `DialogueResponseEvent` as UI nodes with dark semi-transparent backgrounds (Color::srgba(0.1, 0.1, 0.1, 0.85)).
-- Positioning system uses `camera.world_to_viewport()` to convert NPC 3D positions to 2D screen coordinates every frame.
-- Distance-based culling hides bubbles when NPCs are beyond max_display_distance (default 25 world units).
-- Fade-out effect interpolates alpha from 1.0 to 0.0 during final 2 seconds using `lifetime.remaining_secs()`.
-- Registered `SpeechBubblePlugin` in `main.rs` after `DialoguePlugin` with startup and update systems.
-- **Implementation Note:** Initially prototyped with Text2d world-space billboards, but switched to UI NodeBundle approach for reliable screen-space tracking without billboard rotation complexity.
+- Speech bubbles spawn from `DialogueResponseEvent` as **Text2d + Transform** entities positioned at NPC world coordinates + Y offset (2.5 units above head).
+- **Billboard rotation system** makes text always face camera using `Quat::from_rotation_arc(Vec3::NEG_Z, forward)` on Y-axis only (no roll).
+- Positioning system updates `Transform.translation` every frame to follow NPCs in 3D world space (natural spatial relationship).
+- Distance-based culling hides bubbles via `Visibility::Hidden` when NPCs are beyond max_display_distance (default 25 world units).
+- Fade-out effect interpolates `TextColor` alpha from 1.0 to 0.0 during final 2 seconds using `lifetime.remaining_secs()`.
+- Registered `SpeechBubblePlugin` in `main.rs` after `DialoguePlugin` with update systems (no startup system needed).
+- **Camera ordering fix (2025-10-22):** Text2d requires Camera2d to render. Added Camera2d with explicit `order: 1` and `ClearColorConfig::None` to render on top of Camera3d (order: 0) without clearing the 3D scene. Eliminates camera order ambiguity warning and text flickering. Research confirmed cameras with higher order render later (on top), and `ClearColorConfig::None` prevents overlay from clearing underlying render.
+- **Implementation Journey:** Four iterations - (1) Text2d with TextLayout issues (never rendered), (2) UI NodeBundle with world_to_viewport (worked but felt spatially disconnected per user feedback), (3) Text2d in world space with billboard rotation (worked but flickering), (4) Camera ordering fix (final solution providing natural spatial association without flickering).
 
 ## 2025-10-18+ - S1.13: Dialogue Broker Verification & Instrumentation
 - Restored delivery completion checks so both the sender and recipient must be at their crates before goods transfer, preventing premature task completion during the economy loop.

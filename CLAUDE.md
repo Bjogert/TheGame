@@ -24,6 +24,13 @@ This file mirrors `AGENT.md` so Claude Code follows the same operating protocol 
 - Refactors are welcome when they unblock the current task; record rationale and follow-ups in `ai_memory`.
 - Add debug tooling behind feature flags or config toggles; remove or gate once the need passes.
 - When logic becomes complex (economy math, scheduling, save/load), add unit/integration tests. If skipping tests, state the risk explicitly.
+- **CRITICAL: Update documentation IMMEDIATELY after completing each task.** Do NOT batch documentation updates. After finishing any implementation, code change, or feature, update:
+  - `.agent/ai_memory.V.N.yaml` (decisions, risks, experiments, open questions)
+  - `.agent/tasks.yaml` (task state, deliverables, notes)
+  - `TASK.md` (checklist items, outcomes, exit criteria)
+  - `CHANGELOG.md` (user-facing changes with implementation details)
+  - Any relevant `src/**/README.md` files
+  - This is NON-NEGOTIABLE. Documentation drift creates coordination failures.
 
 ---
 

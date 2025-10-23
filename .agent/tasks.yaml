@@ -397,9 +397,9 @@
   state: done
   deps: [S1.13]
   deliverables:
-    - "Create src/ui/speech_bubble/ module with components (SpeechBubble, SpeechBubbleSettings, SpeechBubbleTracker, SpeechBubbleUiRoot)"
-    - "Spawn UI NodeBundle entities from DialogueResponseEvent positioned via camera.world_to_viewport()"
-    - "Implement full-screen UI root overlay for bubble container"
+    - "Create src/ui/speech_bubble/ module with components (SpeechBubble, SpeechBubbleSettings, SpeechBubbleTracker)"
+    - "Spawn Text2d entities from DialogueResponseEvent positioned in world space at NPC coordinates + Y offset"
+    - "Implement billboard rotation system (Y-axis only) to make text always face camera"
     - "Add lifetime timer system with fade-out during final 2 seconds, despawn after 10 seconds"
     - "Register SpeechBubblePlugin in main.rs after DialoguePlugin"
   docs_update:
@@ -409,13 +409,16 @@
     - ".agent/ai_memory.V.1.yaml"
     - ".agent/tasks.yaml"
   notes:
-    - "IMPLEMENTATION CHANGED: Replaced Text2d world-space approach with UI NodeBundle screen-space positioning."
-    - "Bubbles are UI nodes with dark semi-transparent backgrounds (Color::srgba(0.1, 0.1, 0.1, 0.85))."
-    - "Positioning via camera.world_to_viewport() converts NPC 3D positions to 2D screen coordinates every frame."
+    - "FINAL IMPLEMENTATION: World-space Text2d entities with billboard rotation (3rd iteration after UI approach felt spatially disconnected)."
+    - "Bubbles are Text2d + Transform entities positioned at NPC.translation + Vec3::Y * 2.5 (world coordinates)."
+    - "Billboard rotation via Quat::from_rotation_arc(Vec3::NEG_Z, to_camera_flat.normalize()) on Y-axis only."
     - "SpeechBubbleTracker ensures one bubble per NPC; updating existing bubble resets timer and content."
-    - "Distance culling (25 world units default) hides bubbles when NPCs are far from camera."
-    - "Fade-out calculated from lifetime.remaining_secs() with smooth alpha interpolation."
-    - "Module files kept under 400 lines: components.rs (123), systems.rs (200), plugin.rs (45), mod.rs (19)."
+    - "Distance culling (25 world units default) hides bubbles via Visibility::Hidden when NPCs are far from camera."
+    - "Fade-out calculated from lifetime.remaining_secs() with smooth alpha interpolation on TextColor."
+    - "Font size 15pt (25% smaller than original 20pt) per user request to reduce screen clutter."
+    - "Plain white text without background sprites - no bubble background implemented in MVP."
+    - "Module files kept under 400 lines: components.rs (114), systems.rs (153), plugin.rs (42), mod.rs (19)."
+    - "Camera setup: Text2d requires Camera2d to render. Added Camera2d with order: 1 and ClearColorConfig::None to render on top of Camera3d (order: 0) without clearing. Eliminates camera order ambiguity warning and flickering (2025-10-22)."
 
 - id: S1.16b
   title: "Speech bubble visual polish - Distance culling & fade"
