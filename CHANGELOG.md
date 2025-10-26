@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### 2025-10-26 - S1.16c: UI Panel Dialogue System (Replacing World-Space Bubbles)
+
+**BREAKING CHANGES:**
+- **Removed `SpeechBubblePlugin`** and entire world-space Text2d dialogue system
+  - Deleted `src/ui/speech_bubble/` module (~250 lines)
+  - Removed `OverlayCamera` component from `src/world/components.rs`
+  - Removed Camera2d overlay spawn from `src/world/systems.rs`
+  - Removed `sync_overlay_camera_with_3d` system (Camera2d/FlyCamera sync)
+  - Removed system registration from `src/world/plugin.rs`
+
+**Rationale:**
+- World-space Text2d approach proven incompatible with Bevy 0.17 architecture
+- Camera2d is designed for 2D games (flat screen-space) and doesn't properly project 3D world coordinates for Text2d entities
+- After extensive debugging (Anchor::BOTTOM_CENTER fix + Camera2d transform sync), bubbles still rendered at screen center
+- bevy_mod_billboard (proper 3D billboard solution) only supports Bevy 0.14, not 0.17
+- Custom billboard rendering system would require weeks of render pipeline work
+
+**Added:**
+- `UiPlugin` replacing `SpeechBubblePlugin` ✅ **COMPLETE**
+  - Bottom-right dialogue panel for NPC conversations (NodeBundle-based screen-space UI)
+  - **Recipient display:** Panels show "Speaker → Recipient" format when NPCs speak to each other, or just "Speaker" when no specific target
+  - Timer-based lifetime (10s default) with 2-second fade-out animation
+  - Single active panel at a time (replaces on new dialogue)
+  - Header with icon (💬), speaker/recipient names in gold, and dialogue text in white
+  - Configurable positioning, sizing, fonts, colors via `DialoguePanelSettings` resource
+  - Simpler, more reliable, better UX (always visible, readable)
+  - Industry precedents: Disco Elysium, Divinity Original Sin 2, Baldur's Gate 3
+  - See `.agent/ui_panel_plan.md` and `.agent/cleanup_plan.md` for full design/migration details
+
+**Migration Notes:**
+- Speech bubble patterns preserved for reuse: timer-based lifetime, fade alpha calculation, single-entity tracking
+- Configuration values preserved: `lifetime_seconds: 10.0`, `fade_seconds: 2.0`
+- No breaking changes to DialogueResponseEvent or other plugins
+- Panel respects `DialogueResponse.target` field to display conversation direction
+
 ## 2025-10-22 - Dialogue Performance & Speech Bubble Refinement
 - **Fixed dialogue interaction lag:** Moved blocking OpenAI HTTP requests to background thread pool using `AsyncComputeTaskPool` and `poll_once()`, preventing main thread freezes during API calls.
 - Introduced `PendingDialogueTasks` resource tracking background tasks and `poll_dialogue_tasks` system to process completed requests.

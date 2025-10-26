@@ -3,8 +3,7 @@ use bevy::prelude::*;
 
 use crate::world::{
     systems::{
-        fly_camera_mouse_look, fly_camera_translate, spawn_world_environment,
-        sync_overlay_camera_with_3d, update_cursor_grab,
+        fly_camera_mouse_look, fly_camera_translate, spawn_world_environment, update_cursor_grab,
     },
     time::{advance_world_clock, apply_world_lighting, WorldClock, WorldTimeSettings},
 };
@@ -32,7 +31,6 @@ impl Plugin for WorldPlugin {
                         update_cursor_grab,
                         fly_camera_mouse_look.after(update_cursor_grab),
                         fly_camera_translate,
-                        sync_overlay_camera_with_3d.after(fly_camera_translate),
                     ),
                     apply_world_lighting.after(advance_world_clock),
                 ),

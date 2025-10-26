@@ -260,55 +260,84 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 
 ---
 
-## Step S1.16a - Speech Bubble MVP (Basic Text Above NPCs)
-**Goal:** Deliver minimal viable speech bubbles that display dialogue text above NPC heads.
+## Step S1.16a - Speech Bubble MVP [ABANDONED]
+**Status:** ABANDONED (2025-10-26)
+**Original Goal:** Deliver minimal viable speech bubbles that display dialogue text above NPC heads.
 
-- [x] Create `src/ui/speech_bubble/` module structure with components, systems, and plugin files.
-- [x] Define `SpeechBubble` component tracking NPC ID, speaker entity, and lifetime timer.
-- [x] Define `SpeechBubbleSettings` resource with configurable lifetime, fade, distance, and font size.
-- [x] Define `SpeechBubbleTracker` resource ensuring one bubble per NPC at a time.
-- [x] Implement spawn system that listens to `DialogueResponseEvent` and creates Text2d entities in world space.
-- [x] Implement update system that updates Transform to follow NPC positions in 3D world coordinates.
-- [x] Implement billboard rotation system (Y-axis only) to make text always face the camera.
-- [x] Implement lifetime/fade/despawn system that fades out during final 2 seconds, then despawns.
-- [x] Implement distance-based culling (hides bubbles beyond 25 world units via Visibility::Hidden).
-- [x] Register `SpeechBubblePlugin` in `main.rs` after `DialoguePlugin`.
-- [x] Update documentation and planning artifacts.
-- [x] Fix camera order ambiguity causing text flickering: Configure Camera2d with order: 1 and ClearColorConfig::None to render on top of Camera3d (order: 0) without clearing the 3D scene.
-- **Outcome (initial):** Achieved world-space Text2d speech bubbles with billboard rotation, fade-out, distance culling, and reduced font size (15pt). Camera ordering fix (Camera2d order: 1, ClearColorConfig::None) resolved flickering before the current anchoring regression.
-- **Current blocker (2025-10-22):** Text2d bubbles render at the screen center instead of above the speaker in the latest build. Attempts so far:
-  1. Parenting the Text2d entity to the NPC and using a local offset (`set_parent_in_place`) — kept world-space translation unchanged, bubble still stuck at prior position.
-  2. Removing parenting and writing world coordinates directly each frame via `Transform::from_translation` + follow system — still renders at center despite logging correct NPC world positions.
-  3. Verified `SpeechBubble` update system runs and receives per-frame NPC `GlobalTransform`; camera billboarding works, so the system executes, but translation updates are ignored in rendering.
-- **Next hypothesis:** The Text2d entity may be missing `TransformBundle`/`GlobalTransform` updates or another component (e.g., `SpatialBundle`). Need to inspect Bevy 0.17 `Text2d` requirements and ensure we spawn with the expected bundle, or consider switching to a screen-space dialogue panel as fallback if world anchoring continues to fail.
-- **Exit criteria:** Running the game shows dialogue text floating above speaking NPCs in 3D world space, billboarding to face camera, with clear spatial association between bubbles and their speakers, without flickering or camera warnings.
+**Why Abandoned:**
+- World-space Text2d approach proven incompatible with Bevy 0.17 architecture
+- Camera2d is designed for 2D games (flat screen-space) and doesn't properly project 3D world coordinates
+- After extensive debugging (added `Anchor::BOTTOM_CENTER`, synced Camera2d transform with FlyCamera), bubbles still rendered at screen center
+- bevy_mod_billboard (proper 3D billboard solution) only supports Bevy 0.14, not 0.17
+- Custom billboard rendering system would require weeks of render pipeline work
 
----
+**What Was Attempted:**
+- [x] Created `src/ui/speech_bubble/` module (now deleted)
+- [x] Implemented Text2d world-space positioning with billboard rotation
+- [x] Added lifetime/fade/despawn systems
+- [x] Added Camera2d overlay (order: 1, ClearColorConfig::None)
+- [x] Fixed missing `Anchor::BOTTOM_CENTER` component
+- [x] Implemented Camera2d/FlyCamera transform sync system
+- [x] Verified all fixes compiled successfully
+- ❌ Bubbles still rendered at screen center (architectural incompatibility)
 
-## Step S1.16b - Speech Bubble Visual Polish (Distance Culling & Fade)
-**Goal:** Add distance-based culling and smooth fade-out animations for polished appearance.
-
-- [ ] Implement distance-based visibility culling system that hides bubbles beyond `max_distance`.
-- [ ] Add fade-out animation system that lerps alpha to 0 during final 2 seconds of lifetime.
-- [ ] Fine-tune Y-offset to position bubbles nicely above NPC capsule meshes (test with camera angles).
-- [ ] Add word wrapping system to keep lines under 40 characters for readability.
-- [ ] Update documentation with distance culling parameters and fade behavior.
-- **Outcome:** Bubbles fade naturally with distance (simulating real-world speech audibility) and disappear smoothly.
-- **Exit criteria:** Distant NPCs' bubbles are hidden/culled, nearby bubbles fade out gracefully before despawning.
+**Resolution:** Pivoted to S1.16c (UI Panel Dialogue System) - cleaner architecture, better UX, industry standard approach.
 
 ---
 
-## Step S1.16c - Speech Bubble Personality (Volume & Mood Integration)
-**Goal:** Integrate NPC personality and mood into speech bubble appearance via font size variations.
+## Step S1.16b - Speech Bubble Visual Polish [OBSOLETE]
+**Status:** OBSOLETE (2025-10-26)
+**Rationale:** S1.16a abandoned, so polish task no longer relevant.
 
-- [ ] Implement `SpeechVolume` enum (Whisper/Normal/Loud) with font size multipliers (0.6x / 1.0x / 1.5x).
-- [ ] Create volume detection system that analyzes dialogue content (CAPS ratio, whisper keywords).
-- [ ] Integrate with `NpcMotivation.mood` to adjust font size (Depressed -20%, Energised +20%).
-- [ ] Add configurable max distances per volume level (Whisper 15u, Normal 25u, Loud 40u).
-- [ ] Document volume detection keywords and mood modifiers in module README.
-- [ ] (Optional) Add per-NPC `Personality` component for persistent volume traits (Boisterous/Shy).
-- **Outcome:** NPCs have distinct "voices" through text size - shy/depressed NPCs whisper, energetic NPCs speak louder.
-- **Exit criteria:** Font sizes vary based on content and mood; distance culling respects volume levels.
+Some features may be resurrected for UI panel polish (fade-out, text wrapping).
+
+---
+
+## Step S1.16c - UI Panel Dialogue System (Replacing World-Space Bubbles)
+**Status:** ✅ COMPLETE (2025-10-26)
+**Goal:** Implement bottom-right UI dialogue panel for NPC conversations.
+
+**Cleanup Phase (COMPLETE):**
+- [x] Delete `src/ui/speech_bubble/` module entirely (~250 lines)
+- [x] Remove `OverlayCamera` component from `src/world/components.rs`
+- [x] Remove Camera2d spawn from `src/world/systems.rs`
+- [x] Remove `sync_overlay_camera_with_3d` system
+- [x] Remove system registration from `src/world/plugin.rs`
+- [x] Update `src/ui/mod.rs` to export `UiPlugin` instead of `SpeechBubblePlugin`
+- [x] Update `src/main.rs` to use `UiPlugin`
+- [x] Verify zero ghost code with Grep scans (SpeechBubble, OverlayCamera, sync system)
+- [x] Update CHANGELOG.md with removal rationale
+- [x] Update README.md features list
+- [x] Update TASK.md (this file)
+
+**Implementation Phase (COMPLETE):**
+- [x] Create `src/ui/dialogue_panel/` module structure (mod.rs, components.rs, systems.rs, plugin.rs)
+- [x] Define `DialoguePanel` component (npc_id, speaker_name, content, lifetime timer)
+- [x] Define `DialoguePanelSettings` resource (lifetime, fade, dimensions, positioning)
+- [x] Define `DialoguePanelTracker` resource (single active panel tracking)
+- [x] Implement `spawn_dialogue_panel` system (listen to DialogueResponseEvent, spawn NodeBundle hierarchy)
+- [x] Implement `update_dialogue_panel` system (tick lifetime, apply fade-out, despawn when finished)
+- [x] Register `UiPlugin` in main.rs (already done in cleanup)
+- [x] Test with existing dialogue events
+- [x] **Add recipient display:** Panel header shows "Speaker → Recipient" format when NPCs converse
+- [x] Update documentation (CHANGELOG.md, README.md, TASK.md)
+
+**Implemented Features:**
+- Panel positioned bottom-right corner (350px wide, max 200px tall, 20px offset from edges)
+- **Recipient display:** Header shows "Speaker → Recipient" when NPCs converse, or just "Speaker" for general dialogue
+- Content: NPC icon (💬 emoji), NPC name(s) in yellow/gold, dialogue text in white with auto-wrapping
+- Styling: semi-transparent dark gray background (0.9 alpha), light gray border (2px)
+- Behavior: single active dialogue, auto-despawn after 10 seconds with 2-second fade-out
+- Respects `DialogueResponse.target` field to display conversation direction
+- Zero breaking changes to DialogueResponseEvent or other plugins
+
+**Industry Precedents:** Disco Elysium, Divinity Original Sin 2, Baldur's Gate 3
+
+**Planning Documents:**
+- `.agent/ui_panel_plan.md` - Comprehensive implementation plan (actual: ~60 min)
+- `.agent/cleanup_plan.md` - Detailed cleanup strategy and verification
+
+**Exit Criteria Met:** ✅ Dialogue displays in UI panel at bottom-right corner with speaker/recipient names, readable text, auto-despawn, and smooth fade-out. Verified with live testing showing "Alric → Bryn" format.
 
 ---
 

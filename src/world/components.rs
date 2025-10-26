@@ -24,9 +24,3 @@ impl FlyCamera {
 /// Marker component identifying the main directional light (the "sun").
 #[derive(Component, Default)]
 pub struct PrimarySun;
-
-/// Marker component for the 2D overlay camera that renders Text2d entities.
-/// This camera's Transform should be synced with FlyCamera to ensure correct
-/// world-space projection for billboard text.
-#[derive(Component, Default)]
-pub struct OverlayCamera;

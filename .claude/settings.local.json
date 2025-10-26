@@ -7,7 +7,12 @@
       "Bash(cargo tree:*)",
       "Bash(cargo doc:*)",
       "Bash(cargo check:*)",
-      "Bash(cargo run:*)"
+      "Bash(cargo run:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(timeout 15 cargo run:*)",
+      "Bash(timeout 30 cargo run:*)",
+      "Bash(cargo build:*)",
+      "Bash(timeout 40 cargo run:*)"
     ],
     "deny": [],
     "ask": []

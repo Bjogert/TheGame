@@ -11,7 +11,7 @@ mod world;
 
 use crate::{
     core::CorePlugin, dialogue::DialoguePlugin, economy::EconomyPlugin, npc::NpcPlugin,
-    ui::SpeechBubblePlugin, world::WorldPlugin,
+    ui::UiPlugin, world::WorldPlugin,
 };
 
 fn main() {
@@ -25,7 +25,7 @@ fn main() {
             EconomyPlugin,
             WorldPlugin,
             NpcPlugin,
-            SpeechBubblePlugin, // After DialoguePlugin to receive DialogueResponseEvent
+            UiPlugin, // After DialoguePlugin to receive DialogueResponseEvent
         ))
         .run();
 }
