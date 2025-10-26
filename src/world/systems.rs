@@ -7,7 +7,7 @@ use bevy::{
     window::{CursorGrabMode, CursorOptions},
 };
 
-use crate::world::components::{FlyCamera, PrimarySun};
+use crate::world::components::{FlyCamera, OverlayCamera, PrimarySun};
 
 const GROUND_SCALE: f32 = 100.0;
 const CAMERA_START_POS: Vec3 = Vec3::new(-12.0, 8.0, 16.0);
@@ -52,6 +52,7 @@ pub fn spawn_world_environment(
     // Spawn a 2D camera to render Text2d entities on top of the 3D scene
     // Text2d requires a Camera2d to render, even when positioned in 3D world space
     // Order 1 renders after the 3D camera (order 0), ClearColorConfig::None prevents clearing
+    // Transform synced with FlyCamera each frame to ensure correct world-space projection
     commands.spawn((
         Camera2d,
         Camera {
@@ -59,7 +60,31 @@ pub fn spawn_world_environment(
             clear_color: ClearColorConfig::None,
             ..default()
         },
+        camera_transform, // Start with same transform as 3D camera
+        OverlayCamera,    // Marker for sync system
     ));
+}
+
+/// Sync the overlay camera (Camera2d for Text2d) with the 3D FlyCamera.
+///
+/// This ensures Text2d entities positioned in world space are projected correctly
+/// from the same viewpoint as the 3D camera, making billboard text appear at
+/// the correct screen positions.
+pub fn sync_overlay_camera_with_3d(
+    fly_camera_query: Query<&Transform, (With<FlyCamera>, Without<OverlayCamera>)>,
+    mut overlay_camera_query: Query<&mut Transform, (With<OverlayCamera>, Without<FlyCamera>)>,
+) {
+    let Ok(fly_transform) = fly_camera_query.single() else {
+        return; // No FlyCamera found
+    };
+
+    let Ok(mut overlay_transform) = overlay_camera_query.single_mut() else {
+        return; // No OverlayCamera found
+    };
+
+    // Copy the 3D camera's transform to the 2D overlay camera
+    // This makes the OrthographicProjection use the same viewpoint
+    *overlay_transform = *fly_transform;
 }
 
 /// Toggles cursor grab when engaging the fly camera look mode.

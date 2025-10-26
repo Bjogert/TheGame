@@ -44,6 +44,7 @@ An experimental Bevy-based project exploring long-form medieval life simulation 
 - Recent cleanup (Steps S1.9–S1.12) re-validated the toolchain, centralised dialogue/economy literals into named constants, split oversized systems into focused modules, and removed dead code highlighted by clippy.
 - Dialogue telemetry streams to `logs/dialogue_history.jsonl` for offline analysis; the broker still falls back to the local stub whenever `OPENAI_API_KEY` is absent.
 - **Active queue:** Surface locomotion, motivation, and planner telemetry in UI overlays, harden the OpenAI client path, and promote the work-order/dependency data outlined for Step 7.
+- **Known regression (S1.16a):** Speech bubble Text2d overlay currently renders at the screen centre instead of above NPCs. Investigation points to missing bundle components; in the meantime, expect dialogue text to stack in the middle of the screen until the anchoring fix (or a temporary HUD panel) lands.
 
 ## NPC Motivation & Wellbeing
 - Villager motivation now tracks a dopamine-style meter via `NpcMotivation`, rewarding productive tasks, dialogue responses, and leisure activities while decaying over time.

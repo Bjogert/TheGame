@@ -393,8 +393,8 @@
     - "Expose telemetry hooks so UI/debug overlays can visualise needs and resulting decisions."
 
 - id: S1.16a
-  title: "Speech bubble MVP - Basic text above NPCs"
-  state: done
+  title: "Speech bubble MVP - Basic text above NPCs [ABANDONED]"
+  state: abandoned
   deps: [S1.13]
   deliverables:
     - "Create src/ui/speech_bubble/ module with components (SpeechBubble, SpeechBubbleSettings, SpeechBubbleTracker)"
@@ -409,20 +409,16 @@
     - ".agent/ai_memory.V.1.yaml"
     - ".agent/tasks.yaml"
   notes:
-    - "FINAL IMPLEMENTATION: World-space Text2d entities with billboard rotation (3rd iteration after UI approach felt spatially disconnected)."
-    - "Bubbles are Text2d + Transform entities positioned at NPC.translation + Vec3::Y * 2.5 (world coordinates)."
-    - "Billboard rotation via Quat::from_rotation_arc(Vec3::NEG_Z, to_camera_flat.normalize()) on Y-axis only."
-    - "SpeechBubbleTracker ensures one bubble per NPC; updating existing bubble resets timer and content."
-    - "Distance culling (25 world units default) hides bubbles via Visibility::Hidden when NPCs are far from camera."
-    - "Fade-out calculated from lifetime.remaining_secs() with smooth alpha interpolation on TextColor."
-    - "Font size 15pt (25% smaller than original 20pt) per user request to reduce screen clutter."
-    - "Plain white text without background sprites - no bubble background implemented in MVP."
-    - "Module files kept under 400 lines: components.rs (114), systems.rs (153), plugin.rs (42), mod.rs (19)."
-    - "Camera setup: Text2d requires Camera2d to render. Added Camera2d with order: 1 and ClearColorConfig::None to render on top of Camera3d (order: 0) without clearing. Eliminates camera order ambiguity warning and flickering (2025-10-22)."
+    - "ABANDONED (2025-10-26): World-space Text2d approach proven incompatible with Bevy 0.17 architecture."
+    - "ROOT CAUSE: Camera2d is designed for 2D games (flat screen-space) and doesn't properly project 3D world coordinates for Text2d entities."
+    - "Attempted fixes: (1) Added Anchor::BOTTOM_CENTER, (2) Synced Camera2d Transform with FlyCamera. Code compiled but bubbles still rendered at screen center."
+    - "bevy_mod_billboard (proper solution) only supports Bevy 0.14, not 0.17. Custom billboard system would require weeks of render pipeline work."
+    - "Pivoting to S1.16c UI panel approach (simpler, more reliable, better UX)."
+    - "Code remains in src/ui/speech_bubble/ as reference but plugin disabled in main.rs."
 
 - id: S1.16b
-  title: "Speech bubble visual polish - Distance culling & fade"
-  state: backlog
+  title: "Speech bubble visual polish - Distance culling & fade [OBSOLETE]"
+  state: obsolete
   deps: [S1.16a]
   deliverables:
     - "Implement distance-based visibility culling (hide bubbles beyond max_distance)"
@@ -435,28 +431,35 @@
     - "TASK.md"
     - ".agent/ai_memory.V.1.yaml"
   notes:
-    - "Distance culling creates natural 'harder to read far away' effect per design requirements."
-    - "Max distances: Whisper 15u, Normal 25u, Loud 40u (configurable in code for now)."
-    - "Fade-out uses Color alpha channel interpolation with smooth easing."
+    - "OBSOLETE (2025-10-26): Task no longer relevant after abandoning world-space speech bubbles in favor of UI panel (S1.16c)."
+    - "Some features may be resurrected for UI panel polish (S1.16d): fade-out, text wrapping."
 
 - id: S1.16c
-  title: "Speech bubble personality - Volume & mood integration"
-  state: backlog
-  deps: [S1.16b]
+  title: "UI Panel Dialogue System - Replace world-space bubbles"
+  state: in_progress
+  deps: [S1.13]
   deliverables:
-    - "Implement SpeechVolume enum (Whisper/Normal/Loud) with font size multipliers"
-    - "Auto-detect volume from dialogue content (CAPS = Loud, short/whisper keywords = Whisper)"
-    - "Integrate with NpcMotivation.mood (Depressed = quieter, Energised = louder)"
-    - "Add optional per-NPC personality traits affecting default volume"
+    - "Create src/ui/ module with UiPlugin, dialogue_panel/ submodule"
+    - "Define DialoguePanel component (npc_id, speaker_name, content, lifetime timer)"
+    - "Define DialoguePanelSettings resource (lifetime, fade, dimensions, positioning)"
+    - "Define DialoguePanelTracker resource (single active panel tracking)"
+    - "Implement spawn_dialogue_panel system (listen to DialogueResponseEvent, spawn NodeBundle hierarchy)"
+    - "Implement update_dialogue_panel system (tick lifetime, apply fade-out, despawn when finished)"
+    - "Register UiPlugin in main.rs AFTER DialoguePlugin"
+    - "Disable SpeechBubblePlugin registration (comment out or remove)"
   docs_update:
-    - "src/ui/speech_bubble/README.md"
-    - "src/npc/README.md"
-    - "docs/tech_notes.md"
+    - "src/ui/dialogue_panel/README.md"
     - "CHANGELOG.md"
     - "TASK.md"
     - ".agent/ai_memory.V.1.yaml"
+    - ".agent/tasks.yaml"
+    - "README.md"
   notes:
-    - "Font sizes: Whisper 18pt (0.6x), Normal 24pt (1.0x), Loud 36pt (1.5x)."
-    - "Volume detection keywords: 'whisper', 'quietly', 'shout', 'yell', plus CAPS ratio."
-    - "Mood modifiers: Depressed -20% size, Energised +20% size, applied on top of base volume."
-    - "Future: add Personality component with Boisterous/Shy traits for persistent volume offsets."
+    - "PIVOT from world-space bubbles (S1.16a abandoned) to UI panel approach."
+    - "Panel positioned at bottom-right corner (350px wide, max 200px tall, 20px offset from edges)."
+    - "Content: NPC icon (💬 emoji), NPC name (yellow/gold), dialogue text (white, wrapped)."
+    - "Styling: semi-transparent dark gray background, light gray border, readable contrast."
+    - "Behavior: single active dialogue, auto-despawn after 10 seconds with 2-second fade-out."
+    - "Reuses DialogueResponseEvent (no event changes needed), similar component patterns to SpeechBubble."
+    - "Industry precedents: Disco Elysium, Divinity OS2, BG3 - UI panels for dialogue-heavy games."
+    - "Implementation plan documented in .agent/ui_panel_plan.md (comprehensive 55-65 min estimate)."

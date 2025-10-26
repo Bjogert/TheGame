@@ -47,6 +47,10 @@ NpcPlugin
   +- systems: spawn_debug_npcs(), tick_schedule_state(), motivation reward/decay loops
 
 Optional plugins (planned): DialoguePlugin, UiPlugin, WeatherPlugin
+
+SpeechBubblePlugin (UI)
+  +- depends on: DialoguePlugin (DialogueResponseEvent), NpcPlugin (Identity lookup), WorldPlugin (camera)
+  +- current status: Text2d overlay renders but anchoring bug keeps dialogue pinned to screen centre; investigating Text2d spawn/bundle requirements before wider UI work.
 ```
 
 Guidelines:
@@ -75,6 +79,7 @@ Record concrete resource/component names in the nearest module README once imple
 - **Asset pipeline:** choose placeholder asset format (primitives vs. lightweight GLTF) for NPC prototyping.
 - **Persistence crate:** confirm whether to hand-roll SQLite integration or leverage an ECS snapshot crate.
 - **Task scheduling:** evaluate `bevy_tasks` vs. custom async executors for LLM calls once dialogue work begins.
+- **Speech bubbles:** determine whether to keep pursuing world-space Text2d anchoring (likely by spawning full SpatialBundle) or temporarily fall back to a HUD dialogue panel to unblock testing.
 
 Capture outcomes and rationale in `ai_memory.V.N.yaml` when decisions land.
 

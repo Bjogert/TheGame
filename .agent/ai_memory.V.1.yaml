@@ -1,7 +1,7 @@
 ﻿# ai_memory.V.1.yaml
 version: 1
 project: "medieval_sim"
-updated_utc: "2025-10-22T12:30:00Z"
+updated_utc: "2025-10-22T15:10:00Z"
 
 # Short-term notes are tied to the active step. Promote durable lessons to long_term.
 short_term:
@@ -220,30 +220,30 @@ short_term:
       - "Do we want automated retries that can flip the broker from fallback to live mid-session once credentials are supplied?"
   - step: "S1.16a"
     decisions:
-      - "FINAL IMPLEMENTATION: World-space Text2d entities with billboard rotation, positioned via Transform at NPC 3D coordinates."
-      - "Initial attempt used screen-space UI NodeBundle with camera.world_to_viewport(), but user feedback indicated bubbles felt disconnected and hard to associate with speakers."
-      - "Converted to Text2d + Transform in world space with billboard rotation (Y-axis only, no roll) to always face camera."
-      - "Each NPC has at most one bubble tracked in SpeechBubbleTracker to prevent overlap and simplify updates."
-      - "Bubble position updated every frame to NPC.translation + Y offset (2.5 units above head in world space)."
-      - "Settings (lifetime 10s, fade 2s, max distance 25u, font size 15pt) exposed via SpeechBubbleSettings resource."
-      - "Font size reduced to 15pt (25% smaller than original 20pt) per user request for less screen clutter."
-      - "Camera setup fix: Text2d requires Camera2d to render. Camera2d configured with order: 1 and ClearColorConfig::None to render on top of Camera3d (order: 0) without clearing the 3D scene. Eliminates camera order ambiguity and flickering."
+      - "World-space Text2d implementation attempted but ABANDONED (2025-10-26) after discovering fundamental architecture incompatibility."
+      - "ROOT CAUSE IDENTIFIED: Camera2d is designed for 2D games (flat plane, screen-space) and doesn't properly project 3D world coordinates for Text2d entities in Bevy 0.17."
+      - "PIVOT DECISION: Switching to UI panel approach (S1.16c). Rationale: simpler implementation (~30-60 min vs days), better UX (always visible, readable), extensibility (history, portraits, choices), industry precedents (Disco Elysium, Divinity OS2, BG3)."
+      - "bevy_mod_billboard (proper solution for 3D billboards) only supports Bevy 0.14, not 0.17. Building custom billboard system would require weeks of render pipeline work."
+      - "SpeechBubblePlugin code will remain in codebase as reference but disabled; UiPlugin will replace it for dialogue display."
     risks:
-      - "Billboard rotation + position updates run every frame per bubble; acceptable for current NPC count but may need batching at scale."
-      - "Text2d renders plain white text without background - no bubble background implemented, just alpha-faded text."
-      - "No text wrapping implemented; long dialogue displays on single line which may be hard to read at distance."
-      - "Billboard rotation uses Quat::from_rotation_arc(Vec3::NEG_Z, forward) - may have readability issues at extreme camera angles."
+      - "World-space bubble code remains but disabled; may cause confusion. Consider adding deprecation warnings or removing entirely after UI panel proven."
+      - "UI panel may feel less immersive than world-space bubbles; need to design for minimal screen clutter and clear NPC association."
+      - "Transition period: DialogueResponseEvent handlers will need to switch from SpeechBubblePlugin to UiPlugin."
     experiments:
-      - "Attempted screen-space UI approach first (NodeBundle + world_to_viewport) - worked technically but felt spatially wrong."
-      - "World-space Text2d with billboard rotation provides natural spatial relationship - bubbles stay 'glued' to NPCs in 3D space."
-      - "Verified fade-out effect using lifetime.remaining_secs() for smooth alpha transitions during final 2 seconds."
-      - "Distance culling via Visibility::Hidden works correctly for bubbles beyond max_display_distance."
-      - "Researched Bevy 0.17 camera ordering: cameras with higher order render later (on top). ClearColorConfig::None prevents overlay from clearing underlying render."
+      - "Tried parenting bubbles to NPCs with local offsets via set_parent_in_place(); world transform remained unchanged, bubble still stuck at centre."
+      - "Removed parenting and wrote world coordinates directly each frame; rendering still pins to centre, implying Text2d spawn is missing a required component/bundle."
+      - "Used code-detective-serena agent to analyze Text2d spawn code; discovered missing Anchor component and verified Transform updates were correct."
+      - "Web search + Bevy docs research confirmed Text2d works with Camera2d in world space via OrthographicProjection, but Camera2d needs proper Transform."
+      - "Researched bevy_mod_billboard plugin (Bevy 0.14); confirmed billboard approach is correct but Camera2d must follow Camera3d for projection to work."
+      - "FINAL EXPERIMENT: Added Anchor::BOTTOM_CENTER + Camera2d sync system copying FlyCamera transform. Code compiled successfully but bubbles STILL rendered at screen center. Logs confirmed bubbles spawning correctly with proper transforms. Conclusion: Camera2d fundamentally incompatible with 3D world-space projection in current Bevy architecture."
+      - "Verified bevy_mod_billboard doesn't support Bevy 0.17 (only 0.14), eliminating that solution path."
+      - "Researched Bevy Text2d visibility bugs (issue #9676) - glyphs assigned new entity IDs don't match visible_entities checks. May contribute to rendering issues."
     open_questions:
-      - "Should we add background sprites (semi-transparent quads) as child entities for traditional bubble appearance?"
-      - "Do we need text wrapping now or is single-line acceptable for MVP? User didn't mention readability issues yet."
-      - "Should billboard rotation use different algorithm for better readability at extreme camera angles?"
-      - "Would background darkening behind text improve readability without full bubble sprites?"
+      - "UI panel position: bottom-left, bottom-right, or center-bottom? Consider player's view of NPCs and camera movement."
+      - "Show single active dialogue or scrolling history? History helps context but adds UI complexity."
+      - "Display NPC portrait/icon in panel? Helps identify speaker but requires asset creation."
+      - "Auto-advance dialogue after timeout or require user input? Simulation-first suggests auto-advance."
+      - "Should SpeechBubblePlugin code be deleted or kept as reference for future 3D text attempts?"
 
 # Accumulates durable lessons and conventions.
 long_term:
@@ -267,19 +267,21 @@ refactors: []
 # What failed and why (helps agents avoid repeats).
 postmortems:
   - issue: "S1.16a Speech bubble implementation journey: Text2d -> UI -> Text2d + camera ordering fix"
-    date: "2025-10-19 to 2025-10-22"
-    what_happened: "Three iterations of speech bubble implementation with final camera ordering fix. (1) Text2d with TextLayout issues - never rendered. (2) UI NodeBundle with world_to_viewport - worked but felt spatially wrong. (3) Text2d in world space with billboard rotation - worked but had camera order ambiguity causing flickering. (4) Fixed camera ordering with explicit order values and ClearColorConfig."
-    root_cause: "Initial Text2d attempt (iteration 1) failed due to missing TextLayout component and 2D camera overlay confusion. Pivoted to UI approach which worked technically but had poor UX - bubbles felt detached from NPCs during camera movement. User feedback revealed the spatial disconnect issue. Final Text2d approach required Camera2d for rendering, but both Camera2d and Camera3d defaulting to order: 0 caused ambiguity warning and flickering."
+    date: "2025-10-19 to 2025-10-22 (ongoing)"
+    what_happened: "Three iterations of speech bubble implementation with the latest build regressing: Text2d bubbles now render at the screen centre even though transform updates target NPC positions. (1) Text2d with TextLayout issues - never rendered. (2) UI NodeBundle with world_to_viewport - worked but felt spatially wrong. (3) Text2d in world space with billboard rotation - initially worked once camera ordering was fixed, but subsequent refactors introduced anchoring regression still unresolved."
+    root_cause: "Initial Text2d attempt failed due to missing TextLayout component and 2D camera overlay confusion. UI approach solved rendering but not UX. Final Text2d approach required Camera2d overlay; however, current regression suggests the entity is missing required bundle components or transform hierarchy is broken, causing world translations to be ignored."
     what_we_tried:
       - "Iteration 1: Text2d + Transform with TextLayout::new_with_no_wrap() and 2D camera overlay - never rendered"
       - "Iteration 2: UI NodeBundle + camera.world_to_viewport() for screen-space positioning - worked but felt 'floaty' and disconnected"
       - "Iteration 3: Text2d + Transform in world space with billboard rotation - natural spatial relationship but flickering"
-      - "Iteration 4: Camera2d with order: 1 and ClearColorConfig::None - eliminates ambiguity and flickering"
+      - "Iteration 4: Camera2d with order: 1 and ClearColorConfig::None - eliminated ambiguity and flickering"
+      - "Iteration 5: Parenting Text2d to NPCs with local offset - bubble still stuck at centre because world transform not updated"
+      - "Iteration 6: Reverting to direct world-space translations with TextBounds wrapping - regression persists; suspect missing bundle component"
     why_iterations_1_and_2_failed:
       - "Iteration 1: Architectural confusion between 3D camera rendering and 2D camera overlay; never fully debugged Text2d rendering setup"
       - "Iteration 2: Technically correct but poor UX - bubbles locked to screen coordinates made it hard to identify which NPC was speaking"
       - "Iteration 3: Both cameras defaulted to order: 0, causing Bevy to warn about camera order ambiguities and producing flickering text"
-    solution: "Final implementation uses Text2d + Transform positioned at NPC world coordinates + Y offset with billboard rotation (Quat::from_rotation_arc on Y-axis only). Camera3d uses default order: 0, Camera2d uses order: 1 with ClearColorConfig::None to render on top without clearing. Bubbles exist as 3D entities that physically follow NPCs in world space."
+    solution: "Pending. Need to restore reliable world anchoring (likely via spawning a full `SpatialBundle` or checking Bevy's Text2d spawn helpers) or pivot to a temporary HUD dialogue panel if Text2d anchoring continues to fail."
     lessons:
       - "For speech bubbles, world-space entities with billboard rotation provide better spatial UX than screen-space UI overlays."
       - "Text2d REQUIRES Camera2d to render, even when positioned in 3D world space."

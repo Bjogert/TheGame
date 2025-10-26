@@ -46,3 +46,4 @@ Goals today: {goals}
 2. Define RUST struct for prompt context.
 3. Explore caching/summary strategy to stay inside context limits.
 4. Document error handling (timeouts, retries, throttling).
+5. Coordinate with UI: current Text2d speech bubble overlay regressed (anchoring stuck at screen centre). Either restore world-space anchoring (likely via SpatialBundle) or provide a temporary side-panel dialogue log so research prompts have a visible outlet during testing.

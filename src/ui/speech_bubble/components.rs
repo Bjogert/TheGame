@@ -91,6 +91,9 @@ pub struct SpeechBubbleSettings {
 
     /// Font size for bubble text (points).
     pub font_size: f32,
+
+    /// Maximum width for the rendered text before wrapping (logical pixels).
+    pub max_text_width: f32,
 }
 
 impl Default for SpeechBubbleSettings {
@@ -101,6 +104,7 @@ impl Default for SpeechBubbleSettings {
             max_display_distance: 25.0,
             vertical_offset: 2.5,
             font_size: 15.0, // 25% smaller than original 20.0
+            max_text_width: 220.0,
         }
     }
 }

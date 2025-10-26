@@ -3,6 +3,8 @@
 // Systems for spawning, updating, and despawning speech bubbles using world-space Text2d.
 
 use bevy::prelude::*;
+use bevy::sprite::Anchor;
+use bevy::text::TextBounds;
 
 use crate::dialogue::events::DialogueResponseEvent;
 use crate::npc::components::Identity;
@@ -41,7 +43,6 @@ pub fn spawn_speech_bubbles(
             npc_id, identity.display_name, content
         );
 
-        // Calculate initial world position above NPC
         let mut world_position = npc_transform.translation();
         world_position.y += settings.vertical_offset;
 
@@ -56,6 +57,8 @@ pub fn spawn_speech_bubbles(
                     settings.lifetime_seconds,
                 ))
                 .insert(Text2d::new(content))
+                .insert(TextBounds::new_horizontal(settings.max_text_width))
+                .insert(Anchor::BOTTOM_CENTER)
                 .insert(Transform::from_translation(world_position));
             continue;
         }
@@ -69,6 +72,8 @@ pub fn spawn_speech_bubbles(
                     ..default()
                 },
                 TextColor(TEXT_COLOR),
+                TextBounds::new_horizontal(settings.max_text_width),
+                Anchor::BOTTOM_CENTER, // Position text bottom at transform (appears above NPC head)
                 Transform::from_translation(world_position),
                 SpeechBubble::new(npc_id, speaker_entity, settings.lifetime_seconds),
                 Visibility::Visible,
@@ -145,7 +150,7 @@ pub fn update_speech_bubbles(
         let to_camera_flat = Vec3::new(to_camera.x, 0.0, to_camera.z);
         if to_camera_flat.length_squared() > 0.001 {
             let forward = to_camera_flat.normalize();
-            transform.rotation = Quat::from_rotation_arc(Vec3::NEG_Z, forward);
+            transform.rotation = Quat::from_rotation_arc(Vec3::Z, forward);
         }
 
         // Apply fade-out effect during final seconds

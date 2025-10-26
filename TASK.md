@@ -275,7 +275,12 @@ _Last updated: 2025-10-10 (UTC). This file explains the step-by-step execution p
 - [x] Register `SpeechBubblePlugin` in `main.rs` after `DialoguePlugin`.
 - [x] Update documentation and planning artifacts.
 - [x] Fix camera order ambiguity causing text flickering: Configure Camera2d with order: 1 and ClearColorConfig::None to render on top of Camera3d (order: 0) without clearing the 3D scene.
-- **Outcome:** World-space Text2d speech bubbles appear above NPC heads in 3D coordinates, use billboard rotation to face the camera, fade out smoothly, and despawn after 10 seconds. Bubbles physically follow NPCs in world space providing natural spatial relationship (you can clearly see WHO is speaking). Font size reduced to 15pt (25% smaller) per user request. Plain white text without background sprites in this MVP iteration. Camera ordering fixed (2025-10-22): Camera2d configured with explicit order: 1 and ClearColorConfig::None to eliminate ambiguity warning and flickering.
+- **Outcome (initial):** Achieved world-space Text2d speech bubbles with billboard rotation, fade-out, distance culling, and reduced font size (15pt). Camera ordering fix (Camera2d order: 1, ClearColorConfig::None) resolved flickering before the current anchoring regression.
+- **Current blocker (2025-10-22):** Text2d bubbles render at the screen center instead of above the speaker in the latest build. Attempts so far:
+  1. Parenting the Text2d entity to the NPC and using a local offset (`set_parent_in_place`) — kept world-space translation unchanged, bubble still stuck at prior position.
+  2. Removing parenting and writing world coordinates directly each frame via `Transform::from_translation` + follow system — still renders at center despite logging correct NPC world positions.
+  3. Verified `SpeechBubble` update system runs and receives per-frame NPC `GlobalTransform`; camera billboarding works, so the system executes, but translation updates are ignored in rendering.
+- **Next hypothesis:** The Text2d entity may be missing `TransformBundle`/`GlobalTransform` updates or another component (e.g., `SpatialBundle`). Need to inspect Bevy 0.17 `Text2d` requirements and ensure we spawn with the expected bundle, or consider switching to a screen-space dialogue panel as fallback if world anchoring continues to fail.
 - **Exit criteria:** Running the game shows dialogue text floating above speaking NPCs in 3D world space, billboarding to face camera, with clear spatial association between bubbles and their speakers, without flickering or camera warnings.
 
 ---

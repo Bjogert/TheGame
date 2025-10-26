@@ -3,7 +3,11 @@
     "allow": [
       "Bash(cargo fmt)",
       "Bash(cargo clippy -- -D warnings)",
-      "Bash(timeout 60 cargo run)"
+      "Bash(timeout 60 cargo run)",
+      "Bash(cargo tree:*)",
+      "Bash(cargo doc:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo run:*)"
     ],
     "deny": [],
     "ask": []
