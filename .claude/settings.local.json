@@ -12,7 +12,9 @@
       "Bash(timeout 15 cargo run:*)",
       "Bash(timeout 30 cargo run:*)",
       "Bash(cargo build:*)",
-      "Bash(timeout 40 cargo run:*)"
+      "Bash(timeout 40 cargo run:*)",
+      "Bash(set RUST_LOG=debug:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

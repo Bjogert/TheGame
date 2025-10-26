@@ -4,6 +4,52 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### 2025-10-26 - S1.17: NPC Conversation Behavior (Stop & Face Each Other)
+
+**Added:**
+- **InConversation component** - Tracks when NPCs are engaged in dialogue conversation
+  - Fields: `partner: NpcId`, `request_id: DialogueRequestId`, `started_at: f32`, `state: ConversationState`
+  - Added to both speaker and target when trade dialogue triggers
+- **ConversationState enum** - Manages conversation lifecycle
+  - `Approaching` - Walking toward partner while API call in progress (future: predictive timing)
+  - `WaitingAtDestination` - Arrived at destination, frozen while waiting for/displaying dialogue
+  - `Speaking` - Dialogue panel visible (reserved for future state transitions)
+- **DialogueRequestedEvent** - Emitted by economy system when dialogue is queued
+  - Decouples economy system from NPC conversation behavior
+  - Contains `request_id`, `speaker`, `target` for coordination
+
+**Systems Added:**
+1. **start_conversations** - Adds `InConversation` components when `DialogueRequestedEvent` fired
+2. **Locomotion freeze** - Modified `drive_npc_locomotion` to skip movement when `InConversation` present (except `Approaching` state)
+3. **orient_conversing_npcs** - Smoothly rotates NPCs to face conversation partner using quaternion slerp (Y-axis only, no vertical tilt)
+   - Uses `ParamSet` to avoid query conflicts (mutable vs immutable Transform access)
+   - 3-pass system: collect rotation data → get partner positions → apply rotations
+4. **cleanup_conversations** - Removes `InConversation` after 8-second timeout (~0.013 fractional day with 10-minute day length)
+   - Allows NPCs to resume their tasks after dialogue completes
+   - Handles day wraparound for timing calculations
+
+**Behavior Flow:**
+- T+0s: Trade completes → `DialogueRequestedEvent` → Both NPCs get `InConversation` → **Movement freezes** → NPCs start rotating to face each other
+- T+1.5s: OpenAI response arrives → Dialogue panel spawns (NPCs still frozen and facing)
+- T+8s: Timeout expires → `InConversation` removed → **NPCs resume movement**
+
+**Implementation Details:**
+- System chain in [src/npc/plugin.rs](src/npc/plugin.rs:35-46): `start_conversations → cleanup_conversations → ... → drive_npc_locomotion → orient_conversing_npcs`
+- Economy system modified to emit `DialogueRequestedEvent` in [src/economy/systems/dialogue.rs](src/economy/systems/dialogue.rs:59-103)
+- Conversation timeout tuned for readability: ~1.5s API latency + ~6.5s reading time = 8s total
+
+**Result:**
+- ✅ NPCs stop moving when dialogue starts (like real people!)
+- ✅ NPCs face each other during conversations
+- ✅ Dialogue panels appear while NPCs are stopped
+- ✅ NPCs resume movement after natural pause
+- ✅ Timing feels organic and player-friendly
+
+**Technical Notes:**
+- Used `ParamSet` to resolve Bevy query conflicts (`B0001` error with overlapping Transform access)
+- `#[allow(dead_code)]` on `request_id` and `Speaking` variant (reserved for future dialogue state transitions)
+- `#[allow(clippy::type_complexity)]` on `orient_conversing_npcs` ParamSet signature
+
 ### 2025-10-26 - S1.16c: UI Panel Dialogue System (Replacing World-Space Bubbles)
 
 **BREAKING CHANGES:**

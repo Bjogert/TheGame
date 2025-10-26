@@ -341,6 +341,46 @@ Some features may be resurrected for UI panel polish (fade-out, text wrapping).
 
 ---
 
+## Step S1.17 - NPC Conversation Behavior (Stop & Face Each Other)
+
+**Goal:** Make NPCs stop moving and face each other during dialogue conversations (like real people).
+
+**Problem:** Dialogue panels appear while NPCs continue walking, text appears long after trade completes, and NPCs don't face each other. This feels unnatural and disconnects dialogue from the NPCs speaking.
+
+**Solution:** Event-driven conversation behavior system that freezes NPC locomotion and orients them face-to-face during dialogue.
+
+**Implementation (COMPLETE):**
+- [x] Create `InConversation` component to track conversation state
+  - Fields: `partner: NpcId`, `request_id: DialogueRequestId`, `started_at: f32`, `state: ConversationState`
+- [x] Create `ConversationState` enum (Approaching, WaitingAtDestination, Speaking)
+- [x] Create `DialogueRequestedEvent` for decoupling economy from NPC behavior
+- [x] Implement `start_conversations` system to add `InConversation` when dialogue triggers
+- [x] Modify `drive_npc_locomotion` to freeze movement when `InConversation` present (except Approaching state)
+- [x] Implement `orient_conversing_npcs` system to rotate NPCs face-to-face using quaternion slerp
+  - Solved Bevy `ParamSet` query conflicts with 3-pass approach
+  - Y-axis rotation only (no vertical tilt)
+- [x] Implement `cleanup_conversations` system to remove `InConversation` after 8-second timeout
+  - Allows NPCs to resume tasks after dialogue ends
+  - Handles day wraparound for timing
+- [x] Modify economy system to emit `DialogueRequestedEvent` in [src/economy/systems/dialogue.rs](src/economy/systems/dialogue.rs:59-103)
+- [x] Register systems in correct order: `start_conversations → cleanup_conversations → ... → drive_npc_locomotion → orient_conversing_npcs`
+- [x] Test conversation lifecycle: freeze → face → display → resume
+- [x] Update documentation (CHANGELOG.md, TASK.md)
+
+**Timing Breakdown:**
+- T+0s: Trade completes → Event fired → Both NPCs frozen → Start facing each other
+- T+1.5s: OpenAI response → Dialogue panel spawns (NPCs still frozen)
+- T+8s: Timeout → InConversation removed → NPCs resume movement
+
+**Technical Challenges Solved:**
+- Bevy query conflict (`B0001` error) with overlapping Transform access → Used `ParamSet` with 3-pass system
+- World time wraparound → Added wraparound handling in cleanup system
+- Conversation timeout tuning → 8 seconds = 1.5s API + 6.5s reading time
+
+**Exit Criteria Met:** ✅ NPCs stop moving when dialogue starts, face each other smoothly, dialogue panels appear while stopped, and NPCs resume movement after natural pause. Verified with live testing showing natural conversation behavior.
+
+---
+
 ## What Comes Next
 Use the S1.5 blueprint to draft implementation tasks for Step 7: load profession/recipe configs, add work-order queues, expand economy events, and generate the resource dependency matrix. Follow that by spiking the S1.7 motivation system so wellbeing can feed back into schedules and product quality.
 

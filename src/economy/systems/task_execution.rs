@@ -6,7 +6,7 @@ use bevy::{
 };
 
 use crate::{
-    dialogue::queue::DialogueRequestQueue,
+    dialogue::{events::DialogueRequestedEvent, queue::DialogueRequestQueue},
     npc::components::{Identity, LocomotionState, MovementTarget, NpcId, NpcLocomotion},
     world::time::WorldClock,
 };
@@ -137,6 +137,7 @@ pub fn advance_actor_tasks(
 pub struct EconomyOutputs<'w> {
     trade_writer: MessageWriter<'w, TradeCompletedEvent>,
     dependency_writer: MessageWriter<'w, ProfessionDependencyUpdateEvent>,
+    dialogue_requested_writer: MessageWriter<'w, DialogueRequestedEvent>,
     dialogue_queue: ResMut<'w, DialogueRequestQueue>,
 }
 
@@ -238,6 +239,7 @@ fn execute_task(
             inventory_queries,
             placeholders,
             &mut outputs.trade_writer,
+            &mut outputs.dialogue_requested_writer,
             outputs.dialogue_queue.as_mut(),
         ),
     }
@@ -400,6 +402,7 @@ fn execute_deliver(
     inventory_queries: &mut ParamSet<(Query<&mut Inventory>, Query<&Inventory>)>,
     placeholders: &mut TradeGoodPlaceholderRegistry,
     trade_writer: &mut MessageWriter<TradeCompletedEvent>,
+    dialogue_requested_writer: &mut MessageWriter<DialogueRequestedEvent>,
     dialogue_queue: &mut DialogueRequestQueue,
 ) -> TaskResult {
     if !ensure_actor_at_location(
@@ -481,6 +484,7 @@ fn execute_deliver(
 
     send_trade_and_dialogue(
         trade_writer,
+        dialogue_requested_writer,
         dialogue_queue,
         TradeDialogueInput {
             day,

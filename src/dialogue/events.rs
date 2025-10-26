@@ -1,7 +1,19 @@
 //! Events emitted by the dialogue queue runner.
 use bevy::prelude::{Event, Message};
 
-use super::{errors::DialogueError, types::DialogueResponse};
+use super::{
+    errors::DialogueError,
+    types::{DialogueRequestId, DialogueResponse},
+};
+use crate::npc::components::NpcId;
+
+/// Fired when a dialogue request is queued (for conversation behavior coordination).
+#[derive(Event, Message, Debug, Clone)]
+pub struct DialogueRequestedEvent {
+    pub request_id: DialogueRequestId,
+    pub speaker: NpcId,
+    pub target: Option<NpcId>,
+}
 
 /// Fired when a dialogue request succeeds.
 #[derive(Event, Message, Debug, Clone)]

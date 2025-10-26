@@ -3,6 +3,8 @@ use std::fmt;
 
 use bevy::prelude::*;
 
+use crate::dialogue::types::DialogueRequestId;
+
 /// Unique identifier for an NPC.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component)]
 pub struct NpcId(u64);
@@ -218,4 +220,42 @@ pub enum MovementTarget {
 pub enum LocomotionState {
     Idle,
     Moving,
+}
+
+/// Tracks when an NPC is engaged in a dialogue conversation.
+#[derive(Component, Debug, Clone)]
+pub struct InConversation {
+    pub partner: NpcId,
+    #[allow(dead_code)] // Will be used for Speaking state transitions in future
+    pub request_id: DialogueRequestId,
+    pub started_at: f32,
+    pub state: ConversationState,
+}
+
+impl InConversation {
+    pub fn new(
+        partner: NpcId,
+        request_id: DialogueRequestId,
+        started_at: f32,
+        state: ConversationState,
+    ) -> Self {
+        Self {
+            partner,
+            request_id,
+            started_at,
+            state,
+        }
+    }
+}
+
+/// State of an NPC conversation for coordinating movement and dialogue.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConversationState {
+    /// Walking toward conversation partner, API call in progress
+    Approaching,
+    /// Arrived at destination, waiting for API response
+    WaitingAtDestination,
+    /// Dialogue panel is visible, speaking
+    #[allow(dead_code)] // Will be used when transitioning to speaking state
+    Speaking,
 }

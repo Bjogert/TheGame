@@ -10,7 +10,10 @@ use crate::{
             reward_from_leisure, reward_from_trade_events, track_dependency_satisfaction,
             DailyDependencyTracker, MotivationConfig,
         },
-        systems::{drive_npc_locomotion, spawn_debug_npcs, tick_schedule_state},
+        systems::{
+            cleanup_conversations, drive_npc_locomotion, orient_conversing_npcs, spawn_debug_npcs,
+            start_conversations, tick_schedule_state,
+        },
     },
     world::systems::spawn_world_environment,
 };
@@ -29,6 +32,8 @@ impl Plugin for NpcPlugin {
             .add_systems(
                 Update,
                 (
+                    start_conversations,
+                    cleanup_conversations,
                     tick_schedule_state,
                     reward_from_leisure,
                     reward_from_trade_events,
@@ -37,6 +42,7 @@ impl Plugin for NpcPlugin {
                     evaluate_dependency_impacts,
                     decay_npc_motivation,
                     drive_npc_locomotion,
+                    orient_conversing_npcs,
                 )
                     .chain(),
             );

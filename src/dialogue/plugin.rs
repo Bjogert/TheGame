@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use super::{
     broker::{DialogueBroker, OpenAiDialogueBroker},
     errors::DialogueErrorKind,
-    events::{DialogueRequestFailedEvent, DialogueResponseEvent},
+    events::{DialogueRequestFailedEvent, DialogueRequestedEvent, DialogueResponseEvent},
     queue::{
         advance_dialogue_queue_timers, poll_dialogue_tasks, run_dialogue_request_queue,
         ActiveDialogueBroker, DialogueRateLimitConfig, DialogueRateLimitState,
@@ -39,6 +39,7 @@ impl Plugin for DialoguePlugin {
             .init_resource::<DialogueTelemetryLog>()
             .insert_resource(broker_status)
             .insert_resource(ActiveDialogueBroker::new(Box::new(broker)))
+            .add_message::<DialogueRequestedEvent>()
             .add_message::<DialogueResponseEvent>()
             .add_message::<DialogueRequestFailedEvent>()
             .add_systems(

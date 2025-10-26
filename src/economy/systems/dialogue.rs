@@ -1,6 +1,7 @@
 use bevy::prelude::{debug, MessageWriter};
 
 use crate::dialogue::{
+    events::DialogueRequestedEvent,
     queue::DialogueRequestQueue,
     types::{
         DialogueContext, DialogueContextEvent, DialogueRequest, DialogueTopicHint, TradeContext,
@@ -57,6 +58,7 @@ pub(super) fn queue_schedule_brief(
 
 pub(super) fn send_trade_and_dialogue(
     trade_writer: &mut MessageWriter<TradeCompletedEvent>,
+    dialogue_requested_writer: &mut MessageWriter<DialogueRequestedEvent>,
     queue: &mut DialogueRequestQueue,
     input: TradeDialogueInput,
 ) {
@@ -90,6 +92,13 @@ pub(super) fn send_trade_and_dialogue(
         );
         let id = queue.enqueue(request);
         debug!("Queued dialogue request {} for trade", id.value());
+
+        // Emit event for conversation behavior coordination
+        dialogue_requested_writer.write(DialogueRequestedEvent {
+            request_id: id,
+            speaker,
+            target: Some(target),
+        });
     }
 }
 
