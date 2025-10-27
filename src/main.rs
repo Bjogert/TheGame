@@ -6,12 +6,13 @@ mod core;
 mod dialogue;
 mod economy;
 mod npc;
+mod player;
 mod ui;
 mod world;
 
 use crate::{
     core::CorePlugin, dialogue::DialoguePlugin, economy::EconomyPlugin, npc::NpcPlugin,
-    ui::UiPlugin, world::WorldPlugin,
+    player::PlayerPlugin, ui::UiPlugin, world::WorldPlugin,
 };
 
 fn main() {
@@ -24,6 +25,7 @@ fn main() {
             DialoguePlugin,
             EconomyPlugin,
             WorldPlugin,
+            PlayerPlugin, // Player interaction with NPCs
             NpcPlugin,
             UiPlugin, // After DialoguePlugin to receive DialogueResponseEvent
         ))

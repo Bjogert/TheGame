@@ -7,7 +7,10 @@ use bevy::{
     window::{CursorGrabMode, CursorOptions},
 };
 
-use crate::world::components::{FlyCamera, PrimarySun};
+use crate::{
+    player::components::Player,
+    world::components::{FlyCamera, PrimarySun},
+};
 
 const GROUND_SCALE: f32 = 100.0;
 const CAMERA_START_POS: Vec3 = Vec3::new(-12.0, 8.0, 16.0);
@@ -47,6 +50,7 @@ pub fn spawn_world_environment(
         Camera3d::default(),
         camera_transform,
         FlyCamera::new(yaw, pitch),
+        Player, // Player marker for interaction system
     ));
 }
 

@@ -221,10 +221,12 @@ pub fn drive_npc_locomotion(
 }
 
 /// Makes NPCs face their conversation partner when stopped during dialogue.
+/// Handles both NPC-to-NPC and NPC-to-Player conversations.
 #[allow(clippy::type_complexity)]
 pub fn orient_conversing_npcs(
     time: Res<Time>,
     all_identities: Query<(Entity, &Identity)>,
+    player_query: Query<Entity, With<crate::player::components::Player>>,
     mut transforms: ParamSet<(
         Query<(Entity, &Identity, &mut Transform, &InConversation)>,
         Query<&Transform>,
@@ -239,17 +241,33 @@ pub fn orient_conversing_npcs(
             continue;
         }
 
-        // Find partner entity
-        let Some(partner_entity) = all_identities
-            .iter()
-            .find(|(_, id)| id.id == conversation.partner)
-            .map(|(e, _)| e)
-        else {
-            warn!(
-                "{} in conversation but partner {} not found",
-                identity.display_name, conversation.partner
-            );
-            continue;
+        // Check if partner is the player (special case)
+        let partner_entity = if conversation.partner.is_player() {
+            // Partner is the player - get player entity
+            match player_query.single() {
+                Ok(player_entity) => player_entity,
+                Err(_) => {
+                    warn!(
+                        "{} in conversation with player but player not found",
+                        identity.display_name
+                    );
+                    continue;
+                }
+            }
+        } else {
+            // Partner is another NPC - find via identity
+            let Some(npc_entity) = all_identities
+                .iter()
+                .find(|(_, id)| id.id == conversation.partner)
+                .map(|(e, _)| e)
+            else {
+                warn!(
+                    "{} in conversation but partner {} not found",
+                    identity.display_name, conversation.partner
+                );
+                continue;
+            };
+            npc_entity
         };
 
         // Store the data for second pass
@@ -294,6 +312,7 @@ pub fn orient_conversing_npcs(
 }
 
 /// Starts conversations by adding InConversation components when dialogue is requested.
+/// Handles both NPC-to-NPC and NPC-to-Player conversations.
 pub fn start_conversations(
     mut commands: Commands,
     mut events: MessageReader<DialogueRequestedEvent>,
@@ -305,26 +324,49 @@ pub fn start_conversations(
             continue; // No conversation if no target
         };
 
-        // Find entities for speaker and target
-        let speaker_entity = npcs
+        // Find speaker entity (always an NPC)
+        let Some(speaker_entity) = npcs
             .iter()
             .find(|(_, id)| id.id == event.speaker)
-            .map(|(e, _)| e);
-        let target_entity = npcs.iter().find(|(_, id)| id.id == target).map(|(e, _)| e);
+            .map(|(e, _)| e)
+        else {
+            warn!("Speaker {} not found for conversation", event.speaker);
+            continue;
+        };
 
-        if let (Some(speaker_e), Some(target_e)) = (speaker_entity, target_entity) {
-            let current_time = world_clock.time_of_day();
+        let current_time = world_clock.time_of_day();
 
-            // Add InConversation to speaker
-            commands.entity(speaker_e).insert(InConversation::new(
+        // Check if target is the player (special case)
+        if target.is_player() {
+            // Player interaction - only add InConversation to the NPC speaker
+            commands.entity(speaker_entity).insert(InConversation::new(
                 target,
                 event.request_id,
                 current_time,
                 ConversationState::WaitingAtDestination,
             ));
 
-            // Add InConversation to target
-            commands.entity(target_e).insert(InConversation::new(
+            info!(
+                "Started player conversation: {} -> player (request {})",
+                event.speaker,
+                event.request_id.value()
+            );
+        } else {
+            // NPC-to-NPC conversation - add InConversation to both
+            let Some(target_entity) = npcs.iter().find(|(_, id)| id.id == target).map(|(e, _)| e)
+            else {
+                warn!("Target {} not found for conversation", target);
+                continue;
+            };
+
+            commands.entity(speaker_entity).insert(InConversation::new(
+                target,
+                event.request_id,
+                current_time,
+                ConversationState::WaitingAtDestination,
+            ));
+
+            commands.entity(target_entity).insert(InConversation::new(
                 event.speaker,
                 event.request_id,
                 current_time,

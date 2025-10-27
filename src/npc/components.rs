@@ -13,6 +13,16 @@ impl NpcId {
     pub fn new(value: u64) -> Self {
         Self(value)
     }
+
+    /// Special marker representing the player as a dialogue participant.
+    pub fn player() -> Self {
+        Self(u64::MAX)
+    }
+
+    /// Checks if this NpcId is the special player marker (u64::MAX).
+    pub fn is_player(&self) -> bool {
+        self.0 == u64::MAX
+    }
 }
 
 impl fmt::Display for NpcId {

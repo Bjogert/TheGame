@@ -436,7 +436,7 @@
 
 - id: S1.16c
   title: "UI Panel Dialogue System - Replace world-space bubbles"
-  state: in_progress
+  state: done
   deps: [S1.13]
   deliverables:
     - "Create src/ui/ module with UiPlugin, dialogue_panel/ submodule"
@@ -463,3 +463,74 @@
     - "Reuses DialogueResponseEvent (no event changes needed), similar component patterns to SpeechBubble."
     - "Industry precedents: Disco Elysium, Divinity OS2, BG3 - UI panels for dialogue-heavy games."
     - "Implementation plan documented in .agent/ui_panel_plan.md (comprehensive 55-65 min estimate)."
+
+- id: S1.17
+  title: "NPC Conversation Behavior - Stop & Face Each Other"
+  state: done
+  deps: [S1.16c]
+  deliverables:
+    - "Create InConversation component (partner, request_id, started_at, state)"
+    - "Create ConversationState enum (Approaching, WaitingAtDestination, Speaking)"
+    - "Create DialogueRequestedEvent for economy→NPC decoupling"
+    - "Implement start_conversations system (adds InConversation when dialogue triggers)"
+    - "Modify drive_npc_locomotion to freeze movement when InConversation present"
+    - "Implement orient_conversing_npcs system (face partner using quaternion slerp)"
+    - "Implement cleanup_conversations system (remove InConversation after timeout)"
+    - "Modify economy system to emit DialogueRequestedEvent"
+    - "Register systems in correct order (start → cleanup → locomotion → orient)"
+    - "Test: NPCs stop, face each other, dialogue appears, resume after timeout"
+  docs_update:
+    - "src/npc/components.rs"
+    - "src/npc/systems.rs"
+    - "src/npc/plugin.rs"
+    - "src/dialogue/events.rs"
+    - "src/dialogue/plugin.rs"
+    - "src/economy/systems/dialogue.rs"
+    - "src/economy/systems/task_execution.rs"
+    - "CHANGELOG.md"
+    - "TASK.md"
+    - ".agent/tasks.yaml"
+  notes:
+    - "Timing: T+0s freeze → T+1.5s API response → T+8s cleanup (resume movement)."
+    - "Used ParamSet to resolve Bevy query conflicts (B0001 error with overlapping Transform access)."
+    - "Conversation timeout: 0.013 fractional day ≈ 8 seconds with 10-minute day."
+    - "Y-axis rotation only (no vertical tilt) for natural face-to-face orientation."
+    - "Handles day wraparound in timing calculations."
+    - "COMPLETED 2025-10-26: NPCs successfully stop and face each other during dialogue, verified with live testing."
+
+- id: S1.18
+  title: "Player Interaction System - Walk Up & Press E to Chat"
+  state: in_progress
+  deps: [S1.17]
+  deliverables:
+    - "Create src/player/ module (mod.rs, components.rs, systems.rs, plugin.rs)"
+    - "Define Player marker component (tag camera entity)"
+    - "Define PlayerInteractionState resource (tracks nearby NPC)"
+    - "Implement detect_nearby_npcs system (find nearest NPC within 3 units)"
+    - "Implement handle_player_interaction_input system (E key → enqueue dialogue)"
+    - "Add Player component to camera spawn in src/world/systems.rs"
+    - "Extend orient_conversing_npcs to handle player partner (NPC faces camera)"
+    - "Modify dialogue context to detect player interaction (different prompt)"
+    - "Register PlayerPlugin in main.rs"
+    - "Test MVP: Walk up, press E, NPC responds and faces camera"
+  docs_update:
+    - "src/player/mod.rs"
+    - "src/player/components.rs"
+    - "src/player/systems.rs"
+    - "src/player/plugin.rs"
+    - "src/world/systems.rs"
+    - "src/npc/systems.rs"
+    - "src/dialogue/broker/openai.rs"
+    - "src/main.rs"
+    - "src/lib.rs"
+    - "CHANGELOG.md"
+    - "TASK.md"
+    - ".agent/tasks.yaml"
+  notes:
+    - "INTERACTION_RANGE: 3.0 units (player must be within 3 units of NPC)."
+    - "Special NpcId('player') marker for InConversation.partner field (MVP hack, refactor later)."
+    - "Excludes NPCs already in conversation (query Without<InConversation>)."
+    - "Reuses existing DialogueRequestedEvent infrastructure."
+    - "Phase 1 MVP (45 min): Core functionality only."
+    - "Phase 2 (optional): Visual feedback (highlight NPC, UI prompt), interaction cooldown."
+    - "Implementation plan documented in .agent/player_interaction_plan.md (comprehensive 55 min estimate)."
